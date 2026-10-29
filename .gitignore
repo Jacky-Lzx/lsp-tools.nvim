@@ -1,0 +1,3 @@
+nvim.log
+*.log
+__pycache__/
