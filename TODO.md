@@ -36,6 +36,7 @@ key mappings belong to the user's configuration.
 - [x] Preserve per-document folds and mode across debounced updates and source switches.
 - [x] Cancel obsolete requests and reject stale replies and stale jump positions.
 - [x] Verify real LuaLS/TeXquill symbols and terminal navigation without Snacks.
+- [x] Show TeXquill's Beamer frames, blocks, nested lists and item previews in the default TeX structure view.
 - [ ] Add optional Tree-sitter providers for documents without an LSP, if needed.
 
 ## Current-location breadcrumbs

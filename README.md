@@ -412,11 +412,12 @@ require("lsp-tools").setup({
     width = 0.25,         -- fraction of screen columns; >= 1 means columns
     min_width = 20,
     max_width = 60,
+    indent = 1,           -- spaces per hierarchy level; 0 disables indentation
     focus_on_open = false,
     follow_cursor = true,
     debounce = 200,       -- milliseconds after source edits
     request_timeout = 3000,
-    mode = "auto",       -- "auto", "all", or "sections"
+    mode = "auto",       -- "auto", "structure", "all", or "sections"
     -- client_name = "texquill", -- optional provider preference/filter
     -- client_filter = function(client, bufnr) return true end,
     icons = {            -- optional overrides of the built-in symbol icons
@@ -427,12 +428,27 @@ require("lsp-tools").setup({
 })
 ```
 
-`auto` initially shows sections for `tex` buffers and all symbols for other file
-types. Section filtering recognizes LaTeX heading commands in the server's
-`detail` field, with Namespace symbols as a fallback when detail is absent.
-TeXquill supplies the heading hierarchy directly. Press `m` to include labels,
-macros, environments, and other symbols returned by the server. Filtered-out
-parents do not hide matching descendants.
+`auto` initially shows document structure for `tex` buffers and all symbols for
+other file types. `structure` includes headings, Beamer frames and blocks, lists,
+individual list items, columns, figures, tables, and theorem/proof environments
+when supplied by the server. TeXquill reports frame titles from either
+`\begin{frame}{Title}` or `\frametitle{Title}` and nests list-item previews under
+their environments. For example, a Beamer outline can show
+`Progress → Comparison with the Existing Methods → itemize → Our method`.
+Selection jumps to the frame title or the item's `\item` command.
+
+Set `mode = "sections"` to keep a headings-only view. This recognizes LaTeX
+heading commands in the server's `detail` field, with Namespace symbols as a
+fallback when detail is absent. Structural scopes use Object symbols whose
+detail names the environment, Array symbols for `itemize`/`enumerate`/`description`,
+and EnumMember symbols with detail `item`. These symbols require a TeXquill build
+with document-structure support; changing outline modes cannot add symbols absent
+from an older server's response.
+
+Press `m` to include labels, citations, macros, and other server symbols, then
+press it again to return to structure (`sections` when explicitly configured).
+Filtered-out parents do not hide matching descendants. The client preserves the
+server's hierarchy and never parses LaTeX source itself.
 
 All standard LSP symbol kinds have built-in icons. Icons and symbol names use the
 kind's semantic highlight group from the active colorscheme; fold markers and
@@ -458,7 +474,7 @@ Inside the sidebar:
 | `h`, `zc` | Collapse, or move to the visible parent |
 | `l`, `zo` | Expand, or move to the first child |
 | `zM`, `zR` | Collapse / expand all |
-| `m` | Toggle sections / all symbols |
+| `m` | Toggle structure / all symbols (sections when explicitly configured) |
 | `r` | Refresh from the language server |
 | `q`, `Esc` | Close and return to the source |
 
@@ -478,6 +494,9 @@ switches, close, and timeout; late results are checked against buffer identity,
 URI, changedtick, and the attached client. Stale positions cannot be used to jump.
 
 Run `tests/run.sh` for model/UI race coverage and
-`tests/outline-integration.sh [headless|tui] [lua|texquill]` for real LuaLS or
+`tests/outline-integration.sh [headless|tui] [lua|texquill|beamer]` for real LuaLS or
 TeXquill hierarchy, filtering, editing, key, and focus checks. The chosen server
-must be installed on `PATH`.
+must be installed on `PATH`. The `beamer` case covers frames, nested lists/items,
+source jumps, breadcrumbs and structure/all mode switching. Set `TEXQUILL_BIN`
+to test a specific server build, or `LSP_TOOLS_BEAMER_FILE` to inspect an existing
+presentation containing the fixture's frame/item names without modifying it.

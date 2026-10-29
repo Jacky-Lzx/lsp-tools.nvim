@@ -9,6 +9,7 @@ local defaults = {
   width = 0.25,
   min_width = 20,
   max_width = 60,
+  indent = 1,
   focus_on_open = false,
   follow_cursor = true,
   debounce = 200,
@@ -88,8 +89,8 @@ local function fresh(s)
   local tick, uri = snapshot(s.buf)
   return s.doc.tick == tick and s.doc.uri == uri
 end
-local function sections(s)
-  return s.doc and s.doc.mode == "sections"
+local function filter(s)
+  return s.doc and s.doc.mode ~= "all" and s.doc.mode or false
 end
 local function clean(value)
   return tostring(value):gsub("[%c]", " ")
@@ -115,7 +116,7 @@ update_current = function(s)
   if not fresh(s) or not valid(s.source) or api.nvim_win_get_buf(s.source) ~= s.buf then
     return
   end
-  local node = model.current(s.doc.roots, api.nvim_win_get_cursor(s.source), sections(s))
+  local node = model.current(s.doc.roots, api.nvim_win_get_cursor(s.source), filter(s))
   while node do
     for row, entry in ipairs(s.rows or {}) do
       if entry.node.key == node.key then
@@ -142,7 +143,7 @@ render = function(s)
     local entry = s.rows[api.nvim_win_get_cursor(s.win)[1]]
     selected = entry and entry.node.key
   end
-  s.rows = s.doc and model.rows(s.doc.roots, s.doc.folds, sections(s)) or {}
+  s.rows = s.doc and model.rows(s.doc.roots, s.doc.folds, filter(s)) or {}
   local lines, marks = {}, {}
   for _, entry in ipairs(s.rows) do
     local node = entry.node
@@ -151,14 +152,14 @@ render = function(s)
     local glyph = type(icon) == "table" and icon.icon
       or type(icon) == "string" and icon
       or kind:sub(1, 1)
-    local prefix = string.rep("  ", entry.depth)
+    local prefix = string.rep(" ", config.indent * entry.depth)
       .. (entry.children and (s.doc.folds[node.key] and "▸ " or "▾ ") or "  ")
     local text = prefix .. glyph .. " " .. clean(node.name)
     lines[#lines + 1] = text .. (node.detail ~= "" and "  " .. clean(node.detail) or "")
     marks[#marks + 1] = { #prefix, #text, type(icon) == "table" and icon.hl or "@type" }
   end
   if #lines == 0 then
-    lines = { s.status or (sections(s) and "No sections (m: all symbols)" or "No symbols") }
+    lines = { s.status or (filter(s) and "No structure (m: all symbols)" or "No symbols") }
   end
   vim.bo[s.out].modifiable = true
   api.nvim_buf_set_lines(s.out, 0, -1, false, lines)
@@ -183,7 +184,7 @@ render = function(s)
   local name = s.buf and vim.fn.fnamemodify(api.nvim_buf_get_name(s.buf), ":t") or ""
   vim.wo[s.win].winbar = (" Outline · %s · %s%s"):format(
     clean(name):gsub("%%", "%%%%"),
-    sections(s) and "Sections" or "All",
+    s.doc and ({ sections = "Sections", structure = "Structure", all = "All" })[s.doc.mode] or "All",
     s.status and " · " .. clean(s.status):gsub("%%", "%%%%") or ""
   )
   update_current(s)
@@ -258,7 +259,7 @@ refresh = function(s)
       local old = s.doc or s.docs[buf]
       local mode = old and old.mode or config.mode
       if mode == "auto" then
-        mode = vim.bo[buf].filetype == "tex" and "sections" or "all"
+        mode = vim.bo[buf].filetype == "tex" and "structure" or "all"
       end
       local ok, roots = pcall(model.normalize, result or {}, lines, client.offset_encoding, uri)
       s.doc = {
@@ -506,10 +507,13 @@ function M.open(opts)
   end, "Refresh symbols")
   map("m", function()
     if s.doc then
-      s.doc.mode = sections(s) and "all" or "sections"
+      local filtered = config.mode == "sections" and "sections"
+        or vim.bo[s.buf].filetype == "tex" and "structure"
+        or "sections"
+      s.doc.mode = s.doc.mode == "all" and filtered or "all"
       render(s)
     end
-  end, "Toggle sections/all symbols")
+  end, "Toggle structure/all symbols")
   map("q", function()
     close(s)
   end, "Close outline")
@@ -547,6 +551,10 @@ end
 function M.setup(opts)
   M.disable()
   config = vim.tbl_deep_extend("force", vim.deepcopy(defaults), opts or {})
+  assert(
+    type(config.indent) == "number" and config.indent >= 0 and config.indent % 1 == 0,
+    "outline.indent must be a non-negative integer"
+  )
   for _, key in ipairs({ "width", "min_width", "max_width", "debounce", "request_timeout" }) do
     assert(
       type(config[key]) == "number" and config[key] > 0,
@@ -554,7 +562,10 @@ function M.setup(opts)
     )
   end
   assert(
-    config.mode == "auto" or config.mode == "all" or config.mode == "sections",
+    config.mode == "auto"
+      or config.mode == "all"
+      or config.mode == "sections"
+      or config.mode == "structure",
     "invalid outline.mode"
   )
   enabled = config.enabled ~= false

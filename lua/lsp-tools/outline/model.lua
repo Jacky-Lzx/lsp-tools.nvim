@@ -84,16 +84,48 @@ function M.section(node)
   return headings[detail] or node.kind == 3 and detail == ""
 end
 
+local environments = {
+  frame = true,
+  block = true,
+  alertblock = true,
+  exampleblock = true,
+  columns = true,
+  column = true,
+  figure = true,
+  ["figure*"] = true,
+  table = true,
+  ["table*"] = true,
+  theorem = true,
+  lemma = true,
+  proof = true,
+  definition = true,
+  example = true,
+  corollary = true,
+}
+function M.structure(node)
+  return M.section(node)
+    or node.kind == 19 and environments[node.detail] == true
+    or node.kind == 18 and vim.tbl_contains({ "itemize", "enumerate", "description" }, node.detail)
+    or node.kind == 22 and node.detail == "item"
+end
+
+local function visible(node, filter)
+  if filter == "structure" then
+    return M.structure(node)
+  end
+  return not filter or filter == "all" or M.section(node)
+end
+
 ---Filtering promotes matching descendants rather than discarding whole subtrees.
-function M.rows(roots, folds, sections)
+function M.rows(roots, folds, filter)
   local rows = {}
   local function walk(nodes, depth, visible_parent)
     for _, node in ipairs(nodes) do
-      if not sections or M.section(node) then
+      if visible(node, filter) then
         local children = false
         local function has_child(items)
           for _, child in ipairs(items) do
-            if not sections or M.section(child) or has_child(child.children) then
+            if visible(child, filter) or has_child(child.children) then
               return true
             end
           end
@@ -114,12 +146,12 @@ function M.rows(roots, folds, sections)
   return rows
 end
 
-function M.current(roots, cursor, sections)
+function M.current(roots, cursor, filter)
   local found
   local function walk(nodes)
     for _, node in ipairs(nodes) do
       if not before(cursor, node.range[1]) and before(cursor, node.range[2]) then
-        if not sections or M.section(node) then
+        if visible(node, filter) then
           found = node
         end
         walk(node.children)

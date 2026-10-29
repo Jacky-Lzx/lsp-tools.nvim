@@ -70,6 +70,62 @@ check(
     == 0,
   "invalid positions are skipped"
 )
+local structural = model.normalize({
+  {
+    name = "Progress",
+    detail = "section",
+    kind = 3,
+    range = range(0, 0, 10, 0),
+    children = {
+      {
+        name = "Slide",
+        detail = "frame",
+        kind = 19,
+        range = range(1, 0, 9, 0),
+        children = {
+          {
+            name = "itemize",
+            detail = "itemize",
+            kind = 18,
+            range = range(2, 0, 8, 0),
+            children = {
+              {
+                name = "Point",
+                detail = "item",
+                kind = 22,
+                range = range(3, 0, 7, 0),
+                children = {
+                  { name = "ref:key", kind = 7, range = range(4, 0, 4, 1) },
+                },
+              },
+            },
+          },
+          { name = "helper", kind = 12, range = range(8, 0, 8, 1) },
+        },
+      },
+    },
+  },
+}, vim.fn["repeat"]({ "content" }, 10), "utf-16", uri)
+check(
+  #model.rows(structural, {}, "structure") == 4,
+  "structure includes headings, frames, lists and items"
+)
+check(#model.rows(structural, {}, "all") == 6, "all mode also shows references and definitions")
+check(#model.rows(structural, {}, "sections") == 1, "explicit sections mode remains available")
+check(
+  model.current(structural, { 5, 0 }, "structure").name == "Point",
+  "structure follows enclosing item instead of citation"
+)
+check(
+  model.current(structural, { 9, 0 }, "structure").name == "Slide",
+  "structure ignores macro definitions"
+)
+local structural_rows = model.rows(structural, {}, "structure")
+check(structural_rows[4].depth == 3, "presentation hierarchy is preserved")
+check(
+  #model.rows(structural, { [structural_rows[2].node.key] = true }, "structure") == 2,
+  "frame folding hides its list subtree"
+)
 local calls, clients = {}, {}
 local c = { id = 1, name = "fixture", offset_encoding = "utf-16" }
 function c:request(method, params, callback)
@@ -112,7 +168,10 @@ check(vim.bo[out].filetype == "lsp-tools-outline" and not vim.bo[out].modifiable
 check(calls[1].method == "textDocument/documentSymbol", "requests document symbols")
 calls[1].callback(nil, symbols)
 flush()
-check(api.nvim_buf_line_count(out) == 2, "LaTeX defaults to sections")
+check(
+  api.nvim_buf_line_count(out) == 2 and vim.wo[outwin].winbar:find("Structure"),
+  "LaTeX defaults to document structure"
+)
 check(not vim.wo[outwin].winbar:find("Invalid"), "successful result has no error status")
 check(api.nvim_buf_get_lines(out, 0, 1, false)[1]:find("Chapter"), "renders names")
 check(
