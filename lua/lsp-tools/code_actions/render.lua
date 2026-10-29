@@ -1,5 +1,22 @@
 local M = {}
 
+function M.validate(config)
+  assert(config.backend == "vim" or config.backend == "delta", "backend must be 'vim' or 'delta'")
+  assert(type(config.delta) == "table", "delta must be a table")
+  assert(type(config.delta.command) == "string", "delta.command must be an executable name or path")
+  assert(
+    type(config.delta.args) == "table" and vim.islist(config.delta.args),
+    "delta.args must be a list"
+  )
+  for _, arg in ipairs(config.delta.args) do
+    assert(type(arg) == "string", "delta.args must contain strings")
+  end
+  assert(
+    type(config.delta.timeout) == "number" and config.delta.timeout > 0,
+    "delta.timeout must be positive"
+  )
+end
+
 local function plain(ctx, lines)
   ctx.preview:reset()
   ctx.preview:set_title("Preview")

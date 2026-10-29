@@ -19,10 +19,13 @@ key mappings belong to the user's configuration.
 
 ## Rename preview
 
-- [ ] Preview the language server's actual rename edits, grouped by file.
-- [ ] Show affected-file and edit counts, with diff navigation.
-- [ ] Apply the complete edit after confirmation; cancellation leaves files unchanged.
-- [ ] Handle prepareRename, unsupported servers, stale results, and failed requests.
+- [x] Preview the language server's actual rename edits, grouped by file.
+- [x] Show affected-file and edit counts, with diff navigation.
+- [x] Apply the complete edit after confirmation; cancellation leaves files unchanged.
+- [x] Handle prepareRename, unsupported servers, stale results, and failed requests.
+- [x] Guard all affected buffers, document versions, and disk snapshots before applying.
+- [x] Show change annotations and resource operations; select a single rename provider.
+- [x] Verify cross-file edits and real LuaLS semantics through headless and terminal UI tests.
 
 ## Continuous peek
 

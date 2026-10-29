@@ -219,25 +219,7 @@ end
 
 function M.setup(opts)
   local next_config = vim.tbl_deep_extend("force", config, opts or {})
-  assert(
-    next_config.backend == "vim" or next_config.backend == "delta",
-    "backend must be 'vim' or 'delta'"
-  )
-  assert(
-    type(next_config.delta.command) == "string",
-    "delta.command must be an executable name or path"
-  )
-  assert(
-    type(next_config.delta.args) == "table" and vim.islist(next_config.delta.args),
-    "delta.args must be a list"
-  )
-  for _, arg in ipairs(next_config.delta.args) do
-    assert(type(arg) == "string", "delta.args must contain strings")
-  end
-  assert(
-    type(next_config.delta.timeout) == "number" and next_config.delta.timeout > 0,
-    "delta.timeout must be positive"
-  )
+  require("lsp-tools.code_actions.render").validate(next_config)
   assert(
     type(next_config.resolve_timeout) == "number" and next_config.resolve_timeout > 0,
     "resolve_timeout must be positive"

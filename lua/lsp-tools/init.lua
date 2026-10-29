@@ -1,7 +1,7 @@
 local M = {}
 
 ---Configure independently enabled LSP tools. No key mappings are installed.
----@param opts? {code_actions?: boolean|table, references?: boolean|table}
+---@param opts? {code_actions?: boolean|table, references?: boolean|table, rename?: boolean|table}
 function M.setup(opts)
   opts = opts or {}
   assert(type(opts) == "table", "lsp-tools options must be a table")
@@ -14,6 +14,11 @@ function M.setup(opts)
   assert(
     references == nil or type(references) == "boolean" or type(references) == "table",
     "references must be a boolean or table"
+  )
+  local rename = opts.rename
+  assert(
+    rename == nil or type(rename) == "boolean" or type(rename) == "table",
+    "rename must be a boolean or table"
   )
   if actions == false or type(actions) == "table" and actions.enabled == false then
     local loaded = package.loaded["lsp-tools.code_actions"]
@@ -31,7 +36,30 @@ function M.setup(opts)
   else
     require("lsp-tools.references").setup(type(references) == "table" and references or {})
   end
+  if rename == false or type(rename) == "table" and rename.enabled == false then
+    local loaded = package.loaded["lsp-tools.rename"]
+    if loaded then
+      loaded.disable()
+    end
+  else
+    require("lsp-tools.rename").setup(type(rename) == "table" and rename or {})
+  end
   return M
+end
+
+---Request and preview all workspace edits before applying a rename.
+---@param new_name? string
+---@param opts? table
+function M.rename(new_name, opts)
+  return require("lsp-tools.rename").rename(new_name, opts)
+end
+
+---Cancel the active rename request or preview.
+function M.cancel_rename()
+  local loaded = package.loaded["lsp-tools.rename"]
+  if loaded then
+    loaded.cancel()
+  end
 end
 
 ---Jump between references to the symbol under the cursor in the current document.
