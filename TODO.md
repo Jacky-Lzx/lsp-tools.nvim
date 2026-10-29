@@ -46,7 +46,12 @@ key mappings belong to the user's configuration.
 
 ## Semantic reference navigation
 
-- [ ] Navigate declarations, reads, and writes when the server supplies that information.
+- [x] Highlight and navigate the current symbol's document highlights, independently of Snacks.words.
+- [x] Support signed counts, optional wrapping, jump origins, and opening target folds.
+- [x] Preserve server-provided read/write highlight kinds and position encodings.
+- [x] Sort/deduplicate multiple clients' locations and reject stale asynchronous results.
+- [x] Recommend Normal-mode `]r` / `[r`, leaving native section/terminal navigation available.
+- [ ] Filter navigation by read/write kind when the server supplies that information.
 - [ ] Filter references by the current function or document where supported.
 - [ ] Explain capability limits; do not infer workspace-wide read/write classification from ordinary references.
 

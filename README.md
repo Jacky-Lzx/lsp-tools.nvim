@@ -1,8 +1,8 @@
 # lsp-tools.nvim
 
-Practical LSP tools for Neovim. The first implemented tool integrates all
-code-actions.nvim functionality: a Snacks picker with asynchronous code action
-resolution, workspace-edit previews, and optional delta rendering.
+Practical LSP tools for Neovim: semantic reference highlighting/navigation and
+a Snacks code action picker with asynchronous resolution, workspace-edit previews,
+and optional delta rendering. Includes the code-actions.nvim implementation.
 
 Install this plugin in place of code-actions.nvim. It contains the implementation
 and does not load or depend on that plugin. See [TODO.md](TODO.md) for the roadmap.
@@ -10,10 +10,11 @@ and does not load or depend on that plugin. See [TODO.md](TODO.md) for the roadm
 ## Requirements
 
 - Neovim 0.12 (tested with 0.12.6)
-- [snacks.nvim](https://github.com/folke/snacks.nvim), with picker enabled
-- An attached language server supporting code actions
+- [snacks.nvim](https://github.com/folke/snacks.nvim), with picker enabled, for code actions
+- An attached language server supporting the enabled tool's LSP methods
 
 No plenary or external diff executable is required. Delta is optional.
+Reference navigation alone requires no Snacks: use `setup({ code_actions = false })`.
 
 ## Installation
 
@@ -37,6 +38,18 @@ Local installation with lazy.nvim:
     require("lsp-tools").setup(opts)
   end,
   keys = {
+    {
+      "]r",
+      function() require("lsp-tools").jump_reference(vim.v.count1) end,
+      mode = "n",
+      desc = "[LSP] Next reference",
+    },
+    {
+      "[r",
+      function() require("lsp-tools").jump_reference(-vim.v.count1) end,
+      mode = "n",
+      desc = "[LSP] Previous reference",
+    },
     {
       "<leader>a",
       function() require("lsp-tools").code_action() end,
@@ -81,7 +94,7 @@ require("lsp-tools").setup({
 })
 ```
 
-`setup()` enables code actions by default. Set `code_actions = false` (or
+`setup()` enables both tools by default. Set `code_actions = false` (or
 `{ enabled = false }`) to disable the tool, close its open pickers, and cancel
 pending requests. Disabling restores the previous select provider when the
 adapter still owns it, and preserves providers installed by other plugins.
@@ -118,6 +131,50 @@ require("lsp-tools").setup({
 })
 ```
 
+## Reference navigation
+
+`require("lsp-tools").jump_reference(count, opts)` moves forward for a positive
+count and backward for a negative count, within the current file. It uses
+`textDocument/documentHighlight`, so it follows the language server's understanding
+of the symbol. It does not perform text search or query workspace references.
+Read/write classification is displayed when the server supplies highlight kinds.
+
+```lua
+require("lsp-tools").setup({
+  references = {
+    debounce = 200, -- automatic highlighting after cursor movement, milliseconds
+    request_timeout = 1500,
+    wrap = false, -- stop at the ends by default
+    jumplist = true, -- Ctrl-O returns to the jump origin
+    foldopen = true,
+    notify_end = true,
+  },
+})
+-- Override wrapping for one operation:
+require("lsp-tools").jump_reference(1, { wrap = true })
+```
+
+Recommended mappings are Normal-mode `]r` / `[r` (reference), with counts such as
+`3]r`. They leave native `]]` / `[[` section navigation available, including shell
+prompt navigation in terminal buffers. No mappings are installed automatically.
+Terminal input mode has no reference mapping. The feature only operates in normal
+file buffers, with automatic highlights in Normal, Insert, and command-line modes.
+
+An explicit jump requests highlights immediately, including before the automatic
+debounce expires. Repeated keys during a request accumulate their counts. Results
+are sorted and deduplicated across clients using each client's position encoding.
+The source window, cursor, and buffer version must still match before a pending
+jump is applied. Moving outside the current symbol, editing, switching windows,
+detaching a client, or disabling the tool cancels obsolete work. Slow clients time
+out; completed clients' results remain usable. Highlights use an owned namespace
+and native `LspReferenceText`, `LspReferenceRead`, and `LspReferenceWrite` groups.
+
+Set `references = false` (or `{ enabled = false }`) to disable the tool and clear
+its highlights. When migrating from Snacks.words, disable it with
+`words = { enabled = false }` in Snacks, and remove its old jump mappings so only
+one component owns highlighting and navigation. Workspace-wide reference pickers
+such as Snacks' LSP references picker can continue to be used separately.
+
 ## Behavior and limits
 
 - Previews use loaded buffer contents, including unsaved edits, before disk.
@@ -149,6 +206,8 @@ require("lsp-tools").setup({
 ./tests/run.sh
 SNACKS_DIR=~/.local/share/nvim/lazy/snacks.nvim ./tests/integration.sh
 ./tests/tui.sh # run from a terminal; exercises actual mapped keys and focus
+./tests/references-integration.sh # requires lua-language-server (or LUA_LS=/path/to/server)
+./tests/references-integration.sh tui # real terminal keys and Ctrl-O
 ```
 
 Unit tests cover preview isolation, Unicode edits, unsaved/multiple files,
@@ -168,3 +227,10 @@ Renderer tests cover native output, literal delta arguments, ANSI output,
 cancellation and fallback. Integration tests additionally exercise a missing
 executable and a timed-out process. If delta is installed, they test its real ANSI
 output, switching between delta and command-only previews, and failure fallback.
+
+Reference unit tests cover immediate requests, counted jumps, boundaries/wrapping,
+Unicode encodings, multi-client deduplication, kinds, cancellation, timeout, stale
+responses, and owned-highlight cleanup. Reference integration tests use real LuaLS
+to verify that an inner variable with the same name is excluded from the outer
+symbol's locations. They also cover preceding emoji, counts, backward navigation,
+and jump origins without loading Snacks.
