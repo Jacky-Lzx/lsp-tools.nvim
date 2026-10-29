@@ -95,6 +95,7 @@ api.nvim_buf_set_name(buf, vim.fn.tempname() .. ".tex")
 api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 vim.bo[buf].filetype = "tex"
 tools.setup({
+  breadcrumbs = false,
   code_actions = false,
   references = false,
   rename = false,
@@ -272,6 +273,7 @@ check(
   "last-window close preserves source buffer"
 )
 tools.setup({
+  breadcrumbs = false,
   code_actions = false,
   references = false,
   rename = false,
@@ -284,7 +286,13 @@ check(
   api.nvim_buf_get_lines(api.nvim_win_get_buf(custom), 0, 1, false)[1]:find("§ custom", 1, true),
   "a user icon override replaces the default"
 )
-tools.setup({ code_actions = false, references = false, rename = false, outline = false })
+tools.setup({
+  breadcrumbs = false,
+  code_actions = false,
+  references = false,
+  rename = false,
+  outline = false,
+})
 check(not tools.open_outline(), "disabled outline stays closed")
 print(("lsp-tools outline: %d assertions passed"):format(count))
 vim.cmd("qa!")

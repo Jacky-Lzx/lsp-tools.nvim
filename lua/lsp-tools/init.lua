@@ -1,7 +1,7 @@
 local M = {}
 
 ---Configure independently enabled LSP tools. No key mappings are installed.
----@param opts? {code_actions?: boolean|table, references?: boolean|table, rename?: boolean|table, outline?: boolean|table}
+---@param opts? {code_actions?: boolean|table, references?: boolean|table, rename?: boolean|table, outline?: boolean|table, breadcrumbs?: boolean|table}
 function M.setup(opts)
   opts = opts or {}
   assert(type(opts) == "table", "lsp-tools options must be a table")
@@ -17,6 +17,11 @@ function M.setup(opts)
   )
   local rename = opts.rename
   local outline = opts.outline
+  local breadcrumbs = opts.breadcrumbs
+  assert(
+    breadcrumbs == nil or type(breadcrumbs) == "boolean" or type(breadcrumbs) == "table",
+    "breadcrumbs must be a boolean or table"
+  )
   assert(
     outline == nil or type(outline) == "boolean" or type(outline) == "table",
     "outline must be a boolean or table"
@@ -57,7 +62,23 @@ function M.setup(opts)
   else
     require("lsp-tools.outline").setup(type(outline) == "table" and outline or {})
   end
+  if breadcrumbs == false or type(breadcrumbs) == "table" and breadcrumbs.enabled == false then
+    local loaded = package.loaded["lsp-tools.breadcrumbs"]
+    if loaded then
+      loaded.disable()
+    end
+  else
+    require("lsp-tools.breadcrumbs").setup(type(breadcrumbs) == "table" and breadcrumbs or {})
+  end
   return M
+end
+
+---Render the enclosing symbol path for lualine or a native statusline/winbar.
+---@param opts? {winid?: integer, color?: boolean, icons?: boolean}
+---@return string
+function M.breadcrumbs(opts)
+  local loaded = package.loaded["lsp-tools.breadcrumbs"]
+  return loaded and loaded.statusline(opts) or ""
 end
 
 function M.open_outline(opts)

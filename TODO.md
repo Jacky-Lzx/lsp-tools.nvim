@@ -38,6 +38,14 @@ key mappings belong to the user's configuration.
 - [x] Verify real LuaLS/TeXquill symbols and terminal navigation without Snacks.
 - [ ] Add optional Tree-sitter providers for documents without an LSP, if needed.
 
+## Current-location breadcrumbs
+
+- [x] Render the enclosing LSP symbol path as a lualine component or optional native winbar.
+- [x] Follow each window's cursor using a shared per-buffer cache without cursor-triggered requests.
+- [x] Preserve hierarchy, Unicode positions, semantic icons/colors, and optional LaTeX section filtering.
+- [x] Cancel obsolete requests and preserve other winbar providers on setup and disable.
+- [x] Verify real LuaLS, installed lualine, terminal rendering, split cursors, and live edits.
+
 ## Diagnostic workflow
 
 - [ ] Show full messages, sources, codes, and related locations.

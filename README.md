@@ -1,6 +1,6 @@
 # lsp-tools.nvim
 
-Practical LSP tools for Neovim: a symbol outline, rename previews, semantic reference navigation,
+Practical LSP tools for Neovim: symbol breadcrumbs, a symbol outline, rename previews, semantic reference navigation,
 and code actions with asynchronous resolution and optional delta rendering.
 Includes the code-actions.nvim implementation.
 
@@ -14,7 +14,7 @@ and does not load or depend on that plugin. See [TODO.md](TODO.md) for the roadm
 - An attached language server supporting the enabled tool's LSP methods
 
 No plenary or external diff executable is required. Delta is optional.
-Reference navigation and the outline require no Snacks: use `setup({ code_actions = false, rename = false })`.
+Reference navigation, breadcrumbs, and the outline require no Snacks: use `setup({ code_actions = false, rename = false })`.
 
 ## Installation
 
@@ -105,7 +105,7 @@ require("lsp-tools").setup({
 })
 ```
 
-`setup()` enables all three tools by default. Set `code_actions = false` (or
+`setup()` enables all tools by default. Set `code_actions = false` (or
 `{ enabled = false }`) to disable the tool, close its open pickers, and cancel
 pending requests. Disabling restores the previous select provider when the
 adapter still owns it, and preserves providers installed by other plugins.
@@ -317,6 +317,84 @@ tests cover Unicode, unsaved files, file aliases, loading new buffers, external
 disk writes, document versions, annotations, and ordered resource operations.
 Integration checks include two-file rename review/apply/cancel, annotation previews,
 stale second-file refusal, and real LuaLS renaming that preserves a shadowed local.
+
+## Current-location breadcrumbs
+
+Display the enclosing LSP symbol path at the top of the editor, for example
+`impl Circuit for State › next`. The component uses the server's full symbol
+ranges to find the scope under each window's cursor. It does not require Trouble,
+nvim-navic, Snacks, Tree-sitter, or an open outline.
+
+For lualine, keep its existing filename and LSP-status components and replace the
+Trouble symbols function in `winbar.lualine_b` with:
+
+```lua
+table.insert(opts.winbar.lualine_b, 1, {
+  function()
+    return require("lsp-tools").breadcrumbs()
+  end,
+})
+```
+
+Call `require("lsp-tools").setup()` from the plugin's configuration as usual.
+The function returns `""` before setup, when disabled, outside symbol scopes,
+in special/floating windows, or when no eligible symbol provider is attached.
+It can safely be used when lualine loads before this plugin. Remove the previous
+`require("trouble").statusline({ mode = "lsp_document_symbols", ... })` component
+to avoid showing the same location twice. Lualine continues to own the winbar;
+the default breadcrumbs configuration never changes the window's `winbar` option.
+
+Without lualine, enable the native winbar:
+
+```lua
+require("lsp-tools").setup({
+  breadcrumbs = {
+    winbar = true,       -- default false; install only in windows with an empty winbar
+    separator = " › ",
+    debounce = 200,      -- milliseconds after document edits
+    request_timeout = 3000,
+    mode = "all",       -- "all" (default), "auto", or "sections"
+    -- client_name = "rust_analyzer",
+    -- client_filter = function(client, bufnr) return true end,
+    icons = {
+      Method = { icon = "󰆧", hl = "Function" },
+    },
+  },
+})
+```
+
+The native winbar displays only the symbol path. Existing winbars are preserved.
+Disabling or repeating setup restores windows still owned by this module and
+leaves newer winbar providers untouched. For a custom native winbar expression,
+use `%{%v:lua.require'lsp-tools'.breadcrumbs()%}`.
+
+`breadcrumbs({ winid = win, color = false, icons = false })` optionally selects
+a window or omits colors/icons. The result is escaped **statusline text** (literal
+`%` becomes `%%`), suitable for lualine or a native expression that re-evaluates
+statusline formatting. `require("lsp-tools.breadcrumbs").get(winid)` returns a
+fresh outer-to-inner array of `{ name, kind }` entries for custom rendering.
+The evaluated statusline's `g:statusline_winid` is honored when no window is given.
+
+Breadcrumbs share the outline's built-in icons, semantic highlights, position
+conversion, and hierarchy rules. Each module's icon overrides are independent.
+The default `all` mode includes every enclosing symbol; `auto` shows only heading
+scopes in TeX buffers, and `sections` applies that filter explicitly. Flat
+`SymbolInformation` results do not gain invented parents from `containerName`.
+
+One document cache is shared by all windows showing the same buffer. Cursor
+movement reads that cache without making requests; edits clear the old path and
+refresh after a debounce. Hidden documents drop their cache and cancel pending
+requests. Provider selection retains the previous eligible client, falling back
+to the lowest client ID. Edits, URI changes, detach, timeout, and disable reject
+obsolete replies. Errors and unsupported providers leave the component empty.
+The outline and breadcrumbs request their own symbol snapshots independently.
+Set `breadcrumbs = false` (or `{ enabled = false }`) to disable this module.
+
+Run `tests/run.sh` for cache, range, cancellation, escaping, and window-ownership
+coverage. `tests/breadcrumbs-integration.sh [headless|tui]` verifies real LuaLS,
+the native winbar, the installed lualine implementation, split cursors, and edits.
+LuaLS must be on `PATH`; set `LUALINE_DIR` if lualine is installed outside
+`~/.local/share/nvim/lazy/lualine.nvim`.
 
 ## Symbol outline
 

@@ -61,6 +61,7 @@ local function setup(opts)
   references.disable()
   cursor(1, 4)
   tools.setup({
+    breadcrumbs = false,
     code_actions = false,
     references = vim.tbl_extend("force", {
       debounce = 50,
@@ -166,7 +167,7 @@ check(
 requests[#requests].callback(nil, { highlight(0, 1, 3), highlight(0, 5, 3) })
 check(at(1, 4) and #marks() == 2, "auto highlighting does not move the cursor")
 vim.api.nvim_buf_set_extmark(buf, other_namespace, 0, 0, { end_col = 4, hl_group = "Search" })
-tools.setup({ code_actions = false, references = false })
+tools.setup({ breadcrumbs = false, code_actions = false, references = false })
 check(#marks() == 0, "disable clears owned highlights")
 check(
   #vim.api.nvim_buf_get_extmarks(buf, other_namespace, 0, -1, {}) == 1,
@@ -186,7 +187,7 @@ tools.jump_reference(1)
 deferred[50]() -- A debounce callback may already be scheduled when its timer is stopped.
 check(#requests == n + 1, "an already queued debounce cannot duplicate an immediate jump request")
 pending = requests[#requests]
-tools.setup({ code_actions = false, references = false })
+tools.setup({ breadcrumbs = false, code_actions = false, references = false })
 pending.callback(nil, utf16)
 check(
   pending.cancelled and #marks() == 0 and at(1, 4),

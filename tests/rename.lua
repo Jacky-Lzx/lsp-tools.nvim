@@ -76,7 +76,12 @@ local function setup(prepare)
   clients = { client(1, prepare) }
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "😀foo foo" })
   vim.api.nvim_win_set_cursor(0, { 1, 4 })
-  tools.setup({ code_actions = false, references = false, rename = { request_timeout = 30 } })
+  tools.setup({
+    breadcrumbs = false,
+    code_actions = false,
+    references = false,
+    rename = { request_timeout = 30 },
+  })
 end
 setup(true)
 tools.rename()
@@ -234,7 +239,7 @@ tools.rename("bar", {
   end,
 })
 check(calls[#calls].client == 2, "client predicate filtering")
-tools.setup({ code_actions = false, references = false, rename = false })
+tools.setup({ breadcrumbs = false, code_actions = false, references = false, rename = false })
 check(calls[#calls].cancelled, "disabling rename cancels pending work")
 n = #calls
 tools.rename("bar")
