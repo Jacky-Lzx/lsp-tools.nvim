@@ -27,13 +27,6 @@ key mappings belong to the user's configuration.
 - [x] Show change annotations and resource operations; select a single rename provider.
 - [x] Verify cross-file edits and real LuaLS semantics through headless and terminal UI tests.
 
-## Continuous peek
-
-- [ ] Preview definitions, references, implementations, and type definitions in place.
-- [ ] Continue symbol exploration inside the preview.
-- [ ] Preserve back/forward history and the original cursor/window context.
-- [ ] Support opening the selected location in a normal window or split.
-
 ## Diagnostic workflow
 
 - [ ] Show full messages, sources, codes, and related locations.
