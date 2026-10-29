@@ -1,0 +1,28 @@
+#!/bin/sh
+set -eu
+root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
+export LSP_TOOLS_ROOT="$root"
+export SNACKS_DIR="${SNACKS_DIR:-$HOME/.local/share/nvim/lazy/snacks.nvim}"
+test_tmp=$(mktemp -d)
+trap 'rm -rf "$test_tmp"' EXIT HUP INT TERM
+export XDG_STATE_HOME="$test_tmp/state"
+export XDG_CACHE_HOME="$test_tmp/cache"
+export NVIM_LOG_FILE="$test_tmp/nvim.log"
+nvim --headless -u NONE -i NONE -l "$root/tests/integration.lua"
+LSP_TOOLS_BACKEND=delta LSP_TOOLS_DELTA_COMMAND="$test_tmp/missing-delta" \
+  LSP_TOOLS_EXPECT_DELTA=0 nvim --headless -u NONE -i NONE -l "$root/tests/integration.lua"
+cat > "$test_tmp/slow-delta" <<'EOF'
+#!/usr/bin/env python3
+import sys, time
+sys.stdin.read()
+time.sleep(10)
+EOF
+chmod +x "$test_tmp/slow-delta"
+LSP_TOOLS_BACKEND=delta LSP_TOOLS_DELTA_COMMAND="$test_tmp/slow-delta" \
+  LSP_TOOLS_DELTA_TIMEOUT=50 LSP_TOOLS_EXPECT_DELTA=0 \
+  nvim --headless -u NONE -i NONE -l "$root/tests/integration.lua"
+if command -v delta >/dev/null 2>&1; then
+  LSP_TOOLS_BACKEND=delta nvim --headless -u NONE -i NONE -l "$root/tests/integration.lua"
+  LSP_TOOLS_BACKEND=delta LSP_TOOLS_DELTA_FAIL=1 LSP_TOOLS_EXPECT_DELTA=0 \
+    nvim --headless -u NONE -i NONE -l "$root/tests/integration.lua"
+fi

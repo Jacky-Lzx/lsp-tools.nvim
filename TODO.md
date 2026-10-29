@@ -7,15 +7,15 @@ key mappings belong to the user's configuration.
 
 ## First milestone: code actions
 
-- [ ] Integrate the existing code-actions.nvim functionality into this plugin.
-- [ ] Provide `require("lsp-tools").setup()` and a public code action entry point.
-- [ ] Preserve native LSP requests, Visual ranges, diagnostics, filters, and auto-apply.
-- [ ] Provide a Snacks picker with asynchronous resolution and workspace-edit previews.
-- [ ] Preserve native diff rendering and optional asynchronous delta rendering.
-- [ ] Preserve Unicode positions, unsaved buffers, multi-file edits, and resource-operation summaries.
-- [ ] Preserve resolve caching, cancellation, timeout/failure fallback, and stale-buffer checks.
-- [ ] Document installation and migration without a code-actions.nvim dependency.
-- [ ] Verify unit coverage and real Neovim LSP/Snacks integration.
+- [x] Integrate the existing code-actions.nvim functionality into this plugin.
+- [x] Provide `require("lsp-tools").setup()` and a public code action entry point.
+- [x] Preserve native LSP requests, Visual ranges, diagnostics, filters, and auto-apply.
+- [x] Provide a Snacks picker with asynchronous resolution and workspace-edit previews.
+- [x] Preserve native diff rendering and optional asynchronous delta rendering.
+- [x] Preserve Unicode positions, unsaved buffers, multi-file edits, and resource-operation summaries.
+- [x] Preserve resolve caching, cancellation, timeout/failure fallback, and stale-buffer checks.
+- [x] Document installation and migration without a code-actions.nvim dependency.
+- [x] Verify unit coverage, real Neovim LSP/Snacks integration, and terminal key/focus behavior.
 
 ## Rename preview
 
