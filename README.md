@@ -1,6 +1,6 @@
 # lsp-tools.nvim
 
-Practical LSP tools for Neovim: rename previews, semantic reference navigation,
+Practical LSP tools for Neovim: a symbol outline, rename previews, semantic reference navigation,
 and code actions with asynchronous resolution and optional delta rendering.
 Includes the code-actions.nvim implementation.
 
@@ -14,7 +14,7 @@ and does not load or depend on that plugin. See [TODO.md](TODO.md) for the roadm
 - An attached language server supporting the enabled tool's LSP methods
 
 No plenary or external diff executable is required. Delta is optional.
-Reference navigation alone requires no Snacks: use `setup({ code_actions = false, rename = false })`.
+Reference navigation and the outline require no Snacks: use `setup({ code_actions = false, rename = false })`.
 
 ## Installation
 
@@ -38,6 +38,11 @@ Local installation with lazy.nvim:
     require("lsp-tools").setup(opts)
   end,
   keys = {
+    {
+      "<leader>go",
+      function() require("lsp-tools").toggle_outline() end,
+      desc = "[LSP] Toggle outline",
+    },
     {
       "<leader>rn",
       function() require("lsp-tools").rename() end,
@@ -312,3 +317,89 @@ tests cover Unicode, unsaved files, file aliases, loading new buffers, external
 disk writes, document versions, annotations, and ordered resource operations.
 Integration checks include two-file rename review/apply/cancel, annotation previews,
 stale second-file refusal, and real LuaLS renaming that preserves a shadowed local.
+
+## Symbol outline
+
+The outline uses one attached LSP provider's `textDocument/documentSymbol` results
+and renders a normal right-hand split. It requires neither Snacks nor Tree-sitter.
+The server supplies symbol names, kinds, scopes, hierarchy, and jump positions.
+Hierarchical `DocumentSymbol` results retain their tree; `SymbolInformation`
+results remain flat because `containerName` does not define reliable nesting.
+Servers without this method show an explanatory status; there is no Tree-sitter
+fallback in this version.
+
+```lua
+require("lsp-tools").setup({
+  outline = {
+    width = 0.25,         -- fraction of screen columns; >= 1 means columns
+    min_width = 20,
+    max_width = 60,
+    focus_on_open = false,
+    follow_cursor = true,
+    debounce = 200,       -- milliseconds after source edits
+    request_timeout = 3000,
+    mode = "auto",       -- "auto", "all", or "sections"
+    -- client_name = "texquill", -- optional provider preference/filter
+    -- client_filter = function(client, bufnr) return true end,
+    icons = {            -- optional overrides of the built-in symbol icons
+      Key = { icon = "󰌆", hl = "Type" },
+      Event = { icon = "󱐋", hl = "Type" },
+    },
+  },
+})
+```
+
+`auto` initially shows sections for `tex` buffers and all symbols for other file
+types. Section filtering recognizes LaTeX heading commands in the server's
+`detail` field, with Namespace symbols as a fallback when detail is absent.
+TeXquill supplies the heading hierarchy directly. Press `m` to include labels,
+macros, environments, and other symbols returned by the server. Filtered-out
+parents do not hide matching descendants.
+
+All standard LSP symbol kinds have built-in icons. Icons and symbol names use the
+kind's semantic highlight group from the active colorscheme; fold markers and
+details use `Comment`. A configured `hl` override applies to both icon and name.
+Use a Nerd Font in your terminal to display the icons. For example, LaTeX headings
+reported as Namespace use `󰅪`. `icons` merges with the defaults: override individual
+kinds with `{ icon = "…", hl = "Type" }` or a plain icon string without replacing
+the remaining defaults. Unknown symbol kinds retain a letter fallback.
+
+Public API: `toggle_outline()`, `open_outline({ focus = true })`, and
+`close_outline()`. Calling `open_outline()` on an existing sidebar focuses it;
+pass `{ focus = false }` to keep the current focus. Setup registers
+`:LspToolsOutline`, `:LspToolsOutlineOpen`, and `:LspToolsOutlineClose`.
+For lazy.nvim, add these names to `cmd`, or use the key callback above.
+Set `outline = false` to disable the module. No global key mappings are installed.
+
+Inside the sidebar:
+
+| Key | Action |
+| --- | --- |
+| `Enter` | Jump to the symbol's selection range in the source window |
+| `Tab`, `za` | Toggle the selected subtree |
+| `h`, `zc` | Collapse, or move to the visible parent |
+| `l`, `zo` | Expand, or move to the first child |
+| `zM`, `zR` | Collapse / expand all |
+| `m` | Toggle sections / all symbols |
+| `r` | Refresh from the language server |
+| `q`, `Esc` | Close and return to the source |
+
+Each tab owns a sidebar that follows its last active source window. Source edits
+refresh symbols after a debounce; cursor movement only updates the enclosing
+symbol highlight (`LspToolsOutlineCurrent`, default link `Visual`). Navigation
+opens source folds and records the jump origin. Folding and display mode survive
+refreshes and source switches while the sidebar is open. Duplicate sibling names
+use occurrence-based identities; inserting another identical sibling can move a
+saved fold to that occurrence. Refreshes preserve the sidebar selection while it
+has focus. A folded ancestor represents a hidden current symbol.
+
+When several clients provide symbols, the previous provider is retained if still
+available; otherwise the lowest eligible client ID is selected. Trees from
+different providers are not merged. Requests are canceled on edits, source
+switches, close, and timeout; late results are checked against buffer identity,
+URI, changedtick, and the attached client. Stale positions cannot be used to jump.
+
+Run `tests/run.sh` for model/UI race coverage and
+`tests/outline-integration.sh [headless|tui] [lua|texquill]` for real LuaLS or
+TeXquill hierarchy, filtering, editing, key, and focus checks. The chosen server
+must be installed on `PATH`.

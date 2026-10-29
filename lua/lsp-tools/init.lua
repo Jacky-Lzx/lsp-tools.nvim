@@ -1,7 +1,7 @@
 local M = {}
 
 ---Configure independently enabled LSP tools. No key mappings are installed.
----@param opts? {code_actions?: boolean|table, references?: boolean|table, rename?: boolean|table}
+---@param opts? {code_actions?: boolean|table, references?: boolean|table, rename?: boolean|table, outline?: boolean|table}
 function M.setup(opts)
   opts = opts or {}
   assert(type(opts) == "table", "lsp-tools options must be a table")
@@ -16,6 +16,11 @@ function M.setup(opts)
     "references must be a boolean or table"
   )
   local rename = opts.rename
+  local outline = opts.outline
+  assert(
+    outline == nil or type(outline) == "boolean" or type(outline) == "table",
+    "outline must be a boolean or table"
+  )
   assert(
     rename == nil or type(rename) == "boolean" or type(rename) == "table",
     "rename must be a boolean or table"
@@ -44,7 +49,30 @@ function M.setup(opts)
   else
     require("lsp-tools.rename").setup(type(rename) == "table" and rename or {})
   end
+  if outline == false or type(outline) == "table" and outline.enabled == false then
+    local loaded = package.loaded["lsp-tools.outline"]
+    if loaded then
+      loaded.disable()
+    end
+  else
+    require("lsp-tools.outline").setup(type(outline) == "table" and outline or {})
+  end
   return M
+end
+
+function M.open_outline(opts)
+  return require("lsp-tools.outline").open(opts)
+end
+
+function M.toggle_outline()
+  return require("lsp-tools.outline").toggle()
+end
+
+function M.close_outline()
+  local loaded = package.loaded["lsp-tools.outline"]
+  if loaded then
+    loaded.close()
+  end
 end
 
 ---Request and preview all workspace edits before applying a rename.

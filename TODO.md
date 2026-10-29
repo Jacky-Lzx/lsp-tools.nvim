@@ -27,6 +27,17 @@ key mappings belong to the user's configuration.
 - [x] Show change annotations and resource operations; select a single rename provider.
 - [x] Verify cross-file edits and real LuaLS semantics through headless and terminal UI tests.
 
+## Symbol outline
+
+- [x] Render a right-hand sidebar from one LSP document-symbol provider.
+- [x] Preserve server hierarchy; handle flat SymbolInformation without invented nesting.
+- [x] Fold subtrees, jump to selections, follow source files, and highlight the current scope.
+- [x] Filter LaTeX sections, with an all-symbol mode for macros, labels, and other symbols.
+- [x] Preserve per-document folds and mode across debounced updates and source switches.
+- [x] Cancel obsolete requests and reject stale replies and stale jump positions.
+- [x] Verify real LuaLS/TeXquill symbols and terminal navigation without Snacks.
+- [ ] Add optional Tree-sitter providers for documents without an LSP, if needed.
+
 ## Diagnostic workflow
 
 - [ ] Show full messages, sources, codes, and related locations.
