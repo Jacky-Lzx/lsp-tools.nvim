@@ -44,7 +44,7 @@ check(
   text():find("foo(x)", 1, true) and vim.bo[s.out].filetype == "markdown",
   "Markdown content survives in pinned buffer"
 )
-key("y")
+key("<LocalLeader>y")
 check(vim.fn.getreg('"'):find("foo(x)", 1, true), "copy documentation")
 local opened
 vim.ui.open = function(url)
@@ -57,14 +57,14 @@ for row, line in ipairs(vim.api.nvim_buf_get_lines(s.out, 0, -1, false)) do
 end
 key("gx")
 check(opened == "https://example.com/docs", "open Markdown documentation URL")
-key("b")
+key("<LocalLeader>b")
 vim.api.nvim_win_set_cursor(win, { 2, 0 })
 vim.api.nvim_exec_autocmds("CursorMoved", {})
 check(
   #calls == 1 and text():find("foo(x)", 1, true),
   "pinned documentation does not request on movement"
 )
-key("f")
+key("<LocalLeader>f")
 calls[#calls].callback(nil, { contents = "bar docs" })
 check(s.follow and text():find("bar docs", 1, true), "follow mode refreshes the source position")
 vim.api.nvim_set_current_win(win)
@@ -78,7 +78,7 @@ local pending = calls[#calls]
 vim.api.nvim_win_set_cursor(win, { 2, 0 })
 pending.callback(nil, { contents = "stale" })
 check(not text():find("stale", 1, true), "follow ignores stale cursor replies")
-key("r")
+key("<LocalLeader>r")
 pending = calls[#calls]
 hover.disable()
 check(pending.cancelled and not panel.alive(s), "disable cancels requests and closes pinned window")

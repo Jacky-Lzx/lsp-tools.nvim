@@ -80,7 +80,7 @@ local function render(s)
   local data = M.snapshot(s.ctx.buf)
   local lines = {
     "LSP inspection",
-    "r refresh · y copy · l LSP log · b source · q close",
+    s.bindings:hint(),
     "",
     "Buffer: " .. vim.api.nvim_buf_get_name(data.buf),
     "Attached clients: " .. #data.clients,
@@ -168,14 +168,18 @@ function M.open(opts)
     return false
   end
   opts = opts or {}
-  local s =
-    panel.open("inspect", request.context(), { width = config.width, focus = opts.focus ~= false })
+  local s = panel.open("inspect", request.context(), {
+    keymaps = opts.keymaps or config.keymaps,
+    key_prefix = opts.key_prefix or config.key_prefix,
+    width = config.width,
+    focus = opts.focus ~= false,
+  })
   sessions[s] = true
   s.on_close = function()
     sessions[s] = nil
   end
-  local function map(lhs, fn)
-    vim.keymap.set("n", lhs, fn, { buffer = s.out })
+  local function map(lhs, fn, desc)
+    return s.bindings:legacy(lhs, fn, desc, "inspect")
   end
   map("r", function()
     render(s)

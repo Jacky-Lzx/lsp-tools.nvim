@@ -2,7 +2,10 @@ local M = {}
 local api = vim.api
 local request = require("lsp-tools.request")
 local location = require("lsp-tools.results.location")
-local key_label = require("lsp-tools.results.view").key_label
+local function refresh_key(v)
+  local key = (v.bindings.actions.refresh or {})[1]
+  return key and require("lsp-tools.keymaps").label(key) or "the refresh action"
+end
 local methods = {
   { "definitions", "Definitions", "textDocument/definition" },
   { "references", "References", "textDocument/references" },
@@ -83,9 +86,7 @@ function M.open(results, opts)
         if not request.valid(ctx, true, true) then
           cancel(v)
           v.stale = true
-          v.status = "Source position changed; "
-            .. key_label("<LocalLeader>r")
-            .. " queries the current source"
+          v.status = "Source position changed; " .. refresh_key(v) .. " queries the current source"
           results.render(v)
           return
         end
@@ -201,7 +202,7 @@ function M.open(results, opts)
           cancel(v)
           v.stale = true
           v.status = "Source changed or client detached; "
-            .. key_label("<LocalLeader>r")
+            .. refresh_key(v)
             .. " refreshes locations"
           results.render(v)
         end

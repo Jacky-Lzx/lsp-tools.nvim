@@ -62,12 +62,12 @@ for i = 1, 100 do
   })
 end
 check(#inspect.snapshot(buf).lifecycle == 80, "bounded lifecycle recording")
-vim.fn.maparg("r", "n", false, true).callback()
+vim.fn.maparg("<LocalLeader>r", "n", false, true).callback()
 check(
   text():find("status only", 1, true) and text():find("request #100", 1, true),
   "refresh includes native lifecycle without claiming response success"
 )
-vim.fn.maparg("y", "n", false, true).callback()
+vim.fn.maparg("<LocalLeader>y", "n", false, true).callback()
 check(vim.fn.getreg('"'):find("/project/main", 1, true), "copy inspection report")
 inspect.disable()
 check(not require("lsp-tools.panel").alive(s), "disable closes owned panel")

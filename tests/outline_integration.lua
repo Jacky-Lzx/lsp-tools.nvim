@@ -92,8 +92,11 @@ local function run()
     )
   end
   local function key(value)
+    if value:match("^%a$") then
+      value = "<LocalLeader>" .. value
+    end
     if tui then
-      api.nvim_input(value)
+      api.nvim_input(vim.keycode(value))
     else
       api.nvim_feedkeys(vim.keycode(value), "xt", false)
     end

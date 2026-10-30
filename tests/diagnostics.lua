@@ -58,7 +58,7 @@ check(
   "related location opens in source"
 )
 vim.api.nvim_set_current_win(s.win)
-key("b")
+key("<LocalLeader>b")
 check(vim.api.nvim_win_get_cursor(win)[1] == 1, "return restores original diagnostic")
 vim.api.nvim_set_current_win(s.win)
 key("]d")

@@ -35,8 +35,8 @@ render = function(s)
   local d = s.items[s.index]
   local lines = {
     "Diagnostic " .. s.index .. "/" .. #s.items,
-    "a fix · A fix then next · ]d/[d next/previous",
-    "<CR> related location · b return · r refresh · q close",
+    s.bindings:hint(),
+    "Messages, sources and related locations",
     "",
   }
   s.related = {}
@@ -256,7 +256,12 @@ function M.open(opts)
   end
   opts = opts or {}
   local ctx = request.context()
-  local s = panel.open("diagnostics", ctx, { width = config.width, focus = opts.focus ~= false })
+  local s = panel.open("diagnostics", ctx, {
+    keymaps = opts.keymaps or config.keymaps,
+    key_prefix = opts.key_prefix or config.key_prefix,
+    width = config.width,
+    focus = opts.focus ~= false,
+  })
   sessions[s] = true
   s.filter, s.index = opts.filter or {}, 1
   s.on_applied = opts.on_applied
@@ -281,8 +286,8 @@ function M.open(opts)
       s.pending.cancel()
     end
   end
-  local function map(lhs, fn)
-    vim.keymap.set("n", lhs, fn, { buffer = s.out, nowait = true })
+  local function map(lhs, fn, desc)
+    return s.bindings:legacy(lhs, fn, desc, "diagnostics")
   end
   map("]d", function()
     go(s, s.index + vim.v.count1)

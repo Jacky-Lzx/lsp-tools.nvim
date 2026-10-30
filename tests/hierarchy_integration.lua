@@ -74,12 +74,15 @@ local function run()
   local root = s.trees.incoming[1]
   assert(root.item.name == "leaf" and root.children[1].item.name == "middle")
   local function key(lhs, row)
+    if lhs:match("^%a$") then
+      lhs = "<LocalLeader>" .. lhs
+    end
     vim.api.nvim_set_current_win(s.win)
     if row then
       vim.api.nvim_win_set_cursor(s.win, { row, 0 })
     end
     if tui then
-      vim.api.nvim_input(lhs)
+      vim.api.nvim_input(vim.keycode(lhs))
     else
       vim.fn.maparg(lhs, "n", false, true).callback()
     end

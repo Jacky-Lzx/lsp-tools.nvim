@@ -115,8 +115,8 @@ render = function(s)
   local selected = s.rows and current(s)
   local lines = {
     s.kind .. " hierarchy · " .. s.direction .. " · " .. s.client.name,
-    "<Tab>/l expand · h collapse · <CR> symbol · g call site · p preview",
-    "d direction · r refresh · b source · q close",
+    "Lazy call/type hierarchy",
+    s.bindings:hint(),
     "",
   }
   s.rows = {}
@@ -329,8 +329,12 @@ prepare = function(s)
   render(s)
 end
 local function open(ctx, client, kind, direction, opts)
-  local s =
-    panel.open(kind .. "-hierarchy", ctx, { width = config.width, focus = opts.focus ~= false })
+  local s = panel.open(kind .. "-hierarchy", ctx, {
+    keymaps = opts.keymaps or config.keymaps,
+    key_prefix = opts.key_prefix or config.key_prefix,
+    width = config.width,
+    focus = opts.focus ~= false,
+  })
   s.client, s.kind, s.direction = client, kind, direction
   s.pending, s.trees, s.rows, s.generation = {}, {}, {}, 0
   sessions[s] = true
@@ -345,8 +349,8 @@ local function open(ctx, client, kind, direction, opts)
       vim.api.nvim_win_close(s.preview, true)
     end
   end
-  local function map(lhs, fn)
-    vim.keymap.set("n", lhs, fn, { buffer = s.out, nowait = true })
+  local function map(lhs, fn, desc)
+    return s.bindings:legacy(lhs, fn, desc, "hierarchy")
   end
   for _, lhs in ipairs({ "<Tab>", "l" }) do
     map(lhs, function()

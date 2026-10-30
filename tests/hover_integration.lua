@@ -92,11 +92,11 @@ local function run()
       rendered:find("Pinned LSP documentation", 1, true),
       "pinned heading is visible in terminal"
     )
-    vim.api.nvim_input("y")
+    vim.api.nvim_input(vim.keycode("<LocalLeader>y"))
     wait(function()
       return vim.fn.getreg('"'):find("greet", 1, true)
     end, "terminal y copies signature")
-    vim.api.nvim_input("q")
+    vim.api.nvim_input(vim.keycode("<LocalLeader>q"))
     wait(function()
       return not vim.api.nvim_win_is_valid(s.win)
     end, "terminal q closes document")

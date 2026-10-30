@@ -58,7 +58,7 @@ local function run()
   )
   local s = assert(tools.diagnostic())
   if tui then
-    vim.api.nvim_input("A")
+    vim.api.nvim_input(vim.keycode("<LocalLeader>A"))
   else
     require("lsp-tools.diagnostics").fix(s, true)
   end
@@ -104,16 +104,16 @@ local function run()
       screen = screen .. "\n"
     end
     assert(screen:find("LSP inspection", 1, true), "inspection visible in terminal")
-    vim.api.nvim_input("y")
+    vim.api.nvim_input(vim.keycode("<LocalLeader>y"))
     wait(function()
       return vim.fn.getreg('"'):find("workflow-fixture", 1, true)
     end, "inspection copy key")
-    vim.api.nvim_input("q")
+    vim.api.nvim_input(vim.keycode("<LocalLeader>q"))
     wait(function()
       return not vim.api.nvim_win_is_valid(info.win)
     end, "inspection closes")
     vim.api.nvim_set_current_win(s.win)
-    vim.api.nvim_input("q")
+    vim.api.nvim_input(vim.keycode("<LocalLeader>q"))
     wait(function()
       return not vim.api.nvim_win_is_valid(s.win)
     end, "diagnostic window closes")

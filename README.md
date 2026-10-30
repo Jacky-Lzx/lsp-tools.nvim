@@ -159,6 +159,30 @@ require("lsp-tools").setup({
 })
 ```
 
+## Panel action mappings
+
+All owned side panels share action-based mappings. Configure the common prefix
+under `ui`, and override individual actions globally or per tool:
+
+```lua
+require("lsp-tools").setup({
+  ui = { key_prefix = "<LocalLeader>", keymaps = { help = "<prefix>?" } },
+  results = { keymaps = { preview = "<prefix>v", sort = false } },
+  hover = { keymaps = { follow = false, copy = { "<prefix>y", "<F6>" } } },
+})
+```
+
+`false` disables an action; a string or list replaces all its default keys.
+Settings apply when a panel is opened again. Common actions include `close`,
+`help`, `refresh`, `return_source`, `copy`, `preview`, and `jump`. Results also
+provide `jump_keep`, `auto_preview`, `filter`, `errors`, `sort`, `group`, `pin`,
+`export`, `next`, `previous`, `details`, `fix`, `fix_next`, and `scope`. Hover adds
+`follow`/`open_link`; hierarchies add `expand`/`collapse`/`direction`/`callsite`;
+inspection adds `log`; outline adds `toggle_fold`, `collapse_all`, `expand_all`,
+and `mode`. Letter actions use the prefix; native Vim motions remain available.
+Panel help lists only its effective owned bindings. Literal result `actions` and
+`keys` callbacks remain supported; named definitions accept `{ keys, action, desc }`.
+
 ## Optional code action indicator
 
 Enable `lightbulb = true` to show `` at the end of the current line when a server
@@ -186,11 +210,11 @@ type directions are `supertypes` (default) and `subtypes`. Pass e.g.
 Unsupported servers report the missing capability. Multiple providers prompt for
 one client; opaque item data is preserved in subsequent requests.
 
-The root expands once; further branches load only on Tab / `l`. `h` collapses,
-`d` switches direction while preserving each tree's expansion cache, Enter jumps
-to the symbol, `g` jumps to a concrete call site (choosing if several exist), `p`
-previews source around that call site or type, `r` rebuilds from the source
-window's current cursor, `b` returns to the origin, and `q` / Escape closes.
+The root expands once; further branches load only on Tab / `<LocalLeader>l`. `<LocalLeader>h` collapses,
+`<LocalLeader>d` switches direction while preserving each tree's expansion cache, Enter jumps
+to the symbol, `g` jumps to a concrete call site (choosing if several exist), `<LocalLeader>p`
+previews source around that call site or type, `<LocalLeader>r` rebuilds from the source
+window's current cursor, `<LocalLeader>b` returns to the origin, and `<LocalLeader>q` / Escape closes.
 Recursive cycles are marked `↻` and cannot expand. Code buffers stay unchanged.
 
 Setup options: `width = 0.35`, `request_timeout = 3000`, `max_nodes = 500`,
@@ -205,8 +229,8 @@ previews and invocation jumps, and type hierarchies when advertised by clangd.
 Enable `inspect = true`, then call `require("lsp-tools").inspect()` for the current
 buffer's actual clients, roots, workspace folders, position encodings, supported
 methods and pending requests. It describes each tool's provider-selection policy.
-Use `r` to refresh, `y` to copy the report, `l` to open the native LSP log, `b` to
-return to the source, and `q` / Escape to close. `width` defaults to 0.5;
+Use `<LocalLeader>r` to refresh, `<LocalLeader>y` to copy the report, `<LocalLeader>l` to open the native LSP log, `<LocalLeader>b` to
+return to the source, and `<LocalLeader>q` / Escape to close. `width` defaults to 0.5;
 `inspect({ focus = false })` keeps source focus. The structured read API is
 `require("lsp-tools.inspect").snapshot(bufnr)`.
 
@@ -250,10 +274,10 @@ Normal `K`, signature help and Noice remain available. Results from capable
 clients are labeled and sorted by client ID; Unicode positions use each client's
 encoding. No Snacks dependency is needed.
 
-Keys inside the side window: `r` refreshes from the source window's current
-position, `f` toggles debounced following, `y` copies the document (including
-signatures) to the unnamed register, `gx` opens the URL at the cursor, `b` returns
-to the captured source position, and `q` / Escape closes. Ordinary `/` searches
+Keys inside the side window: `<LocalLeader>r` refreshes from the source window's current
+position, `<LocalLeader>f` toggles debounced following, `<LocalLeader>y` copies the document (including
+signatures) to the unnamed register, `gx` opens the URL at the cursor, `<LocalLeader>b` returns
+to the captured source position, and `<LocalLeader>q` / Escape closes. Ordinary `/` searches
 the Markdown buffer. The default is pinned: moving the source cursor keeps the
 document unchanged. Use `hover({ focus = false, follow_cursor = true })` for a
 following window. Setup options: `width = 0.4`, `debounce = 200`,
@@ -270,13 +294,13 @@ query and optionally leaves focus in the source. Existing diagnostic signs,
 virtual text, native floats, Trouble and Snacks lists remain independently usable.
 
 The side window shows complete messages, sources, codes, documentation URLs and
-related locations. Its buffer-local keys are `]d` / `[d` (counts supported), `a`
-(preview a fix), `A` (preview a fix then continue), Enter (open a related location),
-`b` (return to the diagnostic), `r` (refresh) and `q` / Escape (close).
+related locations. Its buffer-local keys are `]d` / `[d` (counts supported), `<LocalLeader>a`
+(preview a fix), `<LocalLeader>A` (preview a fix then continue), Enter (open a related location),
+`<LocalLeader>b` (return to the diagnostic), `<LocalLeader>r` (refresh) and `<LocalLeader>q` / Escape (close).
 
 Fixes request the selected diagnostic's range and client-specific diagnostic
 context, then reuse the code-action resolve/diff/confirmation UI. Enable
-`code_actions` for this workflow. Edits stay in unsaved buffers. `A` advances only
+`code_actions` for this workflow. Edits stay in unsaved buffers. `<LocalLeader>A` advances only
 after a diagnostic update confirms fewer matching messages; moved diagnostics
 alone do not count as fixed. It preserves the query filter and does not move the
 cursor if the source window, cursor or text changed while waiting. A bounded wait
@@ -752,7 +776,7 @@ and EnumMember symbols with detail `item`. These symbols require a TeXquill buil
 with document-structure support; changing outline modes cannot add symbols absent
 from an older server's response.
 
-Press `m` to include labels, citations, macros, and other server symbols, then
+Press `<LocalLeader>m` to include labels, citations, macros, and other server symbols, then
 press it again to return to structure (`sections` when explicitly configured).
 Filtered-out parents do not hide matching descendants. The client preserves the
 server's hierarchy and never parses LaTeX source itself.
@@ -778,12 +802,12 @@ Inside the sidebar:
 | --- | --- |
 | `Enter` | Jump to the symbol's selection range in the source window |
 | `Tab`, `za` | Toggle the selected subtree |
-| `h`, `zc` | Collapse, or move to the visible parent |
-| `l`, `zo` | Expand, or move to the first child |
+| `<LocalLeader>h`, `zc` | Collapse, or move to the visible parent |
+| `<LocalLeader>l`, `zo` | Expand, or move to the first child |
 | `zM`, `zR` | Collapse / expand all |
-| `m` | Toggle structure / all symbols (sections when explicitly configured) |
-| `r` | Refresh from the language server |
-| `q`, `Esc` | Close and return to the source |
+| `<LocalLeader>m` | Toggle structure / all symbols (sections when explicitly configured) |
+| `<LocalLeader>r` | Refresh from the language server |
+| `<LocalLeader>q`, `Esc` | Close and return to the source |
 
 Each tab owns a sidebar that follows its last active source window. Source edits
 refresh symbols after a debounce; cursor movement only updates the enclosing

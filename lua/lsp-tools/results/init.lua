@@ -426,6 +426,8 @@ function M.open(items, opts)
     persistent = true,
     filetype = "lsp-tools-results",
     close_keys = {},
+    keymaps = options.keymaps,
+    key_prefix = options.key_prefix,
   })
   for name, value in pairs({
     wrap = false,
@@ -455,7 +457,8 @@ function M.open(items, opts)
     opts.pinned == nil and saved.pinned or opts.pinned, options.auto_preview
   v.raw, v.items, v.rows = {}, {}, {}
   v.line_rows, v.row_lines = {}, {}
-  v.keymaps, v.help_key = {}, view.key_label("<LocalLeader>?")
+  v.keymaps = v.bindings.entries
+  v.help_key = ""
   v.selected_id, v.stops = saved.selected, {}
   sessions[v] = true
   v.on_close = function()
@@ -479,9 +482,37 @@ function M.open(items, opts)
     end
   end
   local function map(lhs, fn, desc)
-    vim.keymap.set("n", lhs, fn, { buffer = v.out, desc = desc })
-    local label = view.key_label(lhs)
-    v.keymaps[label] = { lhs = label, desc = desc }
+    local action = ({
+      ["<Esc>"] = "close",
+      ["<LocalLeader>q"] = "close",
+      ["<LocalLeader>?"] = "help",
+      ["<CR>"] = "jump",
+      ["<LocalLeader>o"] = "jump_keep",
+      ["<LocalLeader>p"] = "preview",
+      ["<LocalLeader>P"] = "auto_preview",
+      ["<LocalLeader>f"] = "filter",
+      ["<LocalLeader>e"] = "errors",
+      ["<LocalLeader>s"] = "sort",
+      ["<LocalLeader>g"] = "group",
+      ["<LocalLeader>F"] = "pin",
+      ["<LocalLeader>r"] = "refresh",
+      ["<LocalLeader>Q"] = "export",
+      ["<LocalLeader>b"] = "return_source",
+      ["]q"] = "next",
+      ["[q"] = "previous",
+      ["<LocalLeader>d"] = "details",
+      ["<LocalLeader>a"] = "fix",
+      ["<LocalLeader>A"] = "fix_next",
+      ["<LocalLeader>S"] = "scope",
+    })[lhs] or lhs
+    local default = lhs:gsub("<LocalLeader>", "<prefix>")
+    if action == "close" then
+      default = { "<Esc>", "<prefix>q" }
+    end
+    local keys = v.bindings:map(action, default, fn, desc)
+    if action == "help" then
+      v.help_key = keys[1] and require("lsp-tools.keymaps").label(keys[1]) or ""
+    end
   end
   local function fold()
     local _, row = selected(v)
@@ -497,7 +528,6 @@ function M.open(items, opts)
     end
     panel.close(v)
   end
-  map("<Esc>", close, "Close results")
   map("<LocalLeader>q", close, "Close results")
   map("<LocalLeader>?", function()
     help(v)
@@ -581,19 +611,24 @@ function M.open(items, opts)
       folds.reveal(v, v.row_lines[row])
     end, "Navigate results")
   end
-  for lhs, action in pairs(options.actions or {}) do
-    map(lhs, function()
-      local item = selected(v)
-      if item then
-        action(item, v)
-      end
-    end, (options.descriptions or {})[lhs] or "Result action")
+  local function extra(entries, item_action)
+    for name, spec in pairs(entries or {}) do
+      local defined = type(spec) == "table"
+      local fn, keys = defined and spec.action or spec, defined and spec.keys or name
+      v.bindings:map(defined and name or "custom:" .. name, keys, function()
+        if item_action then
+          local item = selected(v)
+          if item then
+            fn(item, v)
+          end
+        else
+          fn(v)
+        end
+      end, defined and spec.desc or (options.descriptions or {})[name] or name)
+    end
   end
-  for lhs, action in pairs(options.keys or {}) do
-    map(lhs, function()
-      action(v)
-    end, (options.descriptions or {})[lhs] or "Result view action")
-  end
+  extra(options.actions, true)
+  extra(options.keys, false)
   api.nvim_create_autocmd("CursorMoved", {
     group = v.group,
     buffer = v.out,

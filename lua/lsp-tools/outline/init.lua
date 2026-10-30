@@ -338,6 +338,9 @@ close = function(s)
     return
   end
   s.closed = true
+  if s.bindings then
+    s.bindings:close_help()
+  end
   sessions[s.tab] = nil
   if not next(sessions) and group then
     api.nvim_del_augroup_by_id(group)
@@ -472,9 +475,41 @@ function M.open(opts)
   sessions[tab] = s
   set_options(win, window_options)
   width(s)
+  s.bindings = require("lsp-tools.keymaps").new(out, vim.tbl_extend("force", {}, config, opts))
   local function map(keys, callback, desc)
-    vim.keymap.set("n", keys, callback, { buffer = out, silent = true, nowait = true, desc = desc })
+    local action = ({
+      ["<CR>"] = "jump",
+      ["<Tab>"] = "toggle_fold",
+      za = "toggle_fold",
+      h = "collapse",
+      zc = "collapse",
+      l = "expand",
+      zo = "expand",
+      zM = "collapse_all",
+      zR = "expand_all",
+      r = "refresh",
+      m = "mode",
+      q = "close",
+      ["<Esc>"] = "close",
+    })[keys] or keys
+    local key = keys:match("^%a$") and "<prefix>" .. keys or keys
+    if action == "close" then
+      key = { "<Esc>", "<prefix>q" }
+    end
+    if action == "toggle_fold" then
+      key = { "<Tab>", "za" }
+    end
+    if action == "collapse" then
+      key = { "zc", "<prefix>h" }
+    end
+    if action == "expand" then
+      key = { "zo", "<prefix>l" }
+    end
+    s.bindings:map(action, key, callback, desc)
   end
+  s.bindings:map("help", "<prefix>?", function()
+    s.bindings:show_help(s.win)
+  end, "Show key bindings")
   map("<CR>", function()
     navigate(s)
   end, "Jump to symbol")

@@ -43,6 +43,9 @@ function M.close(s, wiping)
   if s.on_close then
     s.on_close()
   end
+  if s.bindings then
+    s.bindings:close_help()
+  end
   if s.group then
     vim.api.nvim_del_augroup_by_id(s.group)
   end
@@ -140,9 +143,11 @@ function M.open(name, ctx, opts)
     end
     M.close(s)
   end
-  for _, lhs in ipairs(opts.close_keys or { "q", "<Esc>" }) do
-    vim.keymap.set("n", lhs, close, { buffer = out, nowait = true, desc = "Close tool" })
-  end
+  s.bindings = require("lsp-tools.keymaps").new(out, opts)
+  s.bindings:map("close", opts.close_keys or { "<Esc>", "<prefix>q" }, close, "Close tool")
+  s.bindings:map("help", "<prefix>?", function()
+    s.bindings:show_help(win)
+  end, "Show key bindings")
   s.group = vim.api.nvim_create_augroup("LspToolsPanel" .. out, { clear = true })
   vim.api.nvim_create_autocmd("WinClosed", {
     group = s.group,

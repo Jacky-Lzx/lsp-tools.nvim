@@ -64,6 +64,9 @@ calls[#calls].callback(nil, { { from = child, fromRanges = { child.range } } })
 local n = s.trees.incoming[1].children[1]
 check(n.item.name == "child" and n.sites[1].uri == uri, "incoming caller and call sites")
 local function key(lhs, row)
+  if lhs:match("^%a$") then
+    lhs = "<LocalLeader>" .. lhs
+  end
   vim.api.nvim_set_current_win(s.win)
   if row then
     vim.api.nvim_win_set_cursor(s.win, { row, 0 })
@@ -80,10 +83,10 @@ key("h", 6)
 check(not n.expanded, "collapse keeps child state")
 key("l", 6)
 check(n.expanded and #calls == total, "expand reuses cached children")
-key("d")
+key("<LocalLeader>d")
 check(calls[#calls].method == "callHierarchy/outgoingCalls", "direction switches lazily")
 calls[#calls].callback(nil, { { to = child, fromRanges = { root.range } } })
-key("d")
+key("<LocalLeader>d")
 check(
   s.trees.incoming[1].children[1] == n and n.expanded,
   "direction switches preserve expanded tree"
@@ -103,7 +106,7 @@ check(
   "type subtypes use proper protocol: " .. calls[#calls].method .. " " .. tostring(s.status)
 )
 calls[#calls].callback(nil, { child })
-key("d")
+key("<LocalLeader>d")
 check(calls[#calls].method == "typeHierarchy/supertypes", "type supertypes supported")
 local pending = calls[#calls]
 vim.wait(60, function()

@@ -36,7 +36,7 @@ local function write(s, content, status)
     "# Pinned LSP documentation",
     "",
     ("Source: %s:%d:%d"):format(name, ctx.pos[1], ctx.pos[2] + 1),
-    "r refresh · f toggle follow · y copy · gx open link · b source · q close",
+    s.bindings:hint(),
     "Follow cursor: " .. (s.follow and "on" or "off"),
     "",
   }
@@ -111,11 +111,13 @@ function M.open(opts)
   if vim.bo.buftype ~= "" then
     return false
   end
-  local s = panel.open(
-    "hover",
-    request.context(),
-    { width = config.width, filetype = "markdown", focus = opts.focus ~= false }
-  )
+  local s = panel.open("hover", request.context(), {
+    keymaps = opts.keymaps or config.keymaps,
+    key_prefix = opts.key_prefix or config.key_prefix,
+    width = config.width,
+    filetype = "markdown",
+    focus = opts.focus ~= false,
+  })
   s.follow = opts.follow_cursor == nil and config.follow_cursor or opts.follow_cursor
   sessions[s] = true
   s.on_close = function()
@@ -123,7 +125,7 @@ function M.open(opts)
     sessions[s] = nil
   end
   local function map(lhs, fn, desc)
-    vim.keymap.set("n", lhs, fn, { buffer = s.out, desc = desc })
+    return s.bindings:legacy(lhs, fn, desc, "hover")
   end
   map("r", function()
     refresh(s)

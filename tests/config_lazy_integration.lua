@@ -107,7 +107,7 @@ local function run()
     "outline leaves unrelated views deferred"
   )
   vim.api.nvim_set_current_win(out)
-  vim.api.nvim_input("q")
+  vim.api.nvim_input(vim.keycode("<LocalLeader>q"))
   wait(function()
     return not sidebar() and vim.api.nvim_get_current_win() == win
   end, "closing sidebar restores source")

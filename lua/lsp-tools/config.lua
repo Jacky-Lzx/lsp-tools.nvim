@@ -19,6 +19,7 @@ end
 
 -- Validate supplied options without importing the implementation or its defaults.
 function M.tool(name, opts)
+  require("lsp-tools.keymaps").validate(opts)
   for _, key in ipairs({
     "request_timeout",
     "resolve_timeout",

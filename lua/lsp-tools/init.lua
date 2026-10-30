@@ -115,6 +115,9 @@ function M.setup(opts)
   opts = opts or {}
   assert(type(opts) == "table", "lsp-tools options must be a table")
   local validation = require("lsp-tools.config")
+  if opts.ui then
+    require("lsp-tools.keymaps").validate(opts.ui)
+  end
   local pending = {}
   -- Validate supplied options before changing existing tool state.
   for _, name in ipairs(names) do
@@ -135,6 +138,9 @@ function M.setup(opts)
       end
       pending[name] = { enabled = on, options = config }
     end
+  end
+  if opts.ui then
+    require("lsp-tools.keymaps").configure(opts.ui)
   end
   for _, name in ipairs(names) do
     local update = pending[name]
@@ -174,6 +180,13 @@ function M.setup(opts)
     end
   end
   return M
+end
+function M.configuration()
+  return {
+    enabled = vim.deepcopy(enabled),
+    options = vim.deepcopy(options),
+    ui = require("lsp-tools.keymaps").config(),
+  }
 end
 
 ---Render the enclosing symbol path for lualine or a native statusline/winbar.

@@ -206,7 +206,7 @@ local function feed(keys)
   flush()
 end
 api.nvim_set_current_win(outwin)
-feed("m")
+feed("<LocalLeader>m")
 check(api.nvim_buf_line_count(out) == 3, "toggle all symbols")
 check(name_highlight(1, "macro", "Function"), "function names receive their own semantic color")
 feed("za")
@@ -229,12 +229,12 @@ check(#marks == 1 and marks[1][2] == 2, "highlights enclosing symbol")
 api.nvim_set_current_win(outwin)
 api.nvim_win_set_cursor(outwin, { 1, 0 })
 feed("za")
-feed("r")
+feed("<LocalLeader>r")
 calls[#calls].callback(nil, symbols)
 flush()
 check(api.nvim_buf_line_count(out) == 1, "manual folds survive refresh")
 feed("zR")
-feed("r")
+feed("<LocalLeader>r")
 local stale = calls[#calls]
 api.nvim_buf_set_lines(buf, 3, 4, false, { "edited" })
 stale.callback(nil, { { name = "STALE", kind = 12, range = range(0, 0, 0, 2) } })
@@ -252,7 +252,7 @@ check(
 calls[#calls].callback(nil, symbols)
 flush()
 -- Switch sources with an old request in flight.
-feed("r")
+feed("<LocalLeader>r")
 local obsolete = calls[#calls]
 api.nvim_set_current_win(win)
 vim.cmd("enew!")
@@ -269,7 +269,7 @@ last.callback(nil, { { name = "f", kind = 12, range = range(0, 0, 0, 16) } })
 flush()
 check(api.nvim_buf_get_lines(out, 0, 1, false)[1]:find("f"), "new source wins over old result")
 api.nvim_set_current_win(outwin)
-feed("r")
+feed("<LocalLeader>r")
 check(
   vim.wait(200, function()
     return vim.wo[outwin].winbar:find("timed out") ~= nil
@@ -277,7 +277,7 @@ check(
   "request timeout is visible"
 )
 check(calls[#calls].cancelled, "timeout cancels request")
-feed("r")
+feed("<LocalLeader>r")
 local late = calls[#calls]
 tools.close_outline()
 late.callback(nil, symbols)
@@ -325,7 +325,7 @@ check(
 local recovered = api.nvim_get_current_win()
 api.nvim_set_current_win(first)
 api.nvim_win_close(recovered, true)
-feed("q")
+feed("<LocalLeader>q")
 check(vim.bo.filetype ~= "lsp-tools-outline", "closing the last sidebar restores a normal buffer")
 check(
   not api.nvim_buf_is_valid(api.nvim_win_get_buf(first)) or api.nvim_win_get_buf(first) == other,
