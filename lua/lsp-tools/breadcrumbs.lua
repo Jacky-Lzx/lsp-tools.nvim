@@ -193,6 +193,12 @@ local function queue(buf, doc, invalidate)
   end
   doc.generation = (doc.generation or 0) + 1
   local generation = doc.generation
+  if not select_client(buf, doc) then
+    clear(buf, doc)
+    doc.client = nil
+    redraw()
+    return
+  end
   redraw()
   vim.defer_fn(function()
     if documents[buf] == doc and generation == doc.generation then
@@ -363,7 +369,14 @@ function M.setup(opts)
   )
   api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI", "ColorScheme" }, {
     group = group,
-    callback = redraw,
+    callback = function()
+      local buf = api.nvim_get_current_buf()
+      local doc = documents[buf]
+      if doc and select_client(buf, doc) ~= doc.client then
+        refresh(buf, doc)
+      end
+      redraw()
+    end,
   })
   scan()
 end

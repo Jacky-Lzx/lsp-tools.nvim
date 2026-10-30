@@ -40,14 +40,14 @@ function M.attach(client, bufnr)
   if not enabled or not client:supports_method(method, bufnr) then
     return
   end
-  if vim.lsp.linked_editing_range then
-    vim.lsp.linked_editing_range.enable(false, { client_id = client.id, bufnr = bufnr })
-  end
   if sessions[bufnr] then
     if sessions[bufnr].client == client then
       return
     end
     sessions[bufnr].detach()
+  end
+  if vim.lsp.linked_editing_range then
+    vim.lsp.linked_editing_range.enable(false, { client_id = client.id, bufnr = bufnr })
   end
 
   local ns = vim.api.nvim_create_namespace("lsp-tools.linked_editing:" .. client.id .. ":" .. bufnr)
@@ -285,7 +285,11 @@ function M.setup(opts)
   M.disable()
   config, enabled = next_config, true
   local function attach(buf)
-    if not vim.api.nvim_buf_is_valid(buf) or vim.bo[buf].buftype ~= "" then
+    if
+      not vim.api.nvim_buf_is_valid(buf)
+      or vim.bo[buf].buftype ~= ""
+      or #vim.fn.win_findbuf(buf) == 0
+    then
       return
     end
     local clients = vim.lsp.get_clients({ bufnr = buf, method = method })
@@ -294,10 +298,12 @@ function M.setup(opts)
     end)
     if clients[1] then
       M.attach(clients[1], buf)
+    elseif sessions[buf] then
+      sessions[buf].detach()
     end
   end
   setup_group = vim.api.nvim_create_augroup("LspToolsLinkedEditingAttach", { clear = true })
-  vim.api.nvim_create_autocmd({ "LspAttach", "BufEnter" }, {
+  vim.api.nvim_create_autocmd({ "LspAttach", "BufEnter", "CursorMoved", "CursorMovedI" }, {
     group = setup_group,
     callback = function(ev)
       attach(ev.buf)
@@ -313,8 +319,13 @@ function M.setup(opts)
       end)
     end,
   })
-  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-    attach(buf)
+  local seen = {}
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local buf = vim.api.nvim_win_get_buf(win)
+    if not seen[buf] then
+      seen[buf] = true
+      attach(buf)
+    end
   end
 end
 

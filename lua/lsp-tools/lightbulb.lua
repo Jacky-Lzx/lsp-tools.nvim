@@ -4,6 +4,14 @@ local ns = vim.api.nvim_create_namespace("lsp-tools.lightbulb")
 local config =
   { debounce = 200, request_timeout = 1500, text = "", hl = "DiagnosticHint", sign = false }
 local enabled, group, pending, timer, marked
+local method = "textDocument/codeAction"
+
+local function clients()
+  if not enabled or vim.bo.buftype ~= "" or vim.api.nvim_get_mode().mode:sub(1, 1) ~= "n" then
+    return {}
+  end
+  return vim.lsp.get_clients({ bufnr = vim.api.nvim_get_current_buf(), method = method })
+end
 
 local function clear()
   if pending then
@@ -23,13 +31,15 @@ end
 
 local function query()
   clear()
-  if not enabled or vim.bo.buftype ~= "" or vim.api.nvim_get_mode().mode:sub(1, 1) ~= "n" then
+  local providers = clients()
+  if #providers == 0 then
     return
   end
   local ctx = request.context()
   pending = request.start({
     buf = ctx.buf,
-    method = "textDocument/codeAction",
+    method = method,
+    clients = providers,
     timeout = config.request_timeout,
     params = function(client)
       local params = request.position(ctx, client)
@@ -72,7 +82,7 @@ end
 
 local function schedule()
   clear()
-  if enabled then
+  if #clients() > 0 then
     timer = assert(vim.uv.new_timer())
     timer:start(config.debounce, 0, vim.schedule_wrap(query))
   end

@@ -16,13 +16,13 @@ local names = {
 local defaults =
   { code_actions = true, references = true, rename = true, outline = true, breadcrumbs = true }
 local automatic = {
-  code_actions = true,
-  references = true,
-  breadcrumbs = true,
-  lightbulb = true,
-  linked_editing = true,
+  references = "textDocument/documentHighlight",
+  breadcrumbs = "textDocument/documentSymbol",
+  lightbulb = "textDocument/codeAction",
+  linked_editing = "textDocument/linkedEditingRange",
 }
 local options, enabled, ready = {}, {}, {}
+local automatic_group, activating
 
 local function load(name)
   if not enabled[name] then
@@ -44,6 +44,70 @@ local function call(name, method, ...)
   return false
 end
 
+local function pending_automatic()
+  for name in pairs(automatic) do
+    if enabled[name] and not ready[name] then
+      return true
+    end
+  end
+  return false
+end
+
+local function activate(buf)
+  if
+    activating
+    or not vim.api.nvim_buf_is_valid(buf)
+    or vim.bo[buf].buftype ~= ""
+    or #vim.fn.win_findbuf(buf) == 0
+  then
+    return
+  end
+  activating = true
+  local ok, err = pcall(function()
+    for _, name in ipairs(names) do
+      local method = automatic[name]
+      if
+        method
+        and enabled[name]
+        and not ready[name]
+        and #vim.lsp.get_clients({ bufnr = buf, method = method }) > 0
+      then
+        load(name)
+      end
+    end
+  end)
+  activating = false
+  if not pending_automatic() and automatic_group then
+    vim.api.nvim_del_augroup_by_id(automatic_group)
+    automatic_group = nil
+  end
+  if not ok then
+    error(err)
+  end
+end
+
+local function watch_automatic()
+  if automatic_group then
+    vim.api.nvim_del_augroup_by_id(automatic_group)
+    automatic_group = nil
+  end
+  if not pending_automatic() then
+    return
+  end
+  automatic_group = vim.api.nvim_create_augroup("LspToolsAutomatic", { clear = true })
+  -- Cursor checks also catch capabilities dynamically registered after LspAttach.
+  -- Until then these checks allocate no timers, highlights or per-buffer sessions.
+  vim.api.nvim_create_autocmd({ "LspAttach", "BufEnter", "CursorMoved", "CursorMovedI" }, {
+    group = automatic_group,
+    callback = function(ev)
+      activate(ev.buf)
+    end,
+  })
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    activate(vim.api.nvim_win_get_buf(win))
+  end
+end
+
 ---Configure tools without loading interactive implementations. No mappings are installed.
 ---@param opts? table
 function M.setup(opts)
@@ -51,7 +115,7 @@ function M.setup(opts)
   assert(type(opts) == "table", "lsp-tools options must be a table")
   local validation = require("lsp-tools.config")
   local pending = {}
-  -- Validate the complete update before changing existing tool state.
+  -- Validate supplied options before changing existing tool state.
   for _, name in ipairs(names) do
     local value = opts[name]
     assert(
@@ -83,7 +147,7 @@ function M.setup(opts)
       elseif module then
         module.setup(update.options)
         ready[name] = module
-      elseif automatic[name] then
+      elseif name == "code_actions" then
         load(name)
       end
       if name == "inspect" then
@@ -96,6 +160,7 @@ function M.setup(opts)
       end
     end
   end
+  watch_automatic()
   if enabled.outline then
     for command, method in pairs({
       LspToolsOutline = "toggle_outline",

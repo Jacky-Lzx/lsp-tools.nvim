@@ -49,12 +49,26 @@ function M.tool(name, opts)
     )
   end
   if name == "outline" or name == "breadcrumbs" then
-    if opts.mode then
+    if opts.mode ~= nil then
       assert(
         vim.tbl_contains({ "auto", "all", "sections", "structure" }, opts.mode),
         "invalid " .. name .. ".mode"
       )
     end
+  end
+  if name == "breadcrumbs" then
+    if opts.mode ~= nil then
+      assert(opts.mode ~= "structure", "invalid breadcrumbs.mode")
+    end
+    if opts.debounce ~= nil then
+      assert(opts.debounce > 0, "breadcrumbs.debounce must be positive")
+    end
+    if opts.separator ~= nil then
+      assert(type(opts.separator) == "string", "breadcrumbs.separator must be a string")
+    end
+  end
+  if name == "lightbulb" and opts.text ~= nil then
+    assert(type(opts.text) == "string" and opts.text ~= "", "lightbulb text must not be empty")
   end
   for _, key in ipairs({ "open", "fallback", "validate" }) do
     if opts[key] ~= nil then

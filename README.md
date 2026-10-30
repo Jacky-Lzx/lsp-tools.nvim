@@ -122,6 +122,12 @@ recorded before its first opening. Deferred options are validated during setup.
 Rename/link cancellation listeners exist only while an operation is pending.
 Outline listeners are installed for the first sidebar and removed when the last
 sidebar closes, including sidebars in other tabs.
+Automatic reference highlights, breadcrumbs, lightbulb and linked editing load
+when a visible buffer has a provider for their method. A lightweight capability
+check also handles capabilities registered after attachment. Unsupported buffers
+do not allocate lightbulb/breadcrumb update timers; hidden buffers are initialized
+when displayed. Automatic bootstrap listeners are released once every enabled
+engine has initialized. None of these checks opens a UI.
 
 `require("lsp-tools").code_action(opts)` forwards native code action options such
 as `context`, `filter`, `range`, and `apply` to `vim.lsp.buf.code_action()`.
