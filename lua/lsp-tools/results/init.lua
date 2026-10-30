@@ -116,14 +116,15 @@ local function help(v)
       { end_col = 2 + #mappings[i].lhs, hl_group = "Special" }
     )
   end
-  for _, lhs in ipairs({ "<Esc>", "<LocalLeader>q", "<LocalLeader>?" }) do
-    vim.keymap.set("n", lhs, function()
-      close_help(v)
-      if panel.alive(v) then
-        api.nvim_set_current_win(v.win)
-      end
-    end, { buffer = buf, nowait = true, desc = "Close help" })
+  local bindings = require("lsp-tools.keymaps").new(buf, v.options)
+  local function close()
+    close_help(v)
+    if panel.alive(v) then
+      api.nvim_set_current_win(v.win)
+    end
   end
+  bindings:map("close", { "<Esc>", "<prefix>q" }, close, "Close help")
+  bindings:map("help", "<prefix>?", close, "Close help")
 end
 local function remember(v)
   cache[v.cache_key] = {
@@ -212,19 +213,26 @@ function M.jump(v, keep_focus, destination)
   end
   close_preview(v)
   api.nvim_set_current_win(win)
+  local created
   local ok, handled = pcall(function()
     if destination == "tab" then
       vim.cmd("tab split")
     elseif destination ~= "current" then
       vim.cmd("belowright " .. destination)
     end
+    if destination ~= "current" then
+      created = api.nvim_get_current_win()
+    end
     if v.options.on_jump and v.options.on_jump(item, v, destination) then
       return true
     end
     return vim.lsp.util.show_document(loc, "utf-8", { focus = true })
   end)
-  if not ok then
-    v.status = tostring(handled)
+  if not ok or not handled then
+    if created and api.nvim_win_is_valid(created) then
+      pcall(api.nvim_win_close, created, true)
+    end
+    v.status = not ok and tostring(handled) or "Unable to open this source location"
     render(v)
   end
   if keep_focus and panel.alive(v) then
@@ -499,7 +507,6 @@ function M.open(items, opts)
   v.raw, v.items, v.rows = {}, {}, {}
   v.line_rows, v.row_lines = {}, {}
   v.keymaps = v.bindings.entries
-  v.help_key = ""
   v.selected_id, v.stops = saved.selected, {}
   sessions[v] = true
   v.on_close = function()
@@ -553,10 +560,7 @@ function M.open(items, opts)
     if action == "close" then
       default = { "<Esc>", "<prefix>q" }
     end
-    local keys = v.bindings:map(action, default, fn, desc)
-    if action == "help" then
-      v.help_key = keys[1] and require("lsp-tools.keymaps").label(keys[1]) or ""
-    end
+    v.bindings:map(action, default, fn, desc)
   end
   local function fold()
     local _, row = selected(v)

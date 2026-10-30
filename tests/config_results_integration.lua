@@ -14,9 +14,36 @@ local function run()
   local function wait(test, message)
     local start = vim.uv.hrtime()
     while not test() do
-      assert((vim.uv.hrtime() - start) / 1e6 < 8000, message)
+      assert(
+        (vim.uv.hrtime() - start) / 1e6 < 8000,
+        message .. " (filetype=" .. vim.bo.filetype .. ", mode=" .. vim.fn.mode() .. ")"
+      )
       coroutine.yield()
     end
+  end
+  local function choose(query)
+    wait(function()
+      return vim.bo.filetype == "selection_tools_input" and vim.fn.mode():sub(1, 1) == "i"
+    end, "configured vim.ui.select is ready")
+    local input = api.nvim_get_current_buf()
+    if query ~= "" then
+      api.nvim_input(query)
+      wait(function()
+        for _, win in ipairs(api.nvim_list_wins()) do
+          local list = api.nvim_win_get_buf(win)
+          if vim.bo[list].filetype == "selection_tools_list" then
+            local lines = api.nvim_buf_get_lines(list, 0, -1, false)
+            if #lines == 1 and lines[1]:find(query, 1, true) then
+              return true
+            end
+          end
+        end
+      end, "configured menu filters to " .. query)
+    end
+    api.nvim_input("<CR>")
+    wait(function()
+      return api.nvim_get_current_buf() ~= input
+    end, "configured selection closes before the next menu")
   end
   local plugins = require("lazy.core.config").plugins
   local spec = assert(plugins["lsp-tools.nvim"])
@@ -125,12 +152,51 @@ local function run()
     vim.fn.screenpos(preview.win, 1, 1).row > 0,
     "preview metadata stays visible despite the source scrolloff"
   )
+  api.nvim_input(vim.keycode("<LocalLeader>w"))
+  wait(function()
+    return api.nvim_get_current_win() == v.preview.win
+  end, "configured preview focus action")
+  api.nvim_input("/return<CR>")
+  wait(function()
+    return vim.fn.getreg("/") == "return" and vim.fn.mode() == "n"
+  end, "native search inside focused preview")
+  api.nvim_input(vim.keycode("<LocalLeader>s"))
+  wait(function()
+    return v.preview ~= preview and api.nvim_win_get_config(v.preview.win).relative == ""
+  end, "configured preview changes to side layout")
+  assert(api.nvim_get_current_win() == v.preview.win, "layout change preserves preview focus")
+  api.nvim_input("<Esc>")
+  wait(function()
+    return not v.preview and api.nvim_get_current_win() == v.win
+  end, "preview Escape returns to list")
   results.select(v, v.items[1].id)
   api.nvim_set_current_win(v.win)
   api.nvim_input("<CR>")
   wait(function()
     return api.nvim_get_current_win() == win and api.nvim_win_get_cursor(win)[2] == 4
   end, "imported source jump")
+  for _, key in ipairs({ "-", "|", "t" }) do
+    api.nvim_set_current_win(v.win)
+    api.nvim_input(vim.keycode("<LocalLeader>" .. key))
+    wait(function()
+      return api.nvim_get_current_win() ~= win and api.nvim_get_current_win() ~= v.win
+    end, "configured jump destination " .. key)
+    local target = api.nvim_get_current_win()
+    assert(
+      api.nvim_win_get_buf(target) == buf and api.nvim_win_get_cursor(target)[2] == 4,
+      "split/tab keeps source coordinates"
+    )
+    api.nvim_win_close(target, true)
+  end
+  api.nvim_set_current_win(v.win)
+  local previous = v
+  api.nvim_input(vim.keycode("<LocalLeader>H"))
+  choose("")
+  wait(function()
+    v = results.current("picker")
+    return v and v ~= previous and api.nvim_get_current_win() == v.win
+  end, "configured history restores selected snapshot")
+  assert(v.pinned and v.history_snapshot, "history opens as a pinned snapshot")
   api.nvim_set_current_win(v.win)
   api.nvim_input("<Esc>")
   wait(function()
@@ -245,6 +311,17 @@ local function run()
           return vim.fn.foldclosed(2) == -1
         end)
       end, "native zR opens diagnostics after live refreshes")
+      api.nvim_input(vim.keycode("<LocalLeader>/"))
+      choose("Severity")
+      choose("Errors and warnings")
+      wait(function()
+        return vim.deep_equal(v.filter.severity, { 1, 2 }) and api.nvim_get_current_win() == v.win
+      end, "configured combined severity menu applies to diagnostics")
+      api.nvim_input(vim.keycode("<LocalLeader>/"))
+      choose("Reset")
+      wait(function()
+        return next(v.filter) == nil and api.nvim_get_current_win() == v.win
+      end, "configured filter reset restores view")
     end
     if binding[2] == "lsp" then
       wait(function()
@@ -262,6 +339,18 @@ local function run()
     end, "configured entry toggles closed")
   end
   assert(#api.nvim_list_wins() == 1 and not package.loaded["trouble"])
+  vim.cmd("checkhealth lsp-tools")
+  wait(function()
+    return vim.bo.filetype == "checkhealth"
+      and table
+        .concat(api.nvim_buf_get_lines(0, 0, -1, false), "\n")
+        :find("lualine preserves", 1, true)
+  end, "native checkhealth runs against actual configured integrations")
+  local report = table.concat(api.nvim_buf_get_lines(0, 0, -1, false), "\n")
+  assert(
+    not report:find("ERROR", 1, true) and not report:find("may flicker", 1, true),
+    "configured dependencies and ownership pass health"
+  )
 end
 
 local thread = coroutine.create(run)
@@ -275,7 +364,7 @@ local function step()
     vim.cmd("cquit 1")
   elseif coroutine.status(thread) == "dead" then
     vim.fn.writefile({
-      "configured terminal: lazy picker, native Vim keys, clean help, stable winbars (debugging="
+      "configured terminal: lazy picker, native keys, preview focus/layout, split/tab jumps, history, filter menus, health and stable winbars (debugging="
         .. tostring(vim.env.LSP_TOOLS_TEST_DEBUGGING == "1")
         .. ") and result toggles passed",
     }, vim.env.LSP_TOOLS_TEST_TMP .. "/result")

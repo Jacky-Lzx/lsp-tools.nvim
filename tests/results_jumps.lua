@@ -46,6 +46,16 @@ check(
   not results.jump(v, false, "tab") and #api.nvim_list_wins() == windows,
   "stale validation precedes window creation"
 )
+v.options.validate = nil
+v.options.on_jump = function()
+  error("unavailable target")
+end
+check(
+  not results.jump(v, false, "tab")
+    and #api.nvim_list_wins() == windows
+    and v.status:find("unavailable target", 1, true),
+  "failed jumps release newly created destinations"
+)
 results.close("jumps")
 print(("result jump destinations: %d assertions passed"):format(count))
 vim.cmd("qa!")

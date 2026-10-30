@@ -43,87 +43,92 @@ function M.open(results, v)
     "Save preset",
     "Reset",
   }
-  vim.ui.select(menu, { prompt = "Filter results" }, function(choice)
-    if not choice or not alive(v) then
-      return
-    end
-    if choice == "Reset" then
-      M.apply(results, v, {})
-      return
-    end
-    if choice == "Text" then
-      vim.ui.input({ prompt = "Filter text: ", default = v.filter.text or "" }, function(text)
-        if text ~= nil and alive(v) then
-          results.filter(v, { text = text })
-        end
-      end)
-      return
-    end
-    if choice == "Save preset" then
-      vim.ui.input({ prompt = "Session preset name: " }, function(name)
-        if name and name ~= "" and alive(v) then
-          M.save(v, name)
-          v.status = "Saved session preset: " .. name
-          results.render(v)
-        end
-      end)
-      return
-    end
-    if choice == "Load preset" then
-      local presets = M.presets(v)
-      local names = vim.tbl_keys(presets)
-      table.sort(names)
-      vim.ui.select(names, { prompt = "Filter preset" }, function(name)
-        if name and alive(v) then
-          M.apply(results, v, presets[name])
-        end
-      end)
-      return
-    end
-    local field = ({
-      Severity = "severity",
-      Source = "source",
-      ["Diagnostic code"] = "code",
-      Namespace = "namespace",
-    })[choice]
-    local values, seen = { { label = "All", value = false } }, {}
-    if field == "severity" then
-      values[#values + 1] = { label = "Errors and warnings", value = { 1, 2 } }
-      for i = 1, 4 do
-        values[#values + 1] = { label = vim.diagnostic.severity[i], value = i }
+  -- Let the provider finish closing its input before mounting a nested dialog.
+  vim.ui.select(
+    menu,
+    { prompt = "Filter results" },
+    vim.schedule_wrap(function(choice)
+      if not choice or not alive(v) then
+        return
       end
-    else
-      for _, item in ipairs(v.items) do
-        local value = item[field]
-        if value ~= nil and value ~= "" and not seen[tostring(value)] then
-          seen[tostring(value)] = true
-          local label = tostring(value)
-          if field == "namespace" then
-            label = (vim.diagnostic.get_namespaces()[value] or {}).name or label
+      if choice == "Reset" then
+        M.apply(results, v, {})
+        return
+      end
+      if choice == "Text" then
+        vim.ui.input({ prompt = "Filter text: ", default = v.filter.text or "" }, function(text)
+          if text ~= nil and alive(v) then
+            results.filter(v, { text = text })
           end
-          values[#values + 1] = { label = label, value = value }
-        end
+        end)
+        return
       end
-      table.sort(values, function(a, b)
-        if a.value == false then
-          return b.value ~= false
+      if choice == "Save preset" then
+        vim.ui.input({ prompt = "Session preset name: " }, function(name)
+          if name and name ~= "" and alive(v) then
+            M.save(v, name)
+            v.status = "Saved session preset: " .. name
+            results.render(v)
+          end
+        end)
+        return
+      end
+      if choice == "Load preset" then
+        local presets = M.presets(v)
+        local names = vim.tbl_keys(presets)
+        table.sort(names)
+        vim.ui.select(names, { prompt = "Filter preset" }, function(name)
+          if name and alive(v) then
+            M.apply(results, v, presets[name])
+          end
+        end)
+        return
+      end
+      local field = ({
+        Severity = "severity",
+        Source = "source",
+        ["Diagnostic code"] = "code",
+        Namespace = "namespace",
+      })[choice]
+      local values, seen = { { label = "All", value = false } }, {}
+      if field == "severity" then
+        values[#values + 1] = { label = "Errors and warnings", value = { 1, 2 } }
+        for i = 1, 4 do
+          values[#values + 1] = { label = vim.diagnostic.severity[i], value = i }
         end
-        if b.value == false then
-          return false
+      else
+        for _, item in ipairs(v.items) do
+          local value = item[field]
+          if value ~= nil and value ~= "" and not seen[tostring(value)] then
+            seen[tostring(value)] = true
+            local label = tostring(value)
+            if field == "namespace" then
+              label = (vim.diagnostic.get_namespaces()[value] or {}).name or label
+            end
+            values[#values + 1] = { label = label, value = value }
+          end
         end
-        return a.label < b.label
+        table.sort(values, function(a, b)
+          if a.value == false then
+            return b.value ~= false
+          end
+          if b.value == false then
+            return false
+          end
+          return a.label < b.label
+        end)
+      end
+      vim.ui.select(values, {
+        prompt = "Filter " .. field,
+        format_item = function(item)
+          return item.label
+        end,
+      }, function(item)
+        if item and alive(v) then
+          results.filter(v, { [field] = item.value })
+        end
       end)
-    end
-    vim.ui.select(values, {
-      prompt = "Filter " .. field,
-      format_item = function(item)
-        return item.label
-      end,
-    }, function(item)
-      if item and alive(v) then
-        results.filter(v, { [field] = item.value })
-      end
     end)
-  end)
+  )
 end
 return M

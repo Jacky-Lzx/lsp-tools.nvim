@@ -255,6 +255,8 @@ function M.layout(v)
   return out
 end
 function M.winbar(v)
+  local help_key = v.bindings and (v.bindings.actions.help or {})[1]
+  local help = help_key and (require("lsp-tools.keymaps").label(help_key) .. " help ") or ""
   local function escape(value)
     return (clean(value):gsub("%%", "%%%%"))
   end
@@ -311,7 +313,6 @@ function M.winbar(v)
     .. "%=%#"
     .. prefix
     .. "Meta# "
-    .. escape(v.help_key)
-    .. " help "
+    .. escape(help)
 end
 return M

@@ -94,12 +94,13 @@ function M.list()
   return out
 end
 local function valid(entry, item, v)
-  for _, target in pairs(entry.targets) do
+  for uri, target in pairs(entry.targets) do
     if
       target.tick
       and (
         not api.nvim_buf_is_valid(target.buf)
         or api.nvim_buf_get_changedtick(target.buf) ~= target.tick
+        or vim.uri_from_bufnr(target.buf) ~= uri
       )
     then
       return false

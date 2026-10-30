@@ -115,7 +115,7 @@ function M.setup(opts)
   opts = opts or {}
   assert(type(opts) == "table", "lsp-tools options must be a table")
   local validation = require("lsp-tools.config")
-  if opts.ui then
+  if opts.ui ~= nil then
     require("lsp-tools.keymaps").validate(opts.ui)
   end
   local pending = {}
@@ -139,7 +139,7 @@ function M.setup(opts)
       pending[name] = { enabled = on, options = config }
     end
   end
-  if opts.ui then
+  if opts.ui ~= nil then
     require("lsp-tools.keymaps").configure(opts.ui)
   end
   for _, name in ipairs(names) do

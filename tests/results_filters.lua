@@ -27,6 +27,15 @@ local function check(value, message)
 end
 local old_select, old_input = vim.ui.select, vim.ui.input
 local choices = {}
+local function flush()
+  local done = false
+  vim.schedule(function()
+    done = true
+  end)
+  assert(vim.wait(100, function()
+    return done
+  end, 1))
+end
 vim.ui.select = function(items, opts, cb)
   local desired = table.remove(choices, 1)
   for _, item in ipairs(items) do
@@ -40,6 +49,7 @@ end
 local function choose(field, value)
   choices = { field, value }
   filters.open(results, v)
+  flush()
 end
 choose("Severity", "Errors and warnings")
 check(#v.filtered == 2, "severity combinations filter received diagnostics")
@@ -48,8 +58,7 @@ check(#v.filtered == 1 and v.filtered[1].text == "bad", "source picker combines 
 vim.ui.input = function(_, cb)
   cb("Build")
 end
-choices = { "Save preset" }
-filters.open(results, v)
+choose("Save preset")
 choose("Reset")
 check(#v.filtered == 3, "reset clears filters without clearing native diagnostics")
 choose("Load preset", "Build")
@@ -74,6 +83,7 @@ end
 filters.open(results, v)
 results.close("diagnostics")
 callback("Reset")
+flush()
 check(#vim.diagnostic.get(buf) == 3, "late/cancelled filter dialogs cannot delete diagnostics")
 vim.ui.select, vim.ui.input = old_select, old_input
 print(("result filters: %d assertions passed"):format(count))

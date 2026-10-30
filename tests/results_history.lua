@@ -43,6 +43,17 @@ check(
 )
 results.close("generic")
 api.nvim_set_current_win(owner)
+local other = api.nvim_create_buf(true, false)
+api.nvim_buf_set_name(other, vim.fn.tempname() .. "-other.lua")
+api.nvim_buf_set_lines(other, 0, -1, false, { "target" })
+v = tools.results({ { bufnr = other, text = "other target" } }, { id = "renamed" })
+results.close("renamed")
+id = history.list()[1].id
+api.nvim_buf_set_name(other, vim.fn.tempname() .. "-renamed.lua")
+v = history.restore(results, id, { focus = true })
+check(not results.jump(v), "renamed target cannot redirect a historical URI")
+results.close("renamed")
+api.nvim_set_current_win(owner)
 local calls = {}
 local client = { id = 17, name = "fixture", offset_encoding = "utf-16" }
 function client:request(method, params, callback)
@@ -52,8 +63,9 @@ end
 function client:cancel_request(request)
   calls[request].cancelled = true
 end
+local attached = true
 vim.lsp.get_clients = function()
-  return { client }
+  return attached and { client } or {}
 end
 api.nvim_win_set_cursor(owner, { 2, 0 })
 v = tools.locations({ method = "references" })
@@ -67,6 +79,9 @@ api.nvim_win_set_cursor(owner, { 1, 0 })
 v = history.restore(results, id, { focus = true })
 check(v.query.pos[1] == 2 and #calls == 1, "restoring LSP history does not issue a request")
 check(results.jump(v, true), "LSP snapshot preserves native validation and encoding")
+attached = false
+check(not results.jump(v), "detached historical provider cannot jump")
+attached = true
 api.nvim_buf_set_lines(source, 1, -1, false, { "changed target" })
 check(not results.jump(v), "history rejects source edits")
 results.refresh(v)
@@ -105,5 +120,10 @@ for _, win in ipairs(api.nvim_list_wins()) do
     api.nvim_win_close(win, true)
   end
 end
+local before = history.list()
+tools.setup({ results = { history = 0 } })
+v = tools.results({ { bufnr = source, text = "unrecorded" } }, { id = "disabled-history" })
+results.close("disabled-history")
+check(vim.deep_equal(before, history.list()), "zero history limit disables recording")
 print(("result history: %d assertions passed"):format(count))
 vim.cmd("qa!")

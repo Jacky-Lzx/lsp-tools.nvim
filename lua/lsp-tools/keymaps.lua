@@ -69,19 +69,28 @@ function M.new(buf, opts)
   end
   function self:map(action, default, callback, desc)
     for _, lhs in ipairs(self.actions[action] or {}) do
-      pcall(vim.keymap.del, "n", lhs, { buffer = self.buf })
-      self.entries[M.label(lhs)] = nil
+      local label = M.label(lhs)
+      if self.entries[label] and self.entries[label].action == action then
+        pcall(vim.keymap.del, "n", lhs, { buffer = self.buf })
+        self.entries[label] = nil
+      end
     end
     local keys = self:resolve(action, default)
     self.actions[action] = keys
     for _, lhs in ipairs(keys) do
+      local label = M.label(lhs)
+      local previous = self.entries[label]
+      if previous and previous.action ~= action then
+        self.actions[previous.action] = vim.tbl_filter(function(key)
+          return M.label(key) ~= label
+        end, self.actions[previous.action] or {})
+      end
       vim.keymap.set(
         "n",
         lhs,
         callback,
         { buffer = self.buf, silent = true, desc = desc or action }
       )
-      local label = M.label(lhs)
       self.entries[label] = { lhs = label, desc = desc or action, action = action }
     end
     return keys
