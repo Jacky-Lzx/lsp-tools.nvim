@@ -382,9 +382,11 @@ scopes in TeX buffers, and `sections` applies that filter explicitly. Flat
 `SymbolInformation` results do not gain invented parents from `containerName`.
 
 One document cache is shared by all windows showing the same buffer. Cursor
-movement reads that cache without making requests; edits clear the old path and
-refresh after a debounce. Hidden documents drop their cache and cancel pending
-requests. Provider selection retains the previous eligible client, falling back
+movement reads that cache without making requests. Edits refresh after a debounce;
+the previous symbols remain visible while waiting, with ranges tracked through
+edits to avoid flickering during typing. Symbol names update when the new response
+arrives. Hidden documents drop their cache and cancel pending requests.
+Provider selection retains the previous eligible client, falling back
 to the lowest client ID. Edits, URI changes, detach, timeout, and disable reject
 obsolete replies. Errors and unsupported providers leave the component empty.
 The outline and breadcrumbs request their own symbol snapshots independently.
@@ -393,6 +395,7 @@ Set `breadcrumbs = false` (or `{ enabled = false }`) to disable this module.
 Run `tests/run.sh` for cache, range, cancellation, escaping, and window-ownership
 coverage. `tests/breadcrumbs-integration.sh [headless|tui]` verifies real LuaLS,
 the native winbar, the installed lualine implementation, split cursors, and edits.
+The TUI run also types in Insert mode and samples both winbars throughout refreshes.
 LuaLS must be on `PATH`; set `LUALINE_DIR` if lualine is installed outside
 `~/.local/share/nvim/lazy/lualine.nvim`.
 

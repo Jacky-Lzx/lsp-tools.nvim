@@ -15,6 +15,7 @@ local config = vim.deepcopy(defaults)
 local enabled = false
 local documents, windows = {}, {}
 local expression = "%{%v:lua.require'lsp-tools'.breadcrumbs()%}"
+local namespace = api.nvim_create_namespace("lsp-tools.breadcrumbs")
 
 local function source(win)
   if not api.nvim_win_is_valid(win) or api.nvim_win_get_config(win).relative ~= "" then
@@ -44,11 +45,47 @@ local function redraw()
   vim.cmd("redrawstatus")
 end
 
-local function fresh(buf, doc)
+local function clear(buf, doc)
+  doc.roots = nil
+  if api.nvim_buf_is_loaded(buf) then
+    api.nvim_buf_clear_namespace(buf, namespace, 0, -1)
+  end
+end
+
+-- Keep the previous snapshot usable while a new document-symbol request is
+-- debounced/in flight. Extmarks follow edits, including changes before a scope.
+local function track(buf, nodes)
+  for _, node in ipairs(nodes) do
+    local a, b = node.range[1], node.range[2]
+    node.mark = api.nvim_buf_set_extmark(buf, namespace, a[1] - 1, a[2], {
+      end_row = b[1] - 1,
+      end_col = b[2],
+      right_gravity = true,
+      end_right_gravity = false,
+      invalidate = true,
+      strict = false,
+    })
+    track(buf, node.children)
+  end
+end
+
+local function ranges(buf, nodes)
+  for _, node in ipairs(nodes) do
+    local mark = api.nvim_buf_get_extmark_by_id(buf, namespace, node.mark, { details = true })
+    local details = mark[3]
+    if details and not details.invalid then
+      node.range = { { mark[1] + 1, mark[2] }, { details.end_row + 1, details.end_col } }
+    else
+      node.range = { { 1, 0 }, { 1, 0 } }
+    end
+    ranges(buf, node.children)
+  end
+end
+
+local function readable(buf, doc)
   return doc
     and doc.roots
     and api.nvim_buf_is_loaded(buf)
-    and doc.tick == api.nvim_buf_get_changedtick(buf)
     and doc.uri == vim.uri_from_bufnr(buf)
     and vim.lsp.get_client_by_id(doc.client.id) == doc.client
     and vim.lsp.buf_is_attached(buf, doc.client.id)
@@ -80,7 +117,10 @@ local function refresh(buf, doc)
   end
   cancel(doc)
   local client = select_client(buf, doc)
-  doc.client, doc.roots = client, nil
+  if client ~= doc.client then
+    clear(buf, doc)
+  end
+  doc.client = client
   redraw()
   if not client then
     return
@@ -112,8 +152,14 @@ local function refresh(buf, doc)
     if not err then
       local ok, roots = pcall(model.normalize, result or {}, lines, client.offset_encoding, uri)
       if ok then
-        doc.roots, doc.tick, doc.uri = roots, tick, uri
+        clear(buf, doc)
+        track(buf, roots)
+        doc.roots, doc.uri, doc.range_tick = roots, uri, tick
+      else
+        clear(buf, doc)
       end
+    else
+      clear(buf, doc)
     end
     redraw()
   end
@@ -140,9 +186,11 @@ local function refresh(buf, doc)
   )
 end
 
-local function queue(buf, doc)
+local function queue(buf, doc, invalidate)
   cancel(doc)
-  doc.roots = nil
+  if invalidate then
+    clear(buf, doc)
+  end
   doc.generation = (doc.generation or 0) + 1
   local generation = doc.generation
   redraw()
@@ -192,6 +240,7 @@ local function scan()
   for buf, doc in pairs(documents) do
     if not visible[buf] then
       cancel(doc)
+      clear(buf, doc)
       documents[buf] = nil
     end
   end
@@ -214,8 +263,13 @@ function M.get(win)
   win = target(win)
   local buf = source(win)
   local doc = buf and documents[buf]
-  if not buf or not fresh(buf, doc) then
+  if not buf or not readable(buf, doc) then
     return {}
+  end
+  local tick = api.nvim_buf_get_changedtick(buf)
+  if doc.range_tick ~= tick then
+    ranges(buf, doc.roots)
+    doc.range_tick = tick
   end
   local sections = config.mode == "sections"
     or config.mode == "auto" and vim.bo[buf].filetype == "tex"
@@ -259,8 +313,9 @@ end
 function M.disable()
   enabled = false
   pcall(api.nvim_del_augroup_by_name, "LspToolsBreadcrumbs")
-  for _, doc in pairs(documents) do
+  for buf, doc in pairs(documents) do
     cancel(doc)
+    clear(buf, doc)
   end
   documents = {}
   for win in pairs(windows) do
@@ -301,7 +356,7 @@ function M.setup(opts)
       callback = function(event)
         local doc = documents[event.buf]
         if doc then
-          queue(event.buf, doc)
+          queue(event.buf, doc, not event.event:match("^TextChanged"))
         end
       end,
     }

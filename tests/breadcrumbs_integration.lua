@@ -72,6 +72,63 @@ local function run()
       { winid = target, use_winbar = true, highlights = true }
     )
   end
+  local function typing(target, render)
+    if not tui then
+      return
+    end
+    local changes, samples = 0, 0
+    local autocmd = api.nvim_create_autocmd("TextChangedI", {
+      buffer = buf,
+      callback = function()
+        changes = changes + 1
+      end,
+    })
+    local function stable()
+      assert(text(target) == "alpha › beta", "typing never blanks the cached path")
+      local rendered = render()
+      assert(
+        rendered:find("alpha", 1, true) and rendered:find("beta", 1, true),
+        "typing never blanks the rendered winbar"
+      )
+      vim.cmd("redraw!")
+      local line = ""
+      local position = api.nvim_win_get_position(target)
+      for col = position[2] + 1, position[2] + api.nvim_win_get_width(target) do
+        line = line .. vim.fn.screenstring(position[1] + 1, col)
+      end
+      assert(
+        line:find("alpha", 1, true) and line:find("beta", 1, true),
+        "typing keeps both scopes visible on the terminal: " .. vim.inspect({ position, line })
+      )
+      samples = samples + 1
+    end
+    api.nvim_win_set_cursor(target, { 3, 11 })
+    api.nvim_input("A")
+    wait(function()
+      return vim.fn.mode() == "i"
+    end, "enters real Insert mode")
+    local before = requests
+    for character in ("2345"):gmatch(".") do
+      local previous = changes
+      api.nvim_input(character)
+      wait(function()
+        stable()
+        return changes > previous
+      end, "typed input triggers TextChangedI")
+      local start = vim.uv.hrtime()
+      wait(function()
+        stable()
+        return (vim.uv.hrtime() - start) / 1e6 >= 100
+      end, "path stays visible through debounce and the LSP response")
+    end
+    assert(requests > before, "typing exercises real document-symbol refreshes")
+    api.nvim_input("<Esc>")
+    wait(function()
+      return vim.fn.mode() == "n"
+    end, "leaves Insert mode")
+    api.nvim_del_autocmd(autocmd)
+    io.stdout:write(("stable Insert-mode winbar: %d screen samples\n"):format(samples))
+  end
   assert(
     winbar(win).str:find("alpha", 1, true) and winbar(win).str:find("beta", 1, true),
     "native winbar renders both scopes"
@@ -86,6 +143,9 @@ local function run()
       return line:find("alpha", 1, true) and line:find("beta", 1, true)
     end, "terminal top row displays both scopes")
   end
+  typing(win, function()
+    return winbar(win).str
+  end)
   local before = requests
   api.nvim_win_set_cursor(win, { 5, 2 })
   api.nvim_exec_autocmds("CursorMoved", { buffer = buf })
@@ -144,9 +204,16 @@ local function run()
     actual(win):find("alpha", 1, true) and not actual(win):find("beta", 1, true),
     "inactive lualine window uses its own cursor"
   )
+  typing(split, function()
+    lualine.refresh({ force = true })
+    return actual(split)
+  end)
   api.nvim_buf_set_lines(buf, 1, 2, false, { "  local function updated()" })
   api.nvim_exec_autocmds("TextChanged", { buffer = buf })
-  assert(text(split) == "", "editing clears stale path immediately")
+  assert(
+    text(split) == "alpha › beta",
+    "editing preserves the path until its replacement arrives"
+  )
   wait(function()
     return text(split) == "alpha › updated"
   end, "LuaLS refreshes renamed scope")
