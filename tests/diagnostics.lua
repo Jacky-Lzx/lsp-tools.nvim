@@ -93,6 +93,18 @@ applied()
 check(s.advance ~= nil, "fix waits for server diagnostics")
 vim.diagnostic.set(ns, buf, { second })
 check(s.advance == nil and s.items[s.index].message == "second", "confirmed refresh advances")
+vim.diagnostic.set(ns, buf, { first, second })
+vim.api.nvim_set_current_win(win)
+vim.api.nvim_win_set_cursor(win, { 1, 0 })
+require("lsp-tools.panel").close(s)
+s = diagnostics.open()
+check(diagnostics.fix(s, true), "another fix starts")
+vim.diagnostic.set(ns, buf, { second })
+applied()
+check(
+  s.advance == nil and s.items[s.index].message == "second",
+  "synchronous diagnostic refresh before apply callback still advances"
+)
 vim.api.nvim_buf_set_lines(buf, 1, 2, false, { "changed" })
 check(not diagnostics.fix(s, false), "stale source refuses a new fix")
 diagnostics.disable()

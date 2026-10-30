@@ -144,6 +144,12 @@ function M.fix(s, advance)
   end
   local d = s.items[s.index]
   local current = items(s)
+  local baseline_matches, baseline_generation = 0, s.diagnostic_generation
+  for _, item in ipairs(current) do
+    if signature(item) == signature(d) then
+      baseline_matches = baseline_matches + 1
+    end
+  end
   if
     not vim.tbl_contains(vim.tbl_map(identity, current), identity(d))
     or vim.api.nvim_buf_get_changedtick(s.ctx.buf) ~= s.ctx.tick
@@ -215,16 +221,10 @@ function M.fix(s, advance)
       end
       s.status = "Fix applied"
       if advance then
-        local matches = 0
-        for _, item in ipairs(s.items) do
-          if signature(item) == signature(d) then
-            matches = matches + 1
-          end
-        end
         s.advance = {
           key = signature(d),
           row = d.lnum,
-          count = matches,
+          count = baseline_matches,
           tick = vim.api.nvim_buf_get_changedtick(s.ctx.buf),
           pos = vim.api.nvim_win_get_cursor(s.ctx.win),
         }
@@ -237,7 +237,11 @@ function M.fix(s, advance)
           end
         end, config.advance_timeout)
       end
-      render(s)
+      if advance and s.diagnostic_generation > baseline_generation then
+        refresh(s)
+      else
+        render(s)
+      end
     end)
   end)
   return true
@@ -252,6 +256,7 @@ function M.open(opts)
   local s = panel.open("diagnostics", ctx, { width = config.width, focus = opts.focus ~= false })
   sessions[s] = true
   s.filter, s.index = opts.filter or {}, 1
+  s.diagnostic_generation = 0
   s.items = items(s)
   for i, d in ipairs(s.items) do
     if d.lnum <= ctx.pos[1] - 1 then
@@ -311,6 +316,7 @@ function M.open(opts)
     group = s.group,
     buffer = ctx.buf,
     callback = function()
+      s.diagnostic_generation = s.diagnostic_generation + 1
       refresh(s)
     end,
   })
