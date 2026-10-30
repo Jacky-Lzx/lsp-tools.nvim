@@ -14,9 +14,9 @@ function M.context()
   }
 end
 
-function M.valid(ctx, cursor)
+function M.valid(ctx, cursor, background)
   return vim.api.nvim_win_is_valid(ctx.win)
-    and vim.api.nvim_get_current_win() == ctx.win
+    and (background or vim.api.nvim_get_current_win() == ctx.win)
     and vim.api.nvim_win_get_buf(ctx.win) == ctx.buf
     and vim.api.nvim_buf_get_changedtick(ctx.buf) == ctx.tick
     and vim.uri_from_bufnr(ctx.buf) == ctx.uri

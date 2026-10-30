@@ -116,9 +116,10 @@ function M.open(name, ctx, opts)
   })
   vim.api.nvim_create_autocmd("BufWipeout", {
     group = s.group,
-    buffer = ctx.buf,
-    callback = function()
-      M.close(s)
+    callback = function(ev)
+      if ev.buf == s.ctx.buf then
+        M.close(s)
+      end
     end,
   })
   if opts.focus == false and vim.api.nvim_win_is_valid(original) then

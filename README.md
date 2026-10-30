@@ -160,6 +160,25 @@ edits, window changes, Insert mode, detach, timeout and disable discard obsolete
 results and clear only this tool's decoration. Set `sign = true` for a sign-column
 indicator instead of virtual text. `hl` defaults to `DiagnosticHint`.
 
+## Optional pinned documentation
+
+Enable `hover = true`, then call `require("lsp-tools").hover()` to pin the source
+position's hover documentation in a searchable, read-only Markdown side buffer.
+Normal `K`, signature help and Noice remain available. Results from capable
+clients are labeled and sorted by client ID; Unicode positions use each client's
+encoding. No Snacks dependency is needed.
+
+Keys inside the side window: `r` refreshes from the source window's current
+position, `f` toggles debounced following, `y` copies the document (including
+signatures) to the unnamed register, `gx` opens the URL at the cursor, `b` returns
+to the captured source position, and `q` / Escape closes. Ordinary `/` searches
+the Markdown buffer. The default is pinned: moving the source cursor keeps the
+document unchanged. Use `hover({ focus = false, follow_cursor = true })` for a
+following window. Setup options: `width = 0.4`, `debounce = 200`,
+`request_timeout = 3000`, `follow_cursor = false`. Closing, hiding the requesting
+source or detaching cancels pending requests; existing pinned content remains
+readable when the source changes. Stale results cannot replace it.
+
 ## Optional diagnostic workflow
 
 Enable `diagnostics = true`, then call `require("lsp-tools").diagnostic()` to open

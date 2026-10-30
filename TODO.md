@@ -69,9 +69,9 @@ key mappings belong to the user's configuration.
 
 ## Persistent documentation
 
-- [ ] Pin hover documentation in a searchable side window.
-- [ ] Support copying signatures and opening documentation links.
-- [ ] Offer manual refresh and an optional follow-cursor mode.
+- [x] Pin hover documentation in a searchable side window.
+- [x] Support copying signatures and opening documentation links.
+- [x] Offer manual refresh and an optional follow-cursor mode.
 
 ## Semantic reference navigation
 
