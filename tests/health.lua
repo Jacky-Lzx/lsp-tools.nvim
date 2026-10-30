@@ -1,0 +1,74 @@
+vim.opt.rtp:prepend(vim.env.LSP_TOOLS_ROOT)
+local tools = require("lsp-tools")
+tools.setup({
+  code_actions = false,
+  references = false,
+  breadcrumbs = false,
+  outline = false,
+  rename = { backend = "delta", delta = { command = "/missing/lsp-tools-delta" } },
+  results = true,
+})
+vim.bo.filetype = "lua"
+local reports = {}
+for _, level in ipairs({ "start", "ok", "info", "warn", "error" }) do
+  vim.health[level] = function(message)
+    reports[#reports + 1] = { level, message }
+  end
+end
+local health = require("lsp-tools.health")
+local count = 0
+local function check(value, message)
+  assert(value, message)
+  count = count + 1
+end
+local function has(level, needle)
+  for _, report in ipairs(reports) do
+    if report[1] == level and report[2]:find(needle, 1, true) then
+      return true
+    end
+  end
+  return false
+end
+local active
+package.loaded.lualine = {
+  get_config = function()
+    return active
+  end,
+}
+active =
+  { winbar = { lualine_c = { "filename" } }, options = { disabled_filetypes = { winbar = {} } } }
+health.check()
+check(has("warn", "delta executable missing"), "missing configured delta is actionable")
+check(has("warn", "result titles may flicker"), "lualine ownership conflict detected")
+check(
+  has("ok", "Tree-sitter") or has("info", "Vim syntax fallback"),
+  "source highlight capability reported"
+)
+check(has("info", "No LSP clients"), "missing server is informational")
+check(has("ok", "results (deferred)"), "enabled deferred tools reported")
+check(
+  not package.loaded["lsp-tools.results"]
+    and not package.loaded["lsp-tools.rename"]
+    and not package.loaded["snacks.picker"],
+  "health does not load interactive implementations or providers"
+)
+active.options.disabled_filetypes.winbar = { "lsp-tools-results" }
+reports = {}
+health.check()
+check(
+  has("ok", "lualine preserves") and not has("warn", "result titles may flicker"),
+  "proper winbar exclusion accepted"
+)
+local buf, contents, maps =
+  vim.api.nvim_get_current_buf(),
+  vim.api.nvim_buf_get_lines(0, 0, -1, false),
+  vim.api.nvim_get_keymap("n")
+health.check()
+check(
+  vim.api.nvim_get_current_buf() == buf
+    and vim.deep_equal(contents, vim.api.nvim_buf_get_lines(0, 0, -1, false))
+    and vim.deep_equal(maps, vim.api.nvim_get_keymap("n")),
+  "health leaves source and global mappings unchanged"
+)
+print(("health checks: %d assertions passed"):format(count))
+vim.cmd("qa!")

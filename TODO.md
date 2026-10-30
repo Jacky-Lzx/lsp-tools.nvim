@@ -111,7 +111,7 @@ key mappings belong to the user's configuration.
 - [x] Interactive diagnostic filters and named presets.
 - [x] Split/vsplit/tab result jumps.
 - [x] Session query history with stale snapshot validation.
-- [ ] Plugin health checks for dependencies, syntax and integration conflicts.
+- [x] Plugin health checks for dependencies, syntax and integration conflicts.
 
 ## Shared guarantees
 

@@ -16,6 +16,13 @@ and does not load or depend on that plugin. See [TODO.md](TODO.md) for the roadm
 No plenary or external diff executable is required. Delta is optional.
 Reference navigation, breadcrumbs, and the outline require no Snacks: use `setup({ code_actions = false, rename = false })`.
 
+Run `:checkhealth lsp-tools` from a source buffer to check the Neovim version,
+enabled/deferred tools, Snacks availability, configured delta executables,
+preview parsers/highlight queries and Vim syntax fallbacks, attached LSP providers,
+and lualine winbar ownership. The check does not load interactive tools or modify
+source buffers. Missing server capabilities are informational; they depend on the
+current language server. Other winbar providers must preserve `lsp-tools-results`.
+
 ## Installation
 
 Local installation with lazy.nvim:
