@@ -79,8 +79,55 @@ check(
   end, 1),
   "open overview follows diagnostic updates"
 )
+v.auto_preview = true
+vim.diagnostic.set(ns, one, { { lnum = 0, col = 0, message = "warning to copy", severity = 2 } })
+check(
+  vim.wait(100, function()
+    return #v.items == 1
+  end, 1),
+  "overview receives the diagnostic for copying"
+)
+vim.api.nvim_set_current_win(v.win)
+results.select(v, v.items[1].id)
+check(
+  vim.wait(100, function()
+    return v.preview ~= nil
+  end, 1),
+  "automatic preview opens"
+)
+local previous = v.preview
+local row = vim.api.nvim_win_get_cursor(v.win)[1]
+vim.api.nvim_win_set_cursor(v.win, { row, 10 })
+vim.api.nvim_exec_autocmds("CursorMoved", { buffer = v.out })
+check(
+  vim.wait(100, function()
+    return v.preview ~= previous
+  end, 1),
+  "cursor movement replaces the automatic preview"
+)
+local tick = vim.api.nvim_buf_get_changedtick(v.out)
+vim.wait(30, function()
+  return false
+end, 1)
+check(
+  vim.api.nvim_win_get_cursor(v.win)[2] == 10 and vim.api.nvim_buf_get_changedtick(v.out) == tick,
+  "preview cleanup does not refresh diagnostics or reset the cursor column"
+)
+v.scope = "all"
+results.refresh(v)
+local before_wipe = #v.items
+vim.api.nvim_buf_delete(one, { force = true })
+check(
+  vim.wait(100, function()
+    return #v.items == before_wipe - 1
+  end, 1),
+  "wiping a diagnostic source still refreshes the overview"
+)
 results.close("diagnostics")
-check(not vim.api.nvim_win_is_valid(v.win), "closing releases overview")
+check(
+  not results.current("diagnostics") and not vim.api.nvim_buf_is_valid(v.out),
+  "closing releases overview"
+)
 vim.fn.delete(root, "rf")
 print(("diagnostic results: %d assertions passed"):format(count))
 vim.cmd("qa!")

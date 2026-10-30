@@ -243,6 +243,46 @@ local function run()
     )
     if binding[2] == "diagnostics" then
       api.nvim_set_current_win(v.win)
+      results.select(v, v.items[1].id)
+      api.nvim_input("/warning<CR>")
+      wait(function()
+        return vim.fn.getreg("/") == "warning" and vim.fn.mode() == "n"
+      end, "native search finds diagnostic text")
+      local row = api.nvim_win_get_cursor(v.win)[1]
+      local text = api.nvim_buf_get_lines(v.out, row - 1, row, false)[1]
+      local column = assert(text:find("warning", 1, true)) - 1
+      api.nvim_input("l")
+      wait(function()
+        return api.nvim_win_get_cursor(v.win)[2] == column + 1
+      end, "native l moves right in diagnostics")
+      local deadline = vim.uv.hrtime() + 300e6
+      while vim.uv.hrtime() < deadline do
+        coroutine.yield()
+      end
+      assert(
+        api.nvim_win_get_cursor(v.win)[2] == column + 1,
+        "automatic preview preserves the cursor column"
+      )
+      api.nvim_input("h")
+      wait(function()
+        return api.nvim_win_get_cursor(v.win)[2] == column
+      end, "native h moves left in diagnostics")
+      api.nvim_input("v6l")
+      wait(function()
+        return vim.fn.mode() == "v" and api.nvim_win_get_cursor(v.win)[2] == column + 6
+      end, "native Visual mode selects diagnostic text")
+      deadline = vim.uv.hrtime() + 300e6
+      while vim.uv.hrtime() < deadline do
+        coroutine.yield()
+      end
+      assert(
+        vim.fn.mode() == "v" and api.nvim_win_get_cursor(v.win)[2] == column + 6,
+        "automatic preview preserves the selection"
+      )
+      api.nvim_input('"zy')
+      wait(function()
+        return vim.fn.mode() == "n" and vim.fn.getreg("z") == "warning"
+      end, "native y copies the selected diagnostic text")
       api.nvim_input("ggzc")
       wait(function()
         return api.nvim_win_call(v.win, function()
@@ -338,7 +378,10 @@ local function run()
       return not results.current(binding[2])
     end, "configured entry toggles closed")
   end
-  assert(#api.nvim_list_wins() == 1 and not package.loaded["trouble"])
+  wait(function()
+    return #api.nvim_list_wins() == 1
+  end, "result windows and temporary yank notifications close")
+  assert(not package.loaded["trouble"])
   vim.cmd("checkhealth lsp-tools")
   wait(function()
     return vim.bo.filetype == "checkhealth"

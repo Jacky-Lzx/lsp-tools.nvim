@@ -191,9 +191,24 @@ function M.open(results, opts)
     api.nvim_create_autocmd({ "DiagnosticChanged", "BufWipeout" }, {
       group = v.group,
       callback = function(ev)
-        if ev.buf ~= v.out then
-          results.schedule(v)
+        if ev.buf == v.out then
+          return
         end
+        if ev.event == "BufWipeout" then
+          -- Preview/help buffers are replaced during navigation. Only wiping
+          -- a source represented in this overview can remove a result.
+          local source = false
+          for _, item in ipairs(v.items) do
+            if item.bufnr == ev.buf then
+              source = true
+              break
+            end
+          end
+          if not source then
+            return
+          end
+        end
+        results.schedule(v)
       end,
     })
     return function()
