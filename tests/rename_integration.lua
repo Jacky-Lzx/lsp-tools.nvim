@@ -5,6 +5,7 @@ local function run()
   local tui = vim.env.LSP_TOOLS_TUI == "1"
   local configured = vim.env.LSP_TOOLS_CONFIG == "1"
   local real = vim.env.LSP_TOOLS_REAL_LSP == "1"
+  local native_input = tui and configured
   local backend = vim.env.LSP_TOOLS_BACKEND or "vim"
   local function wait(test, message)
     if not tui then
@@ -100,17 +101,38 @@ local function run()
   end
   if tui then
     vim.api.nvim_input(" rn")
-    wait(function()
-      return vim.bo.filetype == "snacks_input" and vim.api.nvim_get_mode().mode:sub(1, 1) == "i"
-    end, "actual rename input opens")
-    assert(
-      vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]:find("foo", 1, true),
-      "original name appears in input"
-    )
-    vim.api.nvim_input("<C-u>bar")
-    wait(function()
-      return vim.api.nvim_buf_get_lines(0, 0, 1, false)[1] == "bar"
-    end, "typed name reaches the input buffer")
+    if native_input then
+      wait(function()
+        local layout = require("input-tools").get_layout()
+        return layout and layout.kind == "input" and vim.api.nvim_get_mode().mode == "c"
+      end, "input-tools rename input opens")
+      assert(vim.fn.getcmdline() == "foo", "prepareRename prefills native input")
+      assert(vim.ui.input == require("snacks.input").input, "global Snacks provider remains active")
+      local layout = require("input-tools").get_layout()
+      assert(layout.row == 3, "rename input keeps the configured top position")
+      for _, w in ipairs(vim.api.nvim_list_wins()) do
+        assert(
+          vim.bo[vim.api.nvim_win_get_buf(w)].filetype ~= "snacks_input",
+          "rename opened a competing input"
+        )
+      end
+      vim.api.nvim_input("<C-u>bar")
+      wait(function()
+        return vim.fn.getcmdline() == "bar"
+      end, "typed name reaches native input")
+    else
+      wait(function()
+        return vim.bo.filetype == "snacks_input" and vim.api.nvim_get_mode().mode:sub(1, 1) == "i"
+      end, "actual rename input opens")
+      assert(
+        vim.api.nvim_buf_get_lines(0, 0, 1, false)[1]:find("foo", 1, true),
+        "original name appears in input"
+      )
+      vim.api.nvim_input("<C-u>bar")
+      wait(function()
+        return vim.api.nvim_buf_get_lines(0, 0, 1, false)[1] == "bar"
+      end, "typed name reaches the input buffer")
+    end
     vim.api.nvim_input("<CR>")
   else
     tools.rename()

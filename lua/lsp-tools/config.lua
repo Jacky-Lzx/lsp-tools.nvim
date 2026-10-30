@@ -117,6 +117,12 @@ function M.tool(name, opts)
       assert(type(opts[key]) == "function", name .. "." .. key .. " must be a function")
     end
   end
+  if name == "rename" and opts.input ~= nil then
+    assert(
+      opts.input == false or type(opts.input) == "function",
+      "rename.input must be a function or false"
+    )
+  end
   if name == "rename" or name == "code_actions" then
     M.diff(
       vim.tbl_deep_extend(

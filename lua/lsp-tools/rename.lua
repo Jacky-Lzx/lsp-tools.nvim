@@ -7,6 +7,7 @@ local config = {
   backend = "vim",
   delta = { command = "delta", args = {}, timeout = 2000 },
   picker = {},
+  input = false, -- Use the current vim.ui.input unless a provider is supplied.
 }
 local enabled = false
 local active, group
@@ -262,9 +263,21 @@ local function input(token, default, new_name)
     rename(token, new_name)
   else
     token.stage = "input"
-    vim.ui.input({ prompt = "Rename to: ", default = default, scope = "cursor" }, function(value)
-      rename(token, value)
-    end)
+    local provider = config.input or vim.ui.input
+    local answered = false
+    local ok, err = pcall(
+      provider,
+      { prompt = "Rename to: ", default = default, scope = "cursor" },
+      function(value)
+        if not answered then
+          answered = true
+          rename(token, value)
+        end
+      end
+    )
+    if not ok then
+      fail(token, "Cannot open rename input: " .. tostring(err))
+    end
   end
 end
 
@@ -400,6 +413,10 @@ end
 function M.setup(opts)
   local next_config = vim.tbl_deep_extend("force", config, opts or {})
   render.validate(next_config)
+  assert(
+    next_config.input == false or type(next_config.input) == "function",
+    "rename.input must be a function or false"
+  )
   assert(
     type(next_config.request_timeout) == "number" and next_config.request_timeout > 0,
     "request_timeout must be positive"

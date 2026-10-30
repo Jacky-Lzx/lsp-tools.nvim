@@ -80,9 +80,45 @@ local function setup(prepare)
     breadcrumbs = false,
     code_actions = false,
     references = false,
-    rename = { request_timeout = 30 },
+    rename = { request_timeout = 30, input = false },
   })
 end
+-- A tool-local provider must not replace or call the global input owner.
+setup(false)
+local custom_options, custom_callback
+local global_provider = vim.ui.input
+tools.setup({
+  rename = {
+    input = function(opts, callback)
+      custom_options, custom_callback = opts, callback
+    end,
+  },
+})
+tools.rename()
+check(
+  custom_options.default == "foo" and not input_callback,
+  "custom provider receives original name"
+)
+check(vim.ui.input == global_provider, "custom provider leaves global input unchanged")
+custom_callback("bar")
+local sent = #calls
+custom_callback("again")
+check(#calls == sent and calls[sent].params.newName == "bar", "custom provider confirms once")
+tools.cancel_rename()
+setup(false)
+tools.setup({ rename = {
+  input = function()
+    error("provider failure")
+  end,
+} })
+sent = #calls
+tools.rename()
+check(
+  #calls == sent and notices[#notices]:find("provider failure"),
+  "provider error cancels without a rename request"
+)
+check(not pcall(tools.setup, { rename = { input = true } }), "invalid provider is rejected")
+
 setup(true)
 tools.rename()
 check(calls[#calls].method == "textDocument/prepareRename", "prepare before asking for a new name")

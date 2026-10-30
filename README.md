@@ -569,6 +569,7 @@ remain unsaved buffers, as with native LSP rename.
 require("lsp-tools").setup({
   rename = {
     request_timeout = 3000, -- per prepare/rename request, milliseconds
+    input = false, -- Default: current vim.ui.input; or function(opts, callback).
     backend = "vim", -- or "delta", using the same renderer as code actions
     delta = {
       command = "delta",
@@ -584,6 +585,13 @@ require("lsp-tools").rename(nil, { name = "lua_ls" }) -- optional client name
 require("lsp-tools").rename(nil, { filter = function(client) return client.name ~= "other" end })
 require("lsp-tools").cancel_rename()
 ```
+
+`rename.input` accepts an optional `function(opts, on_confirm)` with the
+`vim.ui.input` callback contract (`nil` cancels). For example,
+`input = require("input-tools").input` routes just rename through native input
+and the input-tools renderer. `false` restores the current global provider.
+Programmatic names skip the input provider. Input errors cancel the rename and
+are reported without applying edits.
 
 Servers must support `textDocument/rename`; `prepareRename` is used when supported.
 A null preparation result or server error stops the operation. Servers without
