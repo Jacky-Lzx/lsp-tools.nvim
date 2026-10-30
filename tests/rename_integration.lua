@@ -122,6 +122,15 @@ local function run()
       assert(vim.ui.input == require("snacks.input").input, "global Snacks provider remains active")
       local layout = require("input-tools").get_layout()
       assert(layout.row == 3, "rename input keeps the configured top position")
+      local box = vim.api.nvim_win_get_config(layout.win)
+      assert(
+        box.title[1][1] == "Rename" and box.title_pos == "center",
+        "rename title is centered in the upper border"
+      )
+      assert(
+        vim.api.nvim_buf_get_lines(layout.buf, 0, 1, false)[1] == "foo ",
+        "rename name is the only editable input text"
+      )
       for _, w in ipairs(vim.api.nvim_list_wins()) do
         assert(
           vim.bo[vim.api.nvim_win_get_buf(w)].filetype ~= "snacks_input",

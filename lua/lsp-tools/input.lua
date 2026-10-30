@@ -9,6 +9,15 @@ function M.input(opts, on_confirm)
   if ok and type(tools) == "table" and type(tools.input) == "function" then
     return tools.input(opts, on_confirm)
   end
+  -- Preserve a readable label for providers that only support vim.ui.input.
+  if opts.title ~= nil or opts.title_pos ~= nil then
+    local title = opts.title
+    opts = vim.tbl_extend("force", {}, opts)
+    opts.title, opts.title_pos = nil, nil
+    if type(title) == "string" and title ~= "" and (opts.prompt == nil or opts.prompt == "") then
+      opts.prompt = title .. ": "
+    end
+  end
   return vim.ui.input(opts, on_confirm)
 end
 

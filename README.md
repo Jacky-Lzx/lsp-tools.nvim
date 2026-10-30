@@ -589,6 +589,9 @@ require("lsp-tools").cancel_rename()
 
 Rename calls the general `require("input-tools").input(opts, on_confirm)` API
 automatically when available; no per-rename configuration callback is required.
+It passes `title="Rename"`, `title_pos="center"`, and the prepared/default name;
+the label is centered in the upper border and only the name is editable.
+Fallback providers receive the title as a conventional inline prompt.
 Input-tools is optional and is resolved only when asking for input, so lsp-tools
 setup does not load it or enable its renderer. Missing installations and older
 versions without the API fall back to the current `vim.ui.input`. The global
