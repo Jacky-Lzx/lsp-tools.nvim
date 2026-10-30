@@ -40,6 +40,18 @@ function M.history(buf)
   end, history))
 end
 
+-- Include named pull providers, including dynamically registered identifiers.
+function M.diagnostic_namespaces(client)
+  local result = { [vim.lsp.diagnostic.get_namespace(client.id, false)] = true }
+  local prefix = ("nvim.lsp.%s.%d."):format(client.name, client.id)
+  for id, namespace in pairs(vim.diagnostic.get_namespaces()) do
+    if namespace.name:sub(1, #prefix) == prefix then
+      result[id] = true
+    end
+  end
+  return result
+end
+
 function M.start(opts, callback)
   local clients = opts.clients or vim.lsp.get_clients({ bufnr = opts.buf, method = opts.method })
   local token = { active = true, requests = {}, results = {} }
@@ -70,6 +82,9 @@ function M.start(opts, callback)
       return
     end
     call.done = true
+    if result == vim.NIL then
+      result = nil
+    end
     local entry = {
       buf = opts.buf,
       client_id = call.client.id,

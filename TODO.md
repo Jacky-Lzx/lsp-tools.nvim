@@ -62,10 +62,10 @@ key mappings belong to the user's configuration.
 
 ## Diagnostic workflow
 
-- [ ] Show full messages, sources, codes, and related locations.
-- [ ] Navigate related locations without losing the original diagnostic.
-- [ ] Request code actions for the selected diagnostic.
-- [ ] Continue to the next matching diagnostic after a fix.
+- [x] Show full messages, sources, codes, and related locations.
+- [x] Navigate related locations without losing the original diagnostic.
+- [x] Request code actions for the selected diagnostic.
+- [x] Continue to the next matching diagnostic after a confirmed fix refresh.
 
 ## Persistent documentation
 

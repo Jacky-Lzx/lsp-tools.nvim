@@ -6,7 +6,7 @@ function M.setup(opts)
   opts = opts or {}
   assert(type(opts) == "table", "lsp-tools options must be a table")
   -- New tools are opt-in, preserving existing installations' automatic behavior.
-  for _, name in ipairs({ "lightbulb", "linked_editing" }) do
+  for _, name in ipairs({ "lightbulb", "linked_editing", "diagnostics" }) do
     local value = opts[name]
     assert(
       value == nil or type(value) == "boolean" or type(value) == "table",
@@ -138,6 +138,11 @@ end
 ---@param opts? table
 function M.code_action(opts)
   return vim.lsp.buf.code_action(opts)
+end
+
+---Open persistent diagnostic details and contextual fixes for this buffer.
+function M.diagnostic(opts)
+  return require("lsp-tools.diagnostics").open(opts)
 end
 
 return M

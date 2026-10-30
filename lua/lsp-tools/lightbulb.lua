@@ -36,8 +36,7 @@ local function query()
       params.range = { start = params.position, ["end"] = params.position }
       params.position = nil
       local diagnostics = {}
-      for _, pull in ipairs({ false, true }) do
-        local namespace = vim.lsp.diagnostic.get_namespace(client.id, pull)
+      for namespace in pairs(request.diagnostic_namespaces(client)) do
         for _, diagnostic in
           ipairs(vim.diagnostic.get(ctx.buf, { namespace = namespace, lnum = ctx.pos[1] - 1 }))
         do

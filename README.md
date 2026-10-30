@@ -160,6 +160,29 @@ edits, window changes, Insert mode, detach, timeout and disable discard obsolete
 results and clear only this tool's decoration. Set `sign = true` for a sign-column
 indicator instead of virtual text. `hl` defaults to `DiagnosticHint`.
 
+## Optional diagnostic workflow
+
+Enable `diagnostics = true`, then call `require("lsp-tools").diagnostic()` to open
+persistent details for the current buffer. `diagnostic({ filter = { severity =
+vim.diagnostic.severity.ERROR }, focus = false })` limits the native diagnostic
+query and optionally leaves focus in the source. Existing diagnostic signs,
+virtual text, native floats, Trouble and Snacks lists remain independently usable.
+
+The side window shows complete messages, sources, codes, documentation URLs and
+related locations. Its buffer-local keys are `]d` / `[d` (counts supported), `a`
+(preview a fix), `A` (preview a fix then continue), Enter (open a related location),
+`b` (return to the diagnostic), `r` (refresh) and `q` / Escape (close).
+
+Fixes request the selected diagnostic's range and client-specific diagnostic
+context, then reuse the code-action resolve/diff/confirmation UI. Enable
+`code_actions` for this workflow. Edits stay in unsaved buffers. `A` advances only
+after a diagnostic update confirms fewer matching messages; moved diagnostics
+alone do not count as fixed. It preserves the query filter and does not move the
+cursor if the source window, cursor or text changed while waiting. A bounded wait
+(`advance_timeout`, default 5000 ms) leaves manual navigation available when the
+server has not confirmed a fix. `request_timeout` defaults to 3000 ms; `width`
+defaults to 0.35. Closing or disabling cancels outstanding requests.
+
 ## Optional linked editing
 
 Enable `linked_editing = true` to synchronize server-provided linked ranges (for

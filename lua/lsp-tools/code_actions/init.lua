@@ -14,7 +14,7 @@ local function notify(message)
   vim.notify(message, vim.log.levels.ERROR, { title = "Code Actions" })
 end
 
-local function select(actions, opts, on_choice)
+local function select(actions, opts, on_choice, on_applied)
   local closed, generation, confirming = false, 0, false
   local picker
   local stop_render = function() end
@@ -198,6 +198,8 @@ local function select(actions, opts, on_choice)
         end)
         if not ok then
           notify(tostring(problem))
+        elseif on_applied then
+          on_applied(action, entry.ctx)
         end
       end)
     end)
@@ -215,6 +217,23 @@ local function select(actions, opts, on_choice)
     end
   end
   return picker
+end
+
+-- Reuse the preview/apply path for contextual workflows that already requested actions.
+function M.pick(entries, on_applied, on_cancel)
+  if not enabled then
+    notify("Enable code_actions to preview diagnostic fixes")
+    return false
+  end
+  return select(entries, {
+    format_item = function(entry)
+      return entry.action.title
+    end,
+  }, function()
+    if on_cancel then
+      on_cancel()
+    end
+  end, on_applied)
 end
 
 function M.setup(opts)
