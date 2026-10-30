@@ -10,10 +10,16 @@ function M.input(opts, on_confirm)
     return tools.input(opts, on_confirm)
   end
   -- Preserve a readable label for providers that only support vim.ui.input.
-  if opts.title ~= nil or opts.title_pos ~= nil or opts.position ~= nil or opts.width ~= nil then
+  if
+    opts.title ~= nil
+    or opts.title_pos ~= nil
+    or opts.position ~= nil
+    or opts.width ~= nil
+    or opts.vim_mode ~= nil
+  then
     local title = opts.title
     opts = vim.tbl_extend("force", {}, opts)
-    opts.title, opts.title_pos, opts.position, opts.width = nil, nil, nil, nil
+    opts.title, opts.title_pos, opts.position, opts.width, opts.vim_mode = nil, nil, nil, nil, nil
     if type(title) == "string" and title ~= "" and (opts.prompt == nil or opts.prompt == "") then
       opts.prompt = title .. ": "
     end

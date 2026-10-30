@@ -119,9 +119,12 @@ local function run()
     if native_input then
       wait(function()
         local layout = require("input-tools").get_layout()
-        return layout and layout.kind == "input" and vim.api.nvim_get_mode().mode == "c"
+        return layout
+          and layout.kind == "input"
+          and layout.vim_mode
+          and vim.api.nvim_get_mode().mode:sub(1, 1) == "i"
       end, "input-tools rename input opens")
-      assert(vim.fn.getcmdline() == "foo", "prepareRename prefills native input")
+      assert(vim.api.nvim_get_current_line() == "foo", "prepareRename prefills Vim-mode input")
       assert(vim.ui.input == require("snacks.input").input, "global Snacks provider remains active")
       local layout = require("input-tools").get_layout()
       assert(
@@ -140,7 +143,7 @@ local function run()
         "rename title is centered in the upper border"
       )
       assert(
-        vim.api.nvim_buf_get_lines(layout.buf, 0, 1, false)[1] == "foo ",
+        vim.api.nvim_buf_get_lines(layout.buf, 0, 1, false)[1] == "foo",
         "rename name is the only editable input text"
       )
       for _, w in ipairs(vim.api.nvim_list_wins()) do
@@ -149,10 +152,26 @@ local function run()
           "rename opened a competing input"
         )
       end
-      vim.api.nvim_input("<C-u>bar")
+      vim.api.nvim_input("<Esc>")
       wait(function()
-        return vim.fn.getcmdline() == "bar"
-      end, "typed name reaches native input")
+        return vim.api.nvim_get_mode().mode == "n"
+      end, "Escape enters Normal mode")
+      vim.api.nvim_input("ciwbar<Esc>")
+      wait(function()
+        return vim.api.nvim_get_mode().mode == "n" and vim.api.nvim_get_current_line() == "bar"
+      end, "native Vim change-word edits the name")
+      vim.api.nvim_input("u")
+      wait(function()
+        return vim.api.nvim_get_current_line() == "foo"
+      end, "Vim undo restores the old name")
+      vim.api.nvim_input("<C-r>")
+      wait(function()
+        return vim.api.nvim_get_current_line() == "bar"
+      end, "Vim redo restores the new name")
+      vim.api.nvim_input("A")
+      wait(function()
+        return vim.api.nvim_get_mode().mode:sub(1, 1) == "i"
+      end, "rename returns to Insert before confirming")
     else
       wait(function()
         return vim.bo.filetype == "snacks_input" and vim.api.nvim_get_mode().mode:sub(1, 1) == "i"

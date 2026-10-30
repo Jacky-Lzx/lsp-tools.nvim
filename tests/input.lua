@@ -40,8 +40,14 @@ check(global_calls == 1, "API error does not invoke global input")
 package.loaded["input-tools"] = {}
 input.input(opts, callback)
 check(global_calls == 2, "old plugin without the general API uses fallback")
-local title_options =
-  { title = "Rename", title_pos = "center", position = "cursor", width = 32, default = "foo" }
+local title_options = {
+  title = "Rename",
+  title_pos = "center",
+  position = "cursor",
+  width = 32,
+  vim_mode = true,
+  default = "foo",
+}
 vim.ui.input = function(options, confirm)
   check(
     options.prompt == "Rename: " and options.default == "foo",
@@ -52,6 +58,7 @@ vim.ui.input = function(options, confirm)
       and options.title_pos == nil
       and options.position == nil
       and options.width == nil
+      and options.vim_mode == nil
       and confirm == callback,
     "fallback strips presentation-only fields"
   )

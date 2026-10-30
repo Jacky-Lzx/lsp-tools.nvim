@@ -29,6 +29,11 @@ local function close(token, from_picker)
     return
   end
   token.closed = true
+  if token.input_handle then
+    local handle = token.input_handle
+    token.input_handle = nil
+    pcall(handle.cancel, handle)
+  end
   if active == token then
     active = nil
     if group then
@@ -265,21 +270,30 @@ local function input(token, default, new_name)
     token.stage = "input"
     local provider = config.input or require("lsp-tools.input").input
     local answered = false
-    local ok, err = pcall(provider, {
+    local ok, result = pcall(provider, {
       title = "Rename",
       title_pos = "center",
       position = "cursor",
       width = 32,
+      vim_mode = true,
       default = default,
       scope = "cursor",
     }, function(value)
       if not answered then
         answered = true
+        token.input_handle = nil
         rename(token, value)
       end
     end)
     if not ok then
-      fail(token, "Cannot open rename input: " .. tostring(err))
+      fail(token, "Cannot open rename input: " .. tostring(result))
+    elseif
+      not answered
+      and not token.closed
+      and type(result) == "table"
+      and type(result.cancel) == "function"
+    then
+      token.input_handle = result
     end
   end
 end

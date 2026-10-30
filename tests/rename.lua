@@ -95,6 +95,7 @@ package.loaded["input-tools"] = {
         and opts.title_pos == "center"
         and opts.position == "cursor"
         and opts.width == 32
+        and opts.vim_mode == true
         and opts.prompt == nil,
       "rename requests a centered title without an inline label"
     )
@@ -114,6 +115,29 @@ tools.rename()
 local general_calls = #calls
 general_callback(nil)
 check(#calls == general_calls, "general API cancellation sends no rename request")
+package.loaded["input-tools"] = original_input_tools
+
+-- Cancelling a request closes an asynchronous input through its API handle.
+setup(false)
+local handle_cancels, late_confirm = 0
+package.loaded["input-tools"] = {
+  input = function(_, callback)
+    late_confirm = callback
+    return {
+      cancel = function()
+        handle_cancels = handle_cancels + 1
+      end,
+    }
+  end,
+}
+tools.rename()
+local before_cancel = #calls
+tools.cancel_rename()
+late_confirm("late")
+check(
+  handle_cancels == 1 and #calls == before_cancel,
+  "cancel_rename closes modal input and rejects a late answer"
+)
 package.loaded["input-tools"] = original_input_tools
 
 -- A tool-local provider must not replace or call the global input owner.

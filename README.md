@@ -589,20 +589,28 @@ require("lsp-tools").cancel_rename()
 
 Rename calls the general `require("input-tools").input(opts, on_confirm)` API
 automatically when available; no per-rename configuration callback is required.
-It passes `position="cursor"`, `width=32`, `title="Rename"`, `title_pos="center"`,
+It passes `vim_mode=true`, `position="cursor"`, `width=32`, `title="Rename"`,
+`title_pos="center"`,
 and the prepared/default name;
 the input opens beside the source cursor, the label is centered in the upper
 border, and only the name is editable.
+Rename starts in Insert mode; Escape enters Normal for native motions, `ciw`
+and undo/redo. Enter accepts the name, then the existing workspace-edit preview
+opens. Ctrl-C or Normal-mode Escape cancels the input. Pending inputs are also
+closed when `cancel_rename()` or a stale source invalidates the rename.
 Fallback providers receive the title as a conventional inline prompt.
 Input-tools is optional and is resolved only when asking for input, so lsp-tools
 setup does not load it or enable its renderer. Missing installations and older
 versions without the API fall back to the current `vim.ui.input`. The global
-provider is never replaced. An installed but disabled input-tools instance uses
-its documented native-display fallback.
+provider is never replaced. Vim-mode inputs can open independently of the global
+command-line renderer; native inputs use their documented native-display fallback
+when that renderer is disabled.
 
 `rename.input` still accepts an explicit `function(opts, on_confirm)` override
 with the `vim.ui.input` callback contract (`nil` cancels); `false` restores
-automatic selection. Programmatic names skip the input provider. Input errors
+automatic selection. Providers may return an optional `{ cancel = function() ... end }`
+handle; lsp-tools uses it to close pending input when the rename is cancelled.
+Programmatic names skip the input provider. Input errors
 cancel the rename and are reported without applying edits.
 
 Servers must support `textDocument/rename`; `prepareRename` is used when supported.
