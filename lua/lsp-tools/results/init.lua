@@ -509,6 +509,9 @@ function M.open(items, opts)
   end, "Toggle grouping")
   map("F", function()
     v.pinned = not v.pinned
+    if not v.pinned then
+      refresh(v)
+    end
     render(v)
   end, "Pin results")
   map("r", function()

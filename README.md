@@ -346,6 +346,23 @@ window and text changes prevent automatic navigation. `F` pins the snapshot; `r`
 refreshes it manually. `namespace` restricts a producer; native source/code/severity
 metadata is preserved. Closed overviews have no diagnostic listeners or timers.
 
+## Quickfix and Location List
+
+With `results = true`, `quickfix(opts)` and `loclist(opts)` open native lists
+through the common result UI. They preserve native order (default `sort = "none"`,
+no grouping), list ID, title, context, original row indices and invalid log rows.
+Initial selection follows the native current index; explicit jumps use native
+`:cc` / `:ll`, preserving visual-column and pattern semantics. Opening a view does
+not replace the canonical list or change its contents.
+
+Location lists bind to the original source window, or explicit `winid`, rather
+than the panel's current window. Closing that window stops polling and leaves a
+labeled snapshot whose jumps are disabled. Open lists observe native events and
+poll `changedtick`/list ID/current index for API-only updates (`poll_interval`,
+default 150 ms). Polling stops on close. `F` pins; `r` refreshes; unpinning refreshes
+immediately. Stale snapshots refuse native jumps until refreshed. `Q` explicitly
+exports the filtered view as a new quickfix list. `toggle = true` toggles the view.
+
 ## Reference navigation
 
 `require("lsp-tools").jump_reference(count, opts)` moves forward for a positive

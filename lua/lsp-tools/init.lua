@@ -269,4 +269,11 @@ function M.close_results(id)
   end
 end
 
+function M.quickfix(opts)
+  return call("results", "source", "qflist", opts)
+end
+function M.loclist(opts)
+  return call("results", "source", "loclist", opts)
+end
+
 return M
