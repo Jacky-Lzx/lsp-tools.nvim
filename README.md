@@ -388,6 +388,14 @@ excerpt is parsed; paths and diagnostic messages have separate colors. The targe
 line and UTF-8 range are highlighted. Source buffers stay unchanged and unopened
 files are read without loading their buffers or starting language/filetype hooks.
 Preview buffers retain the widget filetype so statusline integrations keep working.
+Use the `focus_preview` action (default `<LocalLeader>w`) to enter the preview and
+use native scrolling/search/yank commands. Escape returns to the original list.
+Source line numbers exclude the metadata header. In the preview,
+`<LocalLeader>+` expands context and `<LocalLeader>s` toggles float/side layout;
+these are configurable actions `more_context` and `preview_layout`.
+Configure `results.preview = { before = 3, after = 6, layout = "float", width = 0.6,
+height = 0.5 }`. Layout also accepts `"right"` or `"bottom"`. Width/height are
+fractions of the editor. Previews stay read-only and leave source buffers intact.
 
 ## Diagnostic overview
 

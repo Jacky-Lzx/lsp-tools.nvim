@@ -20,6 +20,28 @@ end
 -- Validate supplied options without importing the implementation or its defaults.
 function M.tool(name, opts)
   require("lsp-tools.keymaps").validate(opts)
+  if name == "results" and opts.preview then
+    assert(type(opts.preview) == "table", "results.preview must be a table")
+    for _, key in ipairs({ "before", "after" }) do
+      local value = opts.preview[key]
+      assert(
+        value == nil or type(value) == "number" and value >= 0 and value % 1 == 0,
+        "preview context must be a nonnegative integer"
+      )
+    end
+    assert(
+      opts.preview.layout == nil
+        or vim.tbl_contains({ "float", "right", "bottom" }, opts.preview.layout),
+      "invalid preview layout"
+    )
+    for _, key in ipairs({ "width", "height" }) do
+      assert(
+        opts.preview[key] == nil
+          or type(opts.preview[key]) == "number" and opts.preview[key] > 0 and opts.preview[key] <= 1,
+        "preview size must be a fraction between 0 and 1"
+      )
+    end
+  end
   for _, key in ipairs({
     "request_timeout",
     "resolve_timeout",

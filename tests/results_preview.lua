@@ -154,6 +154,43 @@ check(
   not p.target_row and not p.highlight_backend,
   "stale positions beyond the loaded buffer show a safe fallback"
 )
+local many = {}
+for i = 1, 100 do
+  many[i] = "local value" .. i .. " = " .. i
+end
+api.nvim_buf_set_lines(buf, 0, -1, false, many)
+results.set_items(v, { { id = "target", bufnr = buf, pos = { 40, 6 }, text = "context" } })
+v.preview_options = { before = 0, after = 0 }
+p = preview()
+check(
+  p.source_first == 40 and api.nvim_buf_line_count(p.buf) == p.code_start,
+  "preview context options bound the excerpt"
+)
+local number = api.nvim_eval_statusline(
+  vim.wo[p.win].statuscolumn,
+  { winid = p.win, use_statuscol_lnum = p.code_start }
+).str
+check(number:find("40", 1, true), "preview numbers use source-file lines")
+api.nvim_set_current_win(v.win)
+vim.fn.maparg("<LocalLeader>w", "n", false, true).callback()
+check(api.nvim_get_current_win() == p.win, "focus action enters the preview")
+vim.fn.maparg("<LocalLeader>+", "n", false, true).callback()
+p = v.preview
+check(
+  p.source_first == 20 and api.nvim_get_current_win() == p.win,
+  "context expansion retains preview focus"
+)
+vim.fn.maparg("<LocalLeader>s", "n", false, true).callback()
+p = v.preview
+check(
+  api.nvim_win_get_config(p.win).relative == "" and api.nvim_get_current_win() == p.win,
+  "side layout can be selected interactively"
+)
+vim.fn.maparg("<Esc>", "n", false, true).callback()
+check(
+  not v.preview and api.nvim_get_current_win() == v.win,
+  "leaving preview restores the list and releases the preview"
+)
 local file = root .. "/disk.py"
 vim.fn.writefile({ 'value = "disk"', "print(value)" }, file)
 results.set_items(v, { { id = "target", filename = file, pos = { 2, 0 }, text = "disk result" } })

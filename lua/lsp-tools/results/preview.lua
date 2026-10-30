@@ -3,14 +3,14 @@ local api = vim.api
 local model = require("lsp-tools.results.model")
 local ns = api.nvim_create_namespace("lsp-tools.results.preview")
 local syntax_ns = api.nvim_create_namespace("lsp-tools.results.preview.syntax")
-local function source(item)
-  local first = math.max(1, item.pos[1] - 3)
+local function source(item, opts)
+  local first = math.max(1, item.pos[1] - (opts.before or 3))
   local buf = item.bufnr or (item.uri and vim.uri_to_bufnr(item.uri))
   if buf and api.nvim_buf_is_loaded(buf) then
     return api.nvim_buf_get_lines(
       buf,
       first - 1,
-      math.min(api.nvim_buf_line_count(buf), item.pos[1] + 6),
+      math.min(api.nvim_buf_line_count(buf), item.pos[1] + (opts.after or 6)),
       false
     ),
       first,
@@ -19,9 +19,9 @@ local function source(item)
   if item.filename then
     local stat = vim.uv.fs_stat(item.filename)
     if stat and stat.size <= 1024 * 1024 then
-      local ok, lines = pcall(vim.fn.readfile, item.filename, "", item.pos[1] + 6)
+      local ok, lines = pcall(vim.fn.readfile, item.filename, "", item.pos[1] + (opts.after or 6))
       if ok then
-        return vim.list_slice(lines, first, item.pos[1] + 6), first
+        return vim.list_slice(lines, first, item.pos[1] + (opts.after or 6)), first
       end
     end
   end
@@ -113,7 +113,16 @@ local function target(buf, item, lines, first, offset)
   end
   return offset + row + 1, col
 end
-function M.open(item)
+function M.line_number()
+  local info = vim.b.lsp_tools_preview
+  local row = vim.v.lnum
+  if info and vim.v.virtnum == 0 and row >= info.start and row <= info.finish then
+    return tostring(info.first + row - info.start)
+  end
+  return ""
+end
+function M.open(item, opts, owner)
+  opts = opts or {}
   local path = model.clean(item.filename or item.uri or "[no source]")
   local lines =
     { path .. ":" .. item.pos[1] .. ":" .. (item.column_unknown and "?" or item.pos[2] + 1), "" }
@@ -122,7 +131,7 @@ function M.open(item)
     vim.list_extend(lines, vim.split(item.text, "\n", { plain = true }))
     lines[#lines + 1] = ""
   end
-  local code, first, ft = source(item)
+  local code, first, ft = source(item, opts)
   local offset, message_last = #lines, #lines - 1
   vim.list_extend(
     lines,
@@ -176,9 +185,9 @@ function M.open(item)
     )
   end
   local width, height =
-    math.max(1, math.floor(vim.o.columns * 0.6)),
-    math.max(1, math.min(#lines, math.floor((vim.o.lines - 4) * 0.5)))
-  local win = api.nvim_open_win(buf, false, {
+    math.max(1, math.floor(vim.o.columns * (opts.width or 0.6))),
+    math.max(1, math.min(#lines, math.floor((vim.o.lines - 4) * (opts.height or 0.5))))
+  local window = {
     relative = "editor",
     row = math.max(0, math.floor((vim.o.lines - height) / 2) - 1),
     col = math.max(0, math.floor((vim.o.columns - width) / 2)),
@@ -187,10 +196,40 @@ function M.open(item)
     border = "rounded",
     title = " Preview ",
     style = "minimal",
-    focusable = false,
-  })
+    focusable = true,
+  }
+  if opts.layout == "right" or opts.layout == "bottom" then
+    window = { split = opts.layout == "right" and "right" or "below", win = -1 }
+    window[opts.layout == "right" and "width" or "height"] = opts.layout == "right" and width
+      or height
+  end
+  local win = api.nvim_open_win(buf, false, window)
   vim.wo[win].wrap, vim.wo[win].foldenable = true, false
   vim.wo[win].scrolloff, vim.wo[win].sidescrolloff = 0, 0
+  vim.b[buf].lsp_tools_preview =
+    { start = offset + 1, finish = offset + (code and #code or 0), first = first or 1 }
+  vim.wo[win].number, vim.wo[win].relativenumber = true, false
+  vim.wo[win].statuscolumn = "%#LineNr#%4{v:lua.require'lsp-tools.results.preview'.line_number()} "
+  if owner then
+    local bindings = require("lsp-tools.keymaps").new(buf, owner.options)
+    bindings:map("return_list", { "<Esc>", "<prefix>b" }, owner.return_list, "Return to results")
+    bindings:map("more_context", "<prefix>+", function()
+      owner.reopen({ before = (opts.before or 3) + 20, after = (opts.after or 6) + 20 })
+    end, "Expand source context")
+    bindings:map("preview_layout", "<prefix>s", function()
+      owner.reopen({ layout = opts.layout == "right" and "float" or "right" })
+    end, "Toggle side preview")
+    bindings:map("help", "<prefix>?", function()
+      bindings:show_help(win)
+    end, "Show key bindings")
+    api.nvim_create_autocmd("BufWipeout", {
+      buffer = buf,
+      once = true,
+      callback = function()
+        bindings:close_help()
+      end,
+    })
+  end
   if target_row then
     api.nvim_win_set_cursor(win, { target_row, target_col })
   end

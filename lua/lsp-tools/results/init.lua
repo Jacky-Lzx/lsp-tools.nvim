@@ -221,7 +221,7 @@ function M.jump(v, keep_focus)
   end
   return ok and handled
 end
-preview = function(v)
+preview = function(v, changes)
   if not panel.alive(v) then
     return
   end
@@ -230,8 +230,30 @@ preview = function(v)
     close_preview(v)
     return
   end
+  local focused = v.preview and api.nvim_get_current_win() == v.preview.win
+  v.preview_options = vim.tbl_deep_extend(
+    "force",
+    {},
+    v.options.preview or {},
+    v.preview_options or {},
+    changes or {}
+  )
   close_preview(v)
-  v.preview = require("lsp-tools.results.preview").open(item)
+  v.preview = require("lsp-tools.results.preview").open(item, v.preview_options, {
+    options = v.options,
+    return_list = function()
+      if panel.alive(v) then
+        api.nvim_set_current_win(v.win)
+      end
+      close_preview(v)
+    end,
+    reopen = function(opts)
+      preview(v, opts)
+    end,
+  })
+  if focused then
+    api.nvim_set_current_win(v.preview.win)
+  end
 end
 local function schedule_preview(v)
   stop(v.preview_timer)
@@ -546,6 +568,14 @@ function M.open(items, opts)
   map("<LocalLeader>p", function()
     preview(v)
   end, "Preview source")
+  v.bindings:map("focus_preview", "<prefix>w", function()
+    if not v.preview or not api.nvim_win_is_valid(v.preview.win) then
+      preview(v)
+    end
+    if v.preview then
+      api.nvim_set_current_win(v.preview.win)
+    end
+  end, "Focus source preview")
   map("<LocalLeader>P", function()
     v.auto_preview = not v.auto_preview
     if not v.auto_preview then

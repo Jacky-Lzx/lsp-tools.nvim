@@ -109,7 +109,7 @@ key mappings belong to the user's configuration.
 - [x] Persistent diagnostics/LSP/quickfix/loclist views and picker snapshots.
 - [x] Native folds, source syntax previews, and native Vim navigation.
 - [x] Shared configurable action mappings and effective per-panel key help.
-- [ ] Focusable previews, source line numbers, configurable context and side layout.
+- [x] Focusable previews, source line numbers, configurable context and side layout.
 - [ ] Interactive diagnostic filters and named presets.
 - [ ] Split/vsplit/tab result jumps.
 - [ ] Session query history with stale snapshot validation.

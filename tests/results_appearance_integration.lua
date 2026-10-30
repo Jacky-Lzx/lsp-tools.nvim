@@ -162,6 +162,24 @@ local function run()
     "path and diagnostic message have distinct preview colors"
   )
   api.nvim_win_set_cursor(v.win, { first + 1, 0 })
+  local gutter = vim.fn.screenpos(p.win, p.code_start, 1)
+  local numbers = ""
+  for col = gutter.col - 5, gutter.col - 1 do
+    numbers = numbers .. vim.fn.screenstring(gutter.row, col)
+  end
+  assert(numbers:find("1", 1, true), "source line numbers appear in the actual terminal")
+  api.nvim_input(vim.keycode("<LocalLeader>w"))
+  wait(function()
+    return api.nvim_get_current_win() == p.win
+  end, "focus key enters preview")
+  api.nvim_input("/hello<CR>")
+  wait(function()
+    return vim.fn.getreg("/") == "hello" and vim.fn.mode() == "n"
+  end, "native search works in preview")
+  api.nvim_input("<Esc>")
+  wait(function()
+    return not v.preview and api.nvim_get_current_win() == v.win
+  end, "Escape returns to the list")
   api.nvim_input("]q")
   wait(function()
     return results.selected(v).text == "Unused local `options`."
