@@ -113,6 +113,13 @@ adapter still owns it, and preserves providers installed by other plugins.
 Repeated setup is supported; supplied code action options merge with previous
 options. Requiring the plugin alone registers no behavior and loads no Snacks UI.
 
+Interactive tools (rename, outline, diagnostic details, pinned documentation,
+links, inspection and hierarchies) retain their settings at setup and initialize
+on first use. Their public entries and outline commands respect explicit disable.
+The native code-action selection adapter and inspection recorder stay lightweight;
+picker/preview code loads only when needed, and inspection retains request events
+recorded before its first opening. Deferred options are validated during setup.
+
 `require("lsp-tools").code_action(opts)` forwards native code action options such
 as `context`, `filter`, `range`, and `apply` to `vim.lsp.buf.code_action()`.
 

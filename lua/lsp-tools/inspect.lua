@@ -1,9 +1,10 @@
 local M = {}
 local panel = require("lsp-tools.panel")
 local request = require("lsp-tools.request")
-local enabled, group = false, nil
+local enabled = false
 local config = { width = 0.5 }
-local lifecycle, sessions = {}, {}
+local sessions = {}
+local recorder = require("lsp-tools.inspect.recorder")
 local methods = {
   { "Hover", "textDocument/hover" },
   { "Signature", "textDocument/signatureHelp" },
@@ -68,11 +69,7 @@ function M.snapshot(buf)
     end)
     result.clients[#result.clients + 1] = info
   end
-  for _, event in ipairs(lifecycle) do
-    if event.buf == buf then
-      result.lifecycle[#result.lifecycle + 1] = vim.deepcopy(event)
-    end
-  end
+  result.lifecycle = recorder.history(buf)
   return result
 end
 
@@ -209,10 +206,7 @@ end
 
 function M.disable()
   enabled = false
-  if group then
-    vim.api.nvim_del_augroup_by_id(group)
-    group = nil
-  end
+  recorder.disable()
   for s in pairs(vim.tbl_extend("force", {}, sessions)) do
     panel.close(s)
   end
@@ -222,26 +216,7 @@ function M.setup(opts)
   M.disable()
   config = vim.tbl_extend("force", config, opts or {})
   enabled = true
-  group = vim.api.nvim_create_augroup("LspToolsInspect", { clear = true })
-  vim.api.nvim_create_autocmd("LspRequest", {
-    group = group,
-    callback = function(ev)
-      local data = ev.data
-      if not data or not data.request then
-        return
-      end
-      lifecycle[#lifecycle + 1] = {
-        buf = data.request.bufnr,
-        client_id = data.client_id,
-        id = data.request_id,
-        method = data.request.method,
-        status = data.request.type,
-      }
-      if #lifecycle > 80 then
-        table.remove(lifecycle, 1)
-      end
-    end,
-  })
+  recorder.setup()
 end
 
 return M

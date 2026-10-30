@@ -1,98 +1,111 @@
 local M = {}
+local names = {
+  "code_actions",
+  "references",
+  "rename",
+  "outline",
+  "breadcrumbs",
+  "lightbulb",
+  "linked_editing",
+  "diagnostics",
+  "hover",
+  "links",
+  "inspect",
+  "hierarchy",
+}
+local defaults =
+  { code_actions = true, references = true, rename = true, outline = true, breadcrumbs = true }
+local automatic = {
+  code_actions = true,
+  references = true,
+  breadcrumbs = true,
+  lightbulb = true,
+  linked_editing = true,
+}
+local options, enabled, ready = {}, {}, {}
 
----Configure independently enabled LSP tools. No key mappings are installed.
----@param opts? {code_actions?: boolean|table, references?: boolean|table, rename?: boolean|table, outline?: boolean|table, breadcrumbs?: boolean|table, lightbulb?: boolean|table, linked_editing?: boolean|table, diagnostics?: boolean|table, hover?: boolean|table, links?: boolean|table, inspect?: boolean|table, hierarchy?: boolean|table}
+local function load(name)
+  if not enabled[name] then
+    return nil
+  end
+  local module = require("lsp-tools." .. name)
+  if ready[name] ~= module then
+    module.setup(options[name])
+    ready[name] = module
+  end
+  return module
+end
+
+local function call(name, method, ...)
+  local module = load(name)
+  if module then
+    return module[method](...)
+  end
+  return false
+end
+
+---Configure tools without loading interactive implementations. No mappings are installed.
+---@param opts? table
 function M.setup(opts)
   opts = opts or {}
   assert(type(opts) == "table", "lsp-tools options must be a table")
-  -- New tools are opt-in, preserving existing installations' automatic behavior.
-  for _, name in ipairs({
-    "lightbulb",
-    "linked_editing",
-    "diagnostics",
-    "hover",
-    "links",
-    "inspect",
-    "hierarchy",
-  }) do
+  local validation = require("lsp-tools.config")
+  local pending = {}
+  -- Validate the complete update before changing existing tool state.
+  for _, name in ipairs(names) do
     local value = opts[name]
     assert(
       value == nil or type(value) == "boolean" or type(value) == "table",
       name .. " must be a boolean or table"
     )
-    if value == false or type(value) == "table" and value.enabled == false then
-      local loaded = package.loaded["lsp-tools." .. name]
-      if loaded then
-        loaded.disable()
+    if value ~= nil or defaults[name] then
+      local on = value ~= false and not (type(value) == "table" and value.enabled == false)
+      local config = options[name] or {}
+      if on then
+        if name == "outline" or name == "breadcrumbs" then
+          config = {}
+        end
+        config = vim.tbl_deep_extend("force", {}, config, type(value) == "table" and value or {})
+        validation.tool(name, config)
       end
-    elseif value ~= nil then
-      require("lsp-tools." .. name).setup(type(value) == "table" and value or {})
+      pending[name] = { enabled = on, options = config }
     end
   end
-  local actions = opts.code_actions
-  assert(
-    actions == nil or type(actions) == "boolean" or type(actions) == "table",
-    "code_actions must be a boolean or table"
-  )
-  local references = opts.references
-  assert(
-    references == nil or type(references) == "boolean" or type(references) == "table",
-    "references must be a boolean or table"
-  )
-  local rename = opts.rename
-  local outline = opts.outline
-  local breadcrumbs = opts.breadcrumbs
-  assert(
-    breadcrumbs == nil or type(breadcrumbs) == "boolean" or type(breadcrumbs) == "table",
-    "breadcrumbs must be a boolean or table"
-  )
-  assert(
-    outline == nil or type(outline) == "boolean" or type(outline) == "table",
-    "outline must be a boolean or table"
-  )
-  assert(
-    rename == nil or type(rename) == "boolean" or type(rename) == "table",
-    "rename must be a boolean or table"
-  )
-  if actions == false or type(actions) == "table" and actions.enabled == false then
-    local loaded = package.loaded["lsp-tools.code_actions"]
-    if loaded then
-      loaded.disable()
+  for _, name in ipairs(names) do
+    local update = pending[name]
+    if update then
+      enabled[name], options[name], ready[name] = update.enabled, update.options, nil
+      local module = package.loaded["lsp-tools." .. name]
+      if not update.enabled then
+        if module then
+          module.disable()
+        end
+      elseif module then
+        module.setup(update.options)
+        ready[name] = module
+      elseif automatic[name] then
+        load(name)
+      end
+      if name == "inspect" then
+        local recorder = package.loaded["lsp-tools.inspect.recorder"]
+        if update.enabled then
+          require("lsp-tools.inspect.recorder").setup()
+        elseif recorder then
+          recorder.disable()
+        end
+      end
     end
-  else
-    require("lsp-tools.code_actions").setup(type(actions) == "table" and actions or {})
   end
-  if references == false or type(references) == "table" and references.enabled == false then
-    local loaded = package.loaded["lsp-tools.references"]
-    if loaded then
-      loaded.disable()
+  if enabled.outline then
+    for command, method in pairs({
+      LspToolsOutline = "toggle_outline",
+      LspToolsOutlineOpen = "open_outline",
+      LspToolsOutlineClose = "close_outline",
+    }) do
+      vim.api.nvim_create_user_command(command, function()
+        return M[method]()
+      end, { force = true, desc = command })
     end
-  else
-    require("lsp-tools.references").setup(type(references) == "table" and references or {})
-  end
-  if rename == false or type(rename) == "table" and rename.enabled == false then
-    local loaded = package.loaded["lsp-tools.rename"]
-    if loaded then
-      loaded.disable()
-    end
-  else
-    require("lsp-tools.rename").setup(type(rename) == "table" and rename or {})
-  end
-  if outline == false or type(outline) == "table" and outline.enabled == false then
-    local loaded = package.loaded["lsp-tools.outline"]
-    if loaded then
-      loaded.disable()
-    end
-  else
-    require("lsp-tools.outline").setup(type(outline) == "table" and outline or {})
-  end
-  if breadcrumbs == false or type(breadcrumbs) == "table" and breadcrumbs.enabled == false then
-    local loaded = package.loaded["lsp-tools.breadcrumbs"]
-    if loaded then
-      loaded.disable()
-    end
-  else
-    require("lsp-tools.breadcrumbs").setup(type(breadcrumbs) == "table" and breadcrumbs or {})
   end
   return M
 end
@@ -106,11 +119,11 @@ function M.breadcrumbs(opts)
 end
 
 function M.open_outline(opts)
-  return require("lsp-tools.outline").open(opts)
+  return call("outline", "open", opts)
 end
 
 function M.toggle_outline()
-  return require("lsp-tools.outline").toggle()
+  return call("outline", "toggle")
 end
 
 function M.close_outline()
@@ -124,7 +137,7 @@ end
 ---@param new_name? string
 ---@param opts? table
 function M.rename(new_name, opts)
-  return require("lsp-tools.rename").rename(new_name, opts)
+  return call("rename", "rename", new_name, opts)
 end
 
 ---Cancel the active rename request or preview.
@@ -139,7 +152,7 @@ end
 ---@param count? integer Positive goes forward; negative goes backward.
 ---@param opts? {wrap?: boolean}
 function M.jump_reference(count, opts)
-  return require("lsp-tools.references").jump(count, opts)
+  return call("references", "jump", count, opts)
 end
 
 ---Request code actions using Neovim's native range, context, and filter handling.
@@ -150,30 +163,30 @@ end
 
 ---Open persistent diagnostic details and contextual fixes for this buffer.
 function M.diagnostic(opts)
-  return require("lsp-tools.diagnostics").open(opts)
+  return call("diagnostics", "open", opts)
 end
 
 ---Pin hover documentation in a searchable Markdown side window.
 function M.hover(opts)
-  return require("lsp-tools.hover").open(opts)
+  return call("hover", "open", opts)
 end
 
 ---Open the server's document link at the cursor, optionally falling back to a path opener.
 function M.open_link(opts)
-  return require("lsp-tools.links").open(opts)
+  return call("links", "open", opts)
 end
 
 ---Inspect this buffer's clients, feature providers and recent request outcomes.
 function M.inspect(opts)
-  return require("lsp-tools.inspect").open(opts)
+  return call("inspect", "open", opts)
 end
 
 function M.call_hierarchy(opts)
-  return require("lsp-tools.hierarchy").open("call", opts)
+  return call("hierarchy", "open", "call", opts)
 end
 
 function M.type_hierarchy(opts)
-  return require("lsp-tools.hierarchy").open("type", opts)
+  return call("hierarchy", "open", "type", opts)
 end
 
 return M
