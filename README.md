@@ -772,7 +772,8 @@ presentation containing the fixture's frame/item names without modifying it.
 
 Run `sh tests/tools-integration.sh` for the optional tools: real TeXquill linked
 editing and document links, LuaLS hover documentation, clangd call/type hierarchies,
-LSP/Snacks diagnostic fixes, and terminal rendering/key/focus checks. It requires
+LSP/Snacks diagnostic fixes, persistent LuaLS locations, picker imports, and terminal
+rendering/key/focus checks. It requires
 `texquill` (or `NVIM_TEXQUILL`), `lua-language-server`, `clangd`, Python 3, and an
 installed Snacks checkout. `python3 tests/terminal.py workflows_integration.lua`
 runs just the code-action indicator, diagnostic-fix and inspection terminal flow.
@@ -783,3 +784,6 @@ config_lazy_integration.lua`. This opt-in check exercises real first-key loading
 the no-LSP path fallback, code-action preview/cancellation, and outline listener
 cleanup through the configuration's mappings. The regular suite also verifies
 real LSP dynamic capability registration and removal with a stdio fixture.
+Run the same opt-in command with `config_results_integration.lua` for the actual
+Snacks `<C-t>` first-use path before LSP attachment and the configured diagnostic,
+LSP, quickfix and loclist toggles after replacing Trouble.
