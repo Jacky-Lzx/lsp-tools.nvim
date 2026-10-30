@@ -30,7 +30,12 @@ check(vim.api.nvim_get_current_win() ~= v.win, "opening does not steal source fo
 check(#v.items == 3 and #v.rows == 5, "groups and counts include every location")
 local function key(lhs)
   vim.api.nvim_set_current_win(v.win)
-  vim.fn.maparg(lhs, "n", false, true).callback()
+  local mapping = vim.fn.maparg(lhs, "n", false, true)
+  if mapping.callback then
+    mapping.callback()
+  else
+    vim.api.nvim_feedkeys(vim.keycode(lhs), "xt", false)
+  end
 end
 results.filter(v, { text = "second" })
 check(#v.filtered == 1 and v.filtered[1].id == "second", "literal filtering")
@@ -71,9 +76,15 @@ for i, row in ipairs(v.rows) do
 end
 vim.api.nvim_win_set_cursor(v.win, { group_row, 0 })
 key("za")
-check(#v.rows < 5, "groups fold")
+check(
+  vim.fn.foldclosed(group_row) == group_row and #v.rows == 5,
+  "native fold hides groups without removing buffer rows"
+)
 key("zR")
-check(#v.rows == 5, "expand all restores nested groups")
+check(
+  vim.fn.foldclosed(group_row) == -1 and #v.rows == 5,
+  "native expand all restores nested groups"
+)
 results.close("fixture")
 check(not vim.api.nvim_win_is_valid(v.win), "close releases list window")
 v = results.open(nil, { id = "fixture" })

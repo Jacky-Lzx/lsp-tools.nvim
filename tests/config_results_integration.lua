@@ -151,6 +151,13 @@ local function run()
       "lualine refresh preserves the result title bar"
     )
     if binding[2] == "diagnostics" then
+      api.nvim_set_current_win(v.win)
+      api.nvim_input("ggzc")
+      wait(function()
+        return api.nvim_win_call(v.win, function()
+          return vim.fn.foldclosed(1) == 1
+        end)
+      end, "native zc closes diagnostics with actual which-key enabled")
       local foreign_bars = {}
       api.nvim_create_autocmd("OptionSet", {
         group = v.group,
@@ -182,6 +189,12 @@ local function run()
           vim.wo[v.win].winbar:find("LspToolsResultsTitle", 1, true),
           "focus, diagnostic and timer refreshes keep the result winbar stable"
         )
+        assert(
+          api.nvim_win_call(v.win, function()
+            return vim.fn.foldclosed(1) == 1
+          end),
+          "live diagnostic refresh preserves the native closed directory"
+        )
       end
       wait(function()
         return v.items[1].text == "warning " .. iteration
@@ -200,6 +213,13 @@ local function run()
         bar:find("Diagnostics", 1, true) and not bar:find("[No Name]", 1, true),
         "actual terminal retains the diagnostics title after repeated refreshes"
       )
+      api.nvim_set_current_win(v.win)
+      api.nvim_input("zR")
+      wait(function()
+        return api.nvim_win_call(v.win, function()
+          return vim.fn.foldclosed(2) == -1
+        end)
+      end, "native zR opens diagnostics after live refreshes")
     end
     if binding[2] == "lsp" then
       wait(function()

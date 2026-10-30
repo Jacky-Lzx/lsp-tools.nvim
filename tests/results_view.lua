@@ -7,6 +7,8 @@ api.nvim_buf_set_lines(buf, 0, -1, false, { "😀alpha", "beta", "tail" })
 vim.wo[source].winbar = " Source window "
 vim.wo[source].wrap, vim.wo[source].list, vim.wo[source].foldenable = true, true, true
 vim.wo[source].cursorline = false
+local original_folding =
+  { vim.wo[source].foldmethod, vim.wo[source].foldexpr, vim.wo[source].foldtext }
 results.setup({ auto_preview = false, icons = false })
 local v = results.open({
   {
@@ -147,6 +149,10 @@ check(
     and vim.wo.foldenable
     and not vim.wo.cursorline,
   "last-window close restores the source's display options"
+)
+check(
+  vim.deep_equal(original_folding, { vim.wo.foldmethod, vim.wo.foldexpr, vim.wo.foldtext }),
+  "last-window close restores the source's native fold configuration"
 )
 results.disable()
 print(("result presentation: %d assertions passed"):format(count))

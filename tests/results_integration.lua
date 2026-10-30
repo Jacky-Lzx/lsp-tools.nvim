@@ -49,17 +49,26 @@ local function run()
     if tui then
       api.nvim_input(vim.keycode(lhs))
     else
-      vim.fn.maparg(lhs, "n", false, true).callback()
+      local mapping = vim.fn.maparg(lhs, "n", false, true)
+      if mapping.callback then
+        mapping.callback()
+      else
+        api.nvim_feedkeys(vim.keycode(lhs), "xt", false)
+      end
     end
   end
   local full = #v.rows
   key("zM")
   wait(function()
-    return #v.rows < full
+    return api.nvim_win_call(v.win, function()
+      return vim.fn.foldclosed(1) == 1
+    end) and #v.rows == full
   end, "real fold key collapses groups")
   key("zR")
   wait(function()
-    return #v.rows == full
+    return api.nvim_win_call(v.win, function()
+      return vim.fn.foldclosed(1) == -1
+    end)
   end, "real expand key restores groups")
   results.select(v, v.items[1].id)
   key("<LocalLeader>p")

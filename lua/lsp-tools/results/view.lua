@@ -13,6 +13,7 @@ local links = {
   Position = "LineNr",
   Title = "Title",
   CursorLine = "CursorLine",
+  Folded = "Normal",
   WinBar = "WinBar",
   WinBarNC = "WinBarNC",
 }
@@ -128,8 +129,7 @@ local function indent(line, row, guides, enabled, continuation)
   end
 end
 local function group(line, row, v)
-  local open, closed = v.options.icons and " " or "▾ ", v.options.icons and " " or "▸ "
-  line:add(v.folds[row.key] and closed or open, prefix .. "Guide")
+  line:add(v.options.icons and " " or "▾ ", prefix .. "Guide")
   if row.field == "file" then
     local icon, hl = file_icon(row.value, v.options.icons)
     line:add(icon, hl)
@@ -170,14 +170,27 @@ function M.layout(v)
   v.display_cwd =
     canonical(api.nvim_win_is_valid(v.ctx.win) and vim.fn.getcwd(v.ctx.win) or vim.fn.getcwd())
   v.display_paths = {}
-  local out = { lines = {}, highlights = {}, line_rows = {}, row_lines = {} }
+  local out = {
+    lines = {},
+    highlights = {},
+    line_rows = {},
+    row_lines = {},
+    fold_levels = {},
+    fold_ranges = {},
+  }
   local guides = {}
+  local groups = {}
   local function push(line, row)
     out.lines[#out.lines + 1] = line.text
     out.highlights[#out.lines] = line.spans
     out.line_rows[#out.lines] = row
+    out.fold_levels[#out.lines] = row and (row.item and row.depth or ">" .. (row.depth + 1)) or 0
   end
   for index, row in ipairs(v.rows) do
+    while #groups > 0 and groups[#groups].depth > row.depth do
+      groups[#groups].last = #out.lines
+      table.remove(groups)
+    end
     row.index = index
     out.row_lines[index] = #out.lines + 1
     local line = builder()
@@ -206,10 +219,16 @@ function M.layout(v)
         push(line, row)
       end
     else
+      local range = { key = row.key, first = #out.lines + 1, depth = row.depth + 1 }
+      groups[#groups + 1] = range
+      out.fold_ranges[#out.fold_ranges + 1] = range
       group(line, row, v)
       push(line, row)
     end
     guides[row.depth] = not row.last
+  end
+  for _, range in ipairs(groups) do
+    range.last = #out.lines
   end
   if #out.lines == 0 then
     local line = builder()

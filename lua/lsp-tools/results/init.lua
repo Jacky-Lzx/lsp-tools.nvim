@@ -3,6 +3,7 @@ local api = vim.api
 local panel = require("lsp-tools.panel")
 local model = require("lsp-tools.results.model")
 local view = require("lsp-tools.results.view")
+local folds = require("lsp-tools.results.folds")
 local config = {
   position = "bottom",
   width = 0.35,
@@ -70,6 +71,10 @@ local function help(v)
   end)
   vim.list_extend(mappings, {
     { lhs = "gg / G", desc = "First / last line (Vim)" },
+    { lhs = "za / zo / zc", desc = "Toggle / open / close fold (Vim)" },
+    { lhs = "zM / zR", desc = "Close / open all folds (Vim)" },
+    { lhs = "zm / zr", desc = "Decrease / increase fold level (Vim)" },
+    { lhs = "zj / zk", desc = "Next / previous fold (Vim)" },
     { lhs = "w / b / e", desc = "Word motions (Vim)" },
     { lhs = "f / F", desc = "Find character (Vim)" },
     { lhs = "/ / ?", desc = "Search forward / backward (Vim)" },
@@ -124,6 +129,8 @@ local function remember(v)
     raw = v.raw,
     filter = vim.deepcopy(v.filter),
     folds = vim.deepcopy(v.folds),
+    fold_level = v.fold_level,
+    fold_enable = v.fold_enable,
     sort = v.sort,
     group_by = vim.deepcopy(v.group_by),
     selected = v.selected_id,
@@ -299,11 +306,13 @@ render = function(v)
   if not panel.alive(v) then
     return
   end
+  folds.capture(v)
+  local reveal = v.selected_id ~= nil
   local old, old_row = selected(v)
   local id = v.selected_id or (old and old.id)
   local key = old_row and old_row.key
   v.rows, v.filtered =
-    model.rows(v.items, { filter = v.filter, sort = v.sort, group_by = v.group_by }, v.folds)
+    model.rows(v.items, { filter = v.filter, sort = v.sort, group_by = v.group_by })
   local layout = view.layout(v)
   v.line_rows, v.row_lines = layout.line_rows, layout.row_lines
   panel.write(v, layout.lines)
@@ -319,6 +328,7 @@ render = function(v)
       )
     end
   end
+  folds.apply(v, layout)
   vim.wo[v.win].winbar = view.winbar(v)
   local cursor, fallback
   for index, row in ipairs(v.rows) do
@@ -331,7 +341,11 @@ render = function(v)
       cursor = v.row_lines[index]
     end
   end
-  api.nvim_win_set_cursor(v.win, { cursor or fallback or 1, 0 })
+  if reveal and cursor then
+    folds.reveal(v, cursor)
+  else
+    api.nvim_win_set_cursor(v.win, { cursor or fallback or 1, 0 })
+  end
   v.selected_id = nil
   schedule_preview(v)
 end
@@ -387,20 +401,11 @@ function M.filter(v, filter)
   render(v)
 end
 function M.select(v, id)
-  local rows = model.rows(v.items, { filter = v.filter, sort = v.sort, group_by = v.group_by }, {})
-  local ancestors = {}
-  for _, row in ipairs(rows) do
-    if row.item and row.item.id == id then
-      for depth, key in pairs(ancestors) do
-        if depth <= row.depth then
-          v.folds[key] = nil
-        end
-      end
+  for _, item in ipairs(v.items) do
+    if item.id == id and model.matches(item, v.filter) then
       v.selected_id = id
       render(v)
       return true
-    elseif row.key then
-      ancestors[row.depth + 1] = row.key
     end
   end
   return false
@@ -471,11 +476,16 @@ function M.open(items, opts)
   for name, value in pairs({
     wrap = false,
     list = false,
-    foldenable = false,
+    foldenable = true,
+    foldmethod = "expr",
+    foldexpr = "get(get(b:, 'lsp_tools_result_foldlevels', []), v:lnum - 1, 0)",
+    foldtext = "v:lua.require'lsp-tools.results.folds'.text()",
+    foldminlines = 0,
+    foldnestmax = 20,
     cursorline = true,
     cursorlineopt = "line",
-    fillchars = "eob: ",
-    winhighlight = "CursorLine:LspToolsResultsCursorLine,WinBar:LspToolsResultsWinBar,WinBarNC:LspToolsResultsWinBarNC",
+    fillchars = "eob: ,fold: ",
+    winhighlight = "CursorLine:LspToolsResultsCursorLine,WinBar:LspToolsResultsWinBar,WinBarNC:LspToolsResultsWinBarNC,Folded:LspToolsResultsFolded",
   }) do
     vim.wo[v.win][name] = value
   end
@@ -486,6 +496,7 @@ function M.open(items, opts)
   v.sort, v.group_by =
     opts.sort or saved.sort or options.sort,
     vim.deepcopy(opts.group_by or saved.group_by or options.group_by)
+  v.fold_level, v.fold_enable = saved.fold_level or #v.group_by, saved.fold_enable ~= false
   v.pinned, v.auto_preview =
     opts.pinned == nil and saved.pinned or opts.pinned, options.auto_preview
   v.raw, v.items, v.rows = {}, {}, {}
@@ -498,7 +509,9 @@ function M.open(items, opts)
       local row = v.line_rows[api.nvim_win_get_cursor(v.win)[1]]
       v.selected_id = row and row.item and row.item.id or v.selected_id
     end
+    folds.capture(v)
     remember(v)
+    folds.release(v)
     stop(v.preview_timer)
     stop(v.refresh_timer)
     close_preview(v)
@@ -519,8 +532,9 @@ function M.open(items, opts)
   local function fold()
     local _, row = selected(v)
     if row and not row.item then
-      v.folds[row.key] = not v.folds[row.key]
-      render(v)
+      api.nvim_win_call(v.win, function()
+        vim.cmd.normal({ args = { "za" }, bang = true })
+      end)
     end
   end
   local function close()
@@ -556,20 +570,6 @@ function M.open(items, opts)
       preview(v)
     end
   end, "Toggle automatic preview")
-  map("za", fold, "Toggle group")
-  for _, lhs in ipairs({ "zM", "zR" }) do
-    map(lhs, function()
-      if lhs == "zR" then
-        v.folds = {}
-      end
-      for _, row in ipairs(v.rows) do
-        if row.key then
-          v.folds[row.key] = lhs == "zM" or nil
-        end
-      end
-      render(v)
-    end, "Fold groups")
-  end
   map("<LocalLeader>f", function()
     vim.ui.input({ prompt = "Filter results: ", default = v.filter.text }, function(text)
       if text ~= nil and panel.alive(v) then
@@ -624,7 +624,7 @@ function M.open(items, opts)
           return
         end
       end
-      api.nvim_win_set_cursor(v.win, { v.row_lines[row], 0 })
+      folds.reveal(v, v.row_lines[row])
     end, "Navigate results")
   end
   for lhs, action in pairs(options.actions or {}) do
@@ -657,7 +657,7 @@ function M.open(items, opts)
         local pos = api.nvim_win_get_cursor(0)
         for row, entry in ipairs(v.rows) do
           if entry.item and entry.item.bufnr == ev.buf and entry.item.pos[1] == pos[1] then
-            api.nvim_win_set_cursor(v.win, { v.row_lines[row], 0 })
+            folds.reveal(v, v.row_lines[row])
             break
           end
         end

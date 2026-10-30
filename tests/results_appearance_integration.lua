@@ -93,6 +93,38 @@ local function run()
   )
   local capture = { "Bottom diagnostics (" .. vim.g.colors_name .. ")", bar }
   vim.list_extend(capture, lines)
+  api.nvim_input("zc")
+  local folded
+  wait(function()
+    folded = api.nvim_win_call(v.win, function()
+      return vim.fn.foldclosed(first)
+    end)
+    return folded > 0
+  end, "native zc folds the diagnostic's file")
+  vim.cmd("redraw!")
+  local at = vim.fn.screenpos(v.win, folded, 1)
+  local caption = ""
+  for col = at.col, at.col + api.nvim_win_get_width(v.win) - 1 do
+    caption = caption .. vim.fn.screenstring(at.row, col)
+  end
+  assert(
+    caption:find("", 1, true) and caption:find("init.lua", 1, true),
+    "native closed fold retains the styled file caption"
+  )
+  local header = lines[folded]
+  local name_col = at.col
+    + vim.fn.strdisplaywidth(header:sub(1, assert(header:find("init.lua", 1, true)) - 1))
+  local count_col = at.col + vim.fn.strdisplaywidth(header:sub(1, assert(header:find("2$")) - 1))
+  assert(
+    vim.fn.screenattr(at.row, name_col) ~= vim.fn.screenattr(at.row, count_col),
+    "native foldtext preserves file and count colors in the actual theme"
+  )
+  api.nvim_input("zo")
+  wait(function()
+    return api.nvim_win_call(v.win, function()
+      return vim.fn.foldclosed(first) == -1
+    end)
+  end, "native zo restores the diagnostic lines")
   api.nvim_win_set_cursor(v.win, { first + 1, 0 })
   api.nvim_input("]q")
   wait(function()

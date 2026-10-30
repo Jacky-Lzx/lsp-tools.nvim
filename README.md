@@ -322,6 +322,14 @@ Options include `id`, `title`, `position = "bottom" | "right"`, `height`, `width
 releases preview windows, timers and source listeners; reopening restores filters,
 folds, selection and snapshots. The module remains unloaded until first use.
 
+Grouped results use Neovim's native expression folds for directory, file and LSP
+sections. `za`, `zc`/`zo`, `zC`/`zO`, `zM`/`zR`, `zm`/`zr`, `zj`/`zk`, and
+`zn`/`zN` are ordinary Vim commands, with no plugin mappings. All result lines stay
+in the buffer. Native searches can open matching folds, and result navigation opens
+only the target's ancestors. Live refreshes, filtering and reopening preserve
+foldlevel and nested closed/open states by group identity, including children of
+a closed parent. Fold captions retain the group's icons, colors and result count.
+
 The Trouble-inspired layout puts the title, count and active filters in the
 winbar. The body uses file icons, tree guides and multiline messages, with muted
 source/code/position metadata and severity-colored icons. Paths are relative to

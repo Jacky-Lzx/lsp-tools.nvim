@@ -71,7 +71,7 @@ function M.matches(item, filter)
   end
   return true
 end
-function M.rows(items, opts, folds)
+function M.rows(items, opts)
   local filtered = vim.tbl_filter(function(item)
     return M.matches(item, opts.filter)
   end, items)
@@ -129,7 +129,7 @@ function M.rows(items, opts, folds)
       child.depth = depth
       child.last = i == #parent.children
       rows[#rows + 1] = child
-      if not child.item and not folds[child.key] then
+      if not child.item then
         walk(child, depth + 1)
       end
     end

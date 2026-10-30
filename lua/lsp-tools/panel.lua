@@ -101,6 +101,12 @@ function M.open(name, ctx, opts)
     "list",
     "fillchars",
     "foldenable",
+    "foldmethod",
+    "foldexpr",
+    "foldtext",
+    "foldlevel",
+    "foldminlines",
+    "foldnestmax",
   }) do
     source_options[name] = vim.wo[original][name]
   end
