@@ -215,7 +215,7 @@ local function schedule_preview(v)
         return
       end
       v.preview_timer = nil
-      if panel.alive(v) then
+      if panel.alive(v) and api.nvim_get_current_win() == v.win then
         preview(v)
       end
     end)

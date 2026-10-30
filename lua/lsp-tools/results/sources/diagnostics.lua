@@ -129,11 +129,15 @@ function M.open(results, opts)
           }
           stop(v.advance_timer)
           v.advance_timer = assert(vim.uv.new_timer())
-          v.advance_timer:start(
+          local timer = v.advance_timer
+          timer:start(
             opts.advance_timeout or 5000,
             0,
             vim.schedule_wrap(function()
-              stop(v.advance_timer)
+              stop(timer)
+              if v.advance_timer ~= timer then
+                return
+              end
               v.advance_timer = nil
               if panel.alive(v) and v.advance then
                 v.advance = nil
