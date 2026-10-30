@@ -382,6 +382,32 @@ sections remain visible. Large/unavailable files show an unknown column until
 native navigation loads them; jumps and quickfix export retain protocol encoding.
 Location queries require no Snacks picker or Trouble dependency.
 
+## Import picker results
+
+With `results = true`, call `require("lsp-tools").from_picker(picker, opts)` from
+a Snacks action. `type = "smart"` (default) imports selected items, or all filtered
+items when nothing is selected. Explicit `"selected"` and `"all"` are supported.
+The picker closes before the persistent list opens, retaining the original source
+window. Relative files resolve against the item's cwd or the picker cwd. Byte
+positions, text and original item metadata are retained. Rows without locations
+remain visible but cannot jump. Import takes a snapshot, not a live search.
+
+Use `append = true` (`add = true` is an alias) to add to an open or closed snapshot;
+`id` defaults to `"picker"`. Other common result options apply. The returned token
+can cancel a scheduled import with `token.cancel()`. Disabling results cancels it.
+Other pickers, including selection-tools adapters, can pass normalized items to
+the public `results(items, opts)` API without depending on Snacks.
+
+```lua
+-- Inside Snacks picker options:
+actions = {
+  results_open = function(picker)
+    require("lsp-tools").from_picker(picker, { type = "smart" })
+  end,
+},
+win = { input = { keys = { ["<c-t>"] = { "results_open", mode = { "n", "i" } } } } },
+```
+
 ## Reference navigation
 
 `require("lsp-tools").jump_reference(count, opts)` moves forward for a positive

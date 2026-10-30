@@ -604,6 +604,9 @@ function M.source(name, opts)
     vim.tbl_deep_extend("force", {}, config[name] or {}, opts)
   )
 end
+function M.from_picker(picker, opts)
+  return require("lsp-tools.results.picker").open(M, picker, opts)
+end
 function M.selected(v)
   return selected(v)
 end
@@ -615,6 +618,9 @@ function M.preview(v)
 end
 function M.disable()
   enabled = false
+  if package.loaded["lsp-tools.results.picker"] then
+    package.loaded["lsp-tools.results.picker"].cancel()
+  end
   for v in pairs(vim.tbl_extend("force", {}, sessions)) do
     panel.close(v)
   end

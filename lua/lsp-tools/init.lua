@@ -279,5 +279,8 @@ end
 function M.locations(opts)
   return call("results", "source", "lsp", opts)
 end
+function M.from_picker(picker, opts)
+  return call("results", "from_picker", picker, opts)
+end
 
 return M

@@ -5,7 +5,8 @@ local function check(value, message)
   assert(value, message)
   count = count + 1
 end
-local interactive = { "rename", "outline", "diagnostics", "hover", "links", "inspect", "hierarchy" }
+local interactive =
+  { "rename", "outline", "diagnostics", "hover", "links", "inspect", "hierarchy", "results" }
 tools.setup({
   references = false,
   breadcrumbs = false,
@@ -14,6 +15,7 @@ tools.setup({
   links = true,
   inspect = true,
   hierarchy = true,
+  results = true,
   rename = { backend = "delta" },
   outline = { width = 30 },
 })
@@ -94,6 +96,7 @@ tools.setup({
   links = false,
   inspect = false,
   hierarchy = false,
+  results = false,
 })
 print(("lazy tools: %d assertions passed"):format(count))
 vim.cmd("qa!")
