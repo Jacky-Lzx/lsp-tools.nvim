@@ -1,7 +1,7 @@
 local M = {}
 
 ---Configure independently enabled LSP tools. No key mappings are installed.
----@param opts? {code_actions?: boolean|table, references?: boolean|table, rename?: boolean|table, outline?: boolean|table, breadcrumbs?: boolean|table, lightbulb?: boolean|table, linked_editing?: boolean|table, diagnostics?: boolean|table, hover?: boolean|table, links?: boolean|table, inspect?: boolean|table}
+---@param opts? {code_actions?: boolean|table, references?: boolean|table, rename?: boolean|table, outline?: boolean|table, breadcrumbs?: boolean|table, lightbulb?: boolean|table, linked_editing?: boolean|table, diagnostics?: boolean|table, hover?: boolean|table, links?: boolean|table, inspect?: boolean|table, hierarchy?: boolean|table}
 function M.setup(opts)
   opts = opts or {}
   assert(type(opts) == "table", "lsp-tools options must be a table")
@@ -13,6 +13,7 @@ function M.setup(opts)
     "hover",
     "links",
     "inspect",
+    "hierarchy",
   }) do
     local value = opts[name]
     assert(
@@ -165,6 +166,14 @@ end
 ---Inspect this buffer's clients, feature providers and recent request outcomes.
 function M.inspect(opts)
   return require("lsp-tools.inspect").open(opts)
+end
+
+function M.call_hierarchy(opts)
+  return require("lsp-tools.hierarchy").open("call", opts)
+end
+
+function M.type_hierarchy(opts)
+  return require("lsp-tools.hierarchy").open("type", opts)
 end
 
 return M

@@ -8,8 +8,9 @@ export LSP_TOOLS_TEST_TMP="$test_tmp"
 export XDG_STATE_HOME="$test_tmp/state"
 export XDG_CACHE_HOME="$test_tmp/cache"
 export NVIM_LOG_FILE="$test_tmp/nvim.log"
-for name in linked_editing diagnostics hover links workflows; do
+for name in linked_editing diagnostics hover links workflows hierarchy; do
   nvim --headless -u NONE -i NONE -l "$root/tests/${name}_integration.lua"
 done
 python3 "$root/tests/terminal.py" hover_integration.lua
 python3 "$root/tests/terminal.py" workflows_integration.lua
+python3 "$root/tests/terminal.py" hierarchy_integration.lua

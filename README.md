@@ -105,7 +105,8 @@ require("lsp-tools").setup({
 })
 ```
 
-`setup()` enables all tools by default. Set `code_actions = false` (or
+`setup()` enables code actions, references, rename, outline and breadcrumbs by default.
+The newer optional tools below are enabled explicitly. Set `code_actions = false` (or
 `{ enabled = false }`) to disable the tool, close its open pickers, and cancel
 pending requests. Disabling restores the previous select provider when the
 adapter still owns it, and preserves providers installed by other plugins.
@@ -159,6 +160,29 @@ client's diagnostics. It never resolves or applies actions. Cursor movement,
 edits, window changes, Insert mode, detach, timeout and disable discard obsolete
 results and clear only this tool's decoration. Set `sign = true` for a sign-column
 indicator instead of virtual text. `hl` defaults to `DiagnosticHint`.
+
+## Optional call and type hierarchies
+
+Enable `hierarchy = true`, then use `require("lsp-tools").call_hierarchy()` or
+`type_hierarchy()`. Call directions are `incoming` (default) and `outgoing`;
+type directions are `supertypes` (default) and `subtypes`. Pass e.g.
+`call_hierarchy({ direction = "outgoing", name = "clangd", focus = false })`.
+Unsupported servers report the missing capability. Multiple providers prompt for
+one client; opaque item data is preserved in subsequent requests.
+
+The root expands once; further branches load only on Tab / `l`. `h` collapses,
+`d` switches direction while preserving each tree's expansion cache, Enter jumps
+to the symbol, `g` jumps to a concrete call site (choosing if several exist), `p`
+previews source around that call site or type, `r` rebuilds from the source
+window's current cursor, `b` returns to the origin, and `q` / Escape closes.
+Recursive cycles are marked `↻` and cannot expand. Code buffers stay unchanged.
+
+Setup options: `width = 0.35`, `request_timeout = 3000`, `max_nodes = 500`,
+`max_depth = 20`. Limits bound expansion; timeout/errors remain visible and can be
+retried. Source edits, changed captured target buffers/files, detach and close
+reject obsolete work. This is a persistent lazy tree; ordinary Snacks pickers
+remain usable separately. The integration suite verifies real clangd call trees,
+previews and invocation jumps, and type hierarchies when advertised by clangd.
 
 ## Optional LSP inspection
 

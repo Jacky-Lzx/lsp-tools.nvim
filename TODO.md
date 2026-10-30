@@ -86,9 +86,9 @@ key mappings belong to the user's configuration.
 
 ## Call and type hierarchies
 
-- [ ] Lazily expand incoming/outgoing calls and super/subtypes.
-- [ ] Preserve expansion state and preview concrete source locations.
-- [ ] Gate operations on the attached server's capabilities.
+- [x] Lazily expand incoming/outgoing calls and super/subtypes.
+- [x] Preserve expansion state and preview concrete source locations.
+- [x] Gate operations on the attached server's capabilities.
 
 ## Semantic document links
 

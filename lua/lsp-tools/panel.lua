@@ -34,7 +34,7 @@ function M.source(s, restore)
   return true
 end
 
-function M.close(s)
+function M.close(s, wiping)
   if not s or s.closed then
     return
   end
@@ -45,6 +45,9 @@ function M.close(s)
   end
   if s.group then
     vim.api.nvim_del_augroup_by_id(s.group)
+  end
+  if wiping then
+    return
   end
   if vim.api.nvim_win_is_valid(s.win) and vim.api.nvim_win_get_buf(s.win) == s.out then
     vim.api.nvim_win_close(s.win, true)
@@ -117,7 +120,9 @@ function M.open(name, ctx, opts)
   vim.api.nvim_create_autocmd("BufWipeout", {
     group = s.group,
     callback = function(ev)
-      if ev.buf == s.ctx.buf then
+      if ev.buf == s.out then
+        M.close(s, true)
+      elseif ev.buf == s.ctx.buf then
         M.close(s)
       end
     end,
