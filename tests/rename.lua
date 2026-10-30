@@ -83,6 +83,31 @@ local function setup(prepare)
     rename = { request_timeout = 30, input = false },
   })
 end
+-- Rename itself resolves the general API without configuration wiring.
+setup(false)
+local original_input_tools = package.loaded["input-tools"]
+local general_callback
+package.loaded["input-tools"] = {
+  input = function(opts, callback)
+    check(opts.default == "foo", "general API receives prepared/default name")
+    general_callback = callback
+  end,
+}
+tools.rename()
+check(general_callback and not input_callback, "default rename calls the general input-tools API")
+general_callback("bar")
+check(
+  calls[#calls].method == "textDocument/rename" and calls[#calls].params.newName == "bar",
+  "general API result triggers rename"
+)
+tools.cancel_rename()
+setup(false)
+tools.rename()
+local general_calls = #calls
+general_callback(nil)
+check(#calls == general_calls, "general API cancellation sends no rename request")
+package.loaded["input-tools"] = original_input_tools
+
 -- A tool-local provider must not replace or call the global input owner.
 setup(false)
 local custom_options, custom_callback

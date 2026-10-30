@@ -558,7 +558,8 @@ such as Snacks' LSP references picker can continue to be used separately.
 ## Rename preview
 
 `require("lsp-tools").rename()` prepares the symbol at the current cursor position,
-prefills its name through your existing `vim.ui.input` provider, and requests one
+prefills its name through the general `input-tools.input()` API when available
+(or your existing `vim.ui.input` provider otherwise), and requests one
 rename after you enter the new name. A Snacks picker then lists affected files,
 their edit counts, and their diffs. Select a file to inspect it. The title reports
 totals and states that Enter applies **all** listed changes; Escape cancels.
@@ -569,7 +570,7 @@ remain unsaved buffers, as with native LSP rename.
 require("lsp-tools").setup({
   rename = {
     request_timeout = 3000, -- per prepare/rename request, milliseconds
-    input = false, -- Default: current vim.ui.input; or function(opts, callback).
+    input = false, -- Automatic input-tools API, with vim.ui.input fallback.
     backend = "vim", -- or "delta", using the same renderer as code actions
     delta = {
       command = "delta",
@@ -586,12 +587,18 @@ require("lsp-tools").rename(nil, { filter = function(client) return client.name 
 require("lsp-tools").cancel_rename()
 ```
 
-`rename.input` accepts an optional `function(opts, on_confirm)` with the
-`vim.ui.input` callback contract (`nil` cancels). For example,
-`input = require("input-tools").input` routes just rename through native input
-and the input-tools renderer. `false` restores the current global provider.
-Programmatic names skip the input provider. Input errors cancel the rename and
-are reported without applying edits.
+Rename calls the general `require("input-tools").input(opts, on_confirm)` API
+automatically when available; no per-rename configuration callback is required.
+Input-tools is optional and is resolved only when asking for input, so lsp-tools
+setup does not load it or enable its renderer. Missing installations and older
+versions without the API fall back to the current `vim.ui.input`. The global
+provider is never replaced. An installed but disabled input-tools instance uses
+its documented native-display fallback.
+
+`rename.input` still accepts an explicit `function(opts, on_confirm)` override
+with the `vim.ui.input` callback contract (`nil` cancels); `false` restores
+automatic selection. Programmatic names skip the input provider. Input errors
+cancel the rename and are reported without applying edits.
 
 Servers must support `textDocument/rename`; `prepareRename` is used when supported.
 A null preparation result or server error stops the operation. Servers without

@@ -91,6 +91,18 @@ local function run()
   local function current()
     return require("snacks.picker").get()[1]
   end
+  local general_api, general_calls
+  if native_input then
+    local spec = require("lazy.core.config").plugins["lsp-tools.nvim"]
+    local opts = require("lazy.core.plugin").values(spec, "opts", false)
+    assert(opts.rename.input == nil, "rename must not depend on a configuration callback")
+    local input_tools = require("input-tools")
+    general_api, general_calls = input_tools.input, 0
+    input_tools.input = function(options, confirm)
+      general_calls = general_calls + 1
+      return general_api(options, confirm)
+    end
+  end
   local input_seen = false
   if not tui then
     vim.ui.input = function(opts, callback)
@@ -142,6 +154,9 @@ local function run()
   end, "rename preview opens")
   local picker = current()
   assert(tui or input_seen, "input stage was exercised")
+  if native_input then
+    assert(general_calls == 1, "rename must invoke the general input-tools API exactly once")
+  end
   assert(#picker:items() == (real and 1 or 2), "one picker row per affected file")
   assert(
     picker.opts.title:find(real and "1 file · 3 edits" or "2 files · 3 edits", 1, true),
@@ -254,6 +269,9 @@ local function run()
       "stale refusal applies no source edits"
     )
     picker:close()
+  end
+  if general_api then
+    require("input-tools").input = general_api
   end
   client:stop(true)
   io.stdout:write(

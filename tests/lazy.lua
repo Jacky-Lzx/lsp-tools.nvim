@@ -19,6 +19,7 @@ tools.setup({
   rename = { backend = "delta" },
   outline = { width = 30 },
 })
+check(not package.loaded["input-tools"], "lsp-tools setup must not load input-tools")
 for _, name in ipairs(interactive) do
   check(not package.loaded["lsp-tools." .. name], name .. " stays deferred after setup")
 end

@@ -7,7 +7,7 @@ local config = {
   backend = "vim",
   delta = { command = "delta", args = {}, timeout = 2000 },
   picker = {},
-  input = false, -- Use the current vim.ui.input unless a provider is supplied.
+  input = false, -- Automatically use input-tools, with vim.ui.input fallback.
 }
 local enabled = false
 local active, group
@@ -263,7 +263,7 @@ local function input(token, default, new_name)
     rename(token, new_name)
   else
     token.stage = "input"
-    local provider = config.input or vim.ui.input
+    local provider = config.input or require("lsp-tools.input").input
     local answered = false
     local ok, err = pcall(
       provider,
