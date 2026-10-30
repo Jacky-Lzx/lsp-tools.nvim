@@ -19,6 +19,7 @@ local defaults = {
 }
 local config = vim.deepcopy(defaults)
 local sessions = {}
+local group, watch
 local enabled = false
 local window_options = {
   number = false,
@@ -338,6 +339,10 @@ close = function(s)
   end
   s.closed = true
   sessions[s.tab] = nil
+  if not next(sessions) and group then
+    api.nvim_del_augroup_by_id(group)
+    group = nil
+  end
   cancel(s)
   local focused = api.nvim_get_current_win() == s.win
   if valid(s.win) then
@@ -448,6 +453,7 @@ function M.open(opts)
     vim.notify("Outline: open a source file first", vim.log.levels.INFO)
     return
   end
+  watch()
   local out = api.nvim_create_buf(false, true)
   vim.bo[out].buftype, vim.bo[out].bufhidden = "nofile", "wipe"
   vim.bo[out].swapfile, vim.bo[out].filetype = false, "lsp-tools-outline"
@@ -545,7 +551,10 @@ function M.disable()
   for _, s in ipairs(active) do
     close(s)
   end
-  pcall(api.nvim_del_augroup_by_name, "LspToolsOutline")
+  if group then
+    api.nvim_del_augroup_by_id(group)
+    group = nil
+  end
 end
 
 function M.setup(opts)
@@ -573,7 +582,23 @@ function M.setup(opts)
     return
   end
   highlights()
-  local group = api.nvim_create_augroup("LspToolsOutline", { clear = true })
+  for name, callback in pairs({
+    LspToolsOutline = M.toggle,
+    LspToolsOutlineOpen = M.open,
+    LspToolsOutlineClose = M.close,
+  }) do
+    api.nvim_create_user_command(name, function()
+      callback()
+    end, { force = true, desc = name })
+  end
+end
+
+watch = function()
+  if group then
+    return
+  end
+  highlights()
+  group = api.nvim_create_augroup("LspToolsOutline", { clear = true })
   api.nvim_create_autocmd({ "BufEnter", "WinEnter" }, {
     group = group,
     callback = function()
@@ -636,15 +661,6 @@ function M.setup(opts)
     end,
   })
   api.nvim_create_autocmd("ColorScheme", { group = group, callback = highlights })
-  for name, callback in pairs({
-    LspToolsOutline = M.toggle,
-    LspToolsOutlineOpen = M.open,
-    LspToolsOutlineClose = M.close,
-  }) do
-    api.nvim_create_user_command(name, function()
-      callback()
-    end, { force = true, desc = name })
-  end
 end
 
 return M

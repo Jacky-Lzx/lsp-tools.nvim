@@ -2,12 +2,17 @@ local M = {}
 local request = require("lsp-tools.request")
 local enabled, group, active = false, nil, nil
 local config = { request_timeout = 3000 }
+local watch
 
 local function cancel()
   if active and active.pending then
     active.pending.cancel()
   end
   active = nil
+  if group then
+    vim.api.nvim_del_augroup_by_id(group)
+    group = nil
+  end
 end
 
 local function valid(token)
@@ -18,7 +23,7 @@ local function fallback(token)
   if not valid(token) then
     return
   end
-  active = nil
+  cancel()
   if token.fallback then
     return token.fallback()
   end
@@ -36,7 +41,7 @@ local function open_target(token, link)
     fallback(token)
     return
   end
-  active = nil
+  cancel()
   local ok, _, err = pcall(token.open or vim.ui.open, link.target)
   if not ok or err then
     vim.notify("Cannot open link: " .. tostring(not ok and _ or err), vim.log.levels.WARN)
@@ -87,6 +92,7 @@ function M.open(opts)
     open = opts.open or config.open,
   }
   active = token
+  watch()
   token.pending = request.start({
     buf = token.ctx.buf,
     method = "textDocument/documentLink",
@@ -177,6 +183,12 @@ function M.setup(opts)
   end
   M.disable()
   config, enabled = next_config, true
+end
+
+watch = function()
+  if group then
+    return
+  end
   group = vim.api.nvim_create_augroup("LspToolsLinks", { clear = true })
   vim.api.nvim_create_autocmd({
     "CursorMoved",

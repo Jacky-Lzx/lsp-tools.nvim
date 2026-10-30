@@ -10,6 +10,7 @@ local config = {
 }
 local enabled = false
 local active, group
+local watch
 
 local function notify(message)
   vim.notify(message, vim.log.levels.WARN, { title = "LSP Rename" })
@@ -29,6 +30,10 @@ local function close(token, from_picker)
   token.closed = true
   if active == token then
     active = nil
+    if group then
+      vim.api.nvim_del_augroup_by_id(group)
+      group = nil
+    end
   end
   if token.pending then
     local pending = token.pending
@@ -350,6 +355,7 @@ function M.rename(new_name, opts)
     stage = "prepare",
   }
   active = token
+  watch()
   local function use(client)
     if token.closed then
       return
@@ -400,6 +406,12 @@ function M.setup(opts)
   )
   M.disable()
   config, enabled = next_config, true
+end
+
+watch = function()
+  if group then
+    return
+  end
   group = vim.api.nvim_create_augroup("LspToolsRename", { clear = true })
   vim.api.nvim_create_autocmd({
     "CursorMoved",

@@ -119,6 +119,9 @@ on first use. Their public entries and outline commands respect explicit disable
 The native code-action selection adapter and inspection recorder stay lightweight;
 picker/preview code loads only when needed, and inspection retains request events
 recorded before its first opening. Deferred options are validated during setup.
+Rename/link cancellation listeners exist only while an operation is pending.
+Outline listeners are installed for the first sidebar and removed when the last
+sidebar closes, including sidebars in other tabs.
 
 `require("lsp-tools").code_action(opts)` forwards native code action options such
 as `context`, `filter`, `range`, and `apply` to `vim.lsp.buf.code_action()`.
