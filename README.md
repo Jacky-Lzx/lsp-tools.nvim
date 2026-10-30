@@ -675,3 +675,10 @@ LSP/Snacks diagnostic fixes, and terminal rendering/key/focus checks. It require
 `texquill` (or `NVIM_TEXQUILL`), `lua-language-server`, `clangd`, Python 3, and an
 installed Snacks checkout. `python3 tests/terminal.py workflows_integration.lua`
 runs just the code-action indicator, diagnostic-fix and inspection terminal flow.
+
+For a compatible profile-based Neovim configuration using this development
+checkout, run `LSP_TOOLS_NVIM_CONFIG=/path/to/nvim python3 tests/terminal.py
+config_lazy_integration.lua`. This opt-in check exercises real first-key loading,
+the no-LSP path fallback, code-action preview/cancellation, and outline listener
+cleanup through the configuration's mappings. The regular suite also verifies
+real LSP dynamic capability registration and removal with a stdio fixture.
