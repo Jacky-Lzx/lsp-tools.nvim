@@ -334,30 +334,39 @@ overridden. Lists use a cursor line and hide empty-buffer markers.
 If a statusline plugin manages winbars, exclude the `lsp-tools-results` filetype
 from its winbar handling so it preserves the list's own title and count.
 
-Keys: Enter jumps or folds a group; `o` jumps while keeping list focus; `p` previews;
-`P` toggles auto-preview; `za`, `zM`, `zR` fold; `f` filters; `e` toggles errors;
-`s` cycles sorting; `g` toggles grouping; `F` pins; `r` refreshes; `]q`/`[q` move
-between results; `Q` exports filtered locations to quickfix; `?` shows keys in an
-owned help popup; `q`/Escape closes.
-`/` searches the rendered list. Preview reads loaded buffer contents first and
-limits disk previews to 1 MiB. Results are never applied as edits.
+Keys: Enter jumps or folds a group; `<LocalLeader>o` jumps while keeping list
+focus; `<LocalLeader>p` previews; `<LocalLeader>P` toggles auto-preview; `za`, `zM`,
+`zR` fold; `<LocalLeader>f` filters; `<LocalLeader>e` toggles errors;
+`<LocalLeader>s` cycles sorting; `<LocalLeader>g` toggles grouping;
+`<LocalLeader>F` pins; `<LocalLeader>r` refreshes; `]q`/`[q` move between results;
+`<LocalLeader>Q` exports filtered locations to quickfix; `<LocalLeader>?` shows
+keys in an owned help popup; `<LocalLeader>q`/Escape closes.
+
+`gg`, `G`, word motions, character searches, yank and macro commands retain their
+Vim behavior. `/` and `?` search forward and backward. The default `<LocalLeader>`
+is `\`; it follows your `maplocalleader` setting (often Space). Help shows that
+actual prefix and only this plugin's bindings, excluding other plugins' internal
+triggers. User-supplied `actions` / `keys` remain literal mappings. Preview reads
+loaded buffer contents first and limits disk previews to 1 MiB. Results are never
+applied as edits.
 
 ## Diagnostic overview
 
 With `results = true` and `diagnostics = true`, `require("lsp-tools").diagnostics()`
-opens a live overview grouped by directory/file. `scope = "all"` (default) shows
-all diagnostics received by Neovim, including non-LSP producers. `scope = "buffer"`
-binds to the original buffer; `scope = "project"` uses an explicit `root`, Git root,
-or source directory. This does not claim to discover diagnostics in unopened files
-that the server has never reported. `S` cycles the three scopes, including when
-the current scope is empty. The standard result filters and sorting remain usable.
+opens a live overview grouped by directory/file. `scope = "all"` (default) shows all
+diagnostics received by Neovim, including non-LSP producers. `scope = "buffer"` binds to
+the original buffer; `scope = "project"` uses an explicit `root`, Git root, or source
+directory. This does not claim to discover diagnostics in unopened files that the server
+has never reported. `<LocalLeader>S` cycles the three scopes, including when the current
+scope is empty. The standard result filters and sorting remain usable.
 
-`d` opens the exact selected diagnostic's existing detail view, even when several
-diagnostics overlap. `a` previews a fix; `A` previews a fix and continues across
-files after a diagnostic refresh confirms fewer matching messages. User cursor,
-window and text changes prevent automatic navigation. `F` pins the snapshot; `r`
-refreshes it manually. `namespace` restricts a producer; native source/code/severity
-metadata is preserved. Closed overviews have no diagnostic listeners or timers.
+`<LocalLeader>d` opens the exact selected diagnostic's existing detail view, even when
+several diagnostics overlap. `<LocalLeader>a` previews a fix; `<LocalLeader>A` previews
+a fix and continues across files after a diagnostic refresh confirms fewer matching
+messages. User cursor, window and text changes prevent automatic navigation.
+`<LocalLeader>F` pins the snapshot; `<LocalLeader>r` refreshes it manually. `namespace`
+restricts a producer; native source/code/severity metadata is preserved. Closed
+overviews have no diagnostic listeners or timers.
 
 ## Quickfix and Location List
 
@@ -368,13 +377,14 @@ Initial selection follows the native current index; explicit jumps use native
 `:cc` / `:ll`, preserving visual-column and pattern semantics. Opening a view does
 not replace the canonical list or change its contents.
 
-Location lists bind to the original source window, or explicit `winid`, rather
-than the panel's current window. Closing that window stops polling and leaves a
-labeled snapshot whose jumps are disabled. Open lists observe native events and
-poll `changedtick`/list ID/current index for API-only updates (`poll_interval`,
-default 150 ms). Polling stops on close. `F` pins; `r` refreshes; unpinning refreshes
-immediately. Stale snapshots refuse native jumps until refreshed. `Q` explicitly
-exports the filtered view as a new quickfix list. `toggle = true` toggles the view.
+Location lists bind to the original source window, or explicit `winid`, rather than the
+panel's current window. Closing that window stops polling and leaves a labeled snapshot
+whose jumps are disabled. Open lists observe native events and poll `changedtick`/list
+ID/current index for API-only updates (`poll_interval`, default 150 ms). Polling stops
+on close. `<LocalLeader>F` pins; `<LocalLeader>r` refreshes; unpinning refreshes
+immediately. Stale snapshots refuse native jumps until refreshed. `<LocalLeader>Q`
+explicitly exports the filtered view as a new quickfix list. `toggle = true` toggles the
+view.
 
 ## Persistent LSP locations
 
@@ -385,15 +395,15 @@ section; `include_declaration = false` omits reference declarations. Multiple
 providers are deduplicated by converted location while retaining provider IDs.
 `Location` and `LocationLink` use each client's encoding and selection range.
 
-Results remain available while moving between source files. `r` queries the
-source window's current position; `follow_symbol = true` enables debounced queries
-while that window's cursor moves. `F` pins automatic following. Edits/detach mark
-snapshots stale; changed source/target text or files refuse jumps until refreshed.
-Late replies after source cursor changes and closed views are discarded. Slow
-clients time out (`request_timeout`, default 3000 ms); errors and unsupported
-sections remain visible. Large/unavailable files show an unknown column until
-native navigation loads them; jumps and quickfix export retain protocol encoding.
-Location queries require no Snacks picker or Trouble dependency.
+Results remain available while moving between source files. `<LocalLeader>r` queries the
+source window's current position; `follow_symbol = true` enables debounced queries while
+that window's cursor moves. `<LocalLeader>F` pins automatic following. Edits/detach mark
+snapshots stale; changed source/target text or files refuse jumps until refreshed. Late
+replies after source cursor changes and closed views are discarded. Slow clients time
+out (`request_timeout`, default 3000 ms); errors and unsupported sections remain
+visible. Large/unavailable files show an unknown column until native navigation loads
+them; jumps and quickfix export retain protocol encoding. Location queries require no
+Snacks picker or Trouble dependency.
 
 ## Import picker results
 

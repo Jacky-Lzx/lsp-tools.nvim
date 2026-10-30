@@ -1,4 +1,5 @@
 vim.opt.rtp:prepend(vim.env.LSP_TOOLS_ROOT)
+vim.g.maplocalleader = " "
 local api, results = vim.api, require("lsp-tools.results")
 local buf, source = api.nvim_get_current_buf(), api.nvim_get_current_win()
 api.nvim_buf_set_name(buf, vim.fn.tempname() .. "/src/main.lua")
@@ -29,6 +30,37 @@ local function key(lhs)
   vim.fn.maparg(lhs, "n", false, true).callback()
 end
 local lines = api.nvim_buf_get_lines(v.out, 0, -1, false)
+for _, lhs in ipairs({
+  "g",
+  "G",
+  "h",
+  "j",
+  "k",
+  "l",
+  "w",
+  "b",
+  "e",
+  "f",
+  "F",
+  "d",
+  "y",
+  "p",
+  "q",
+  "r",
+  "s",
+  "/",
+  "?",
+}) do
+  check(vim.fn.maparg(lhs, "n") == "", "native " .. lhs .. " is not remapped")
+end
+api.nvim_feedkeys(vim.keycode("G"), "xt", false)
+check(api.nvim_win_get_cursor(v.win)[1] == #lines, "native G reaches the last line")
+local grouping = vim.deepcopy(v.group_by)
+api.nvim_feedkeys(vim.keycode("gg"), "xt", false)
+check(
+  api.nvim_win_get_cursor(v.win)[1] == 1 and vim.deep_equal(v.group_by, grouping),
+  "native gg reaches the first line without toggling grouping"
+)
 check(
   not table.concat(lines, "\n"):find("Enter jump", 1, true),
   "key legend no longer occupies result rows"
@@ -81,17 +113,29 @@ check(
   icon == "E " and message == "类型错误 😀" and meta,
   "severity, message and metadata have separate UTF8-safe highlight spans"
 )
-key("?")
+vim.keymap.set("n", "<C-w>", function() end, { buffer = v.out, desc = "which-key-trigger" })
+vim.keymap.set("n", "<F12>", function() end, { buffer = v.out, desc = "Unrelated action" })
+key("<LocalLeader>?")
 local help = v.help
 check(help and api.nvim_get_current_win() == help.win, "help opens on demand")
-vim.fn.maparg("q", "n", false, true).callback()
+local help_text = table.concat(api.nvim_buf_get_lines(help.buf, 0, -1, false), "\n")
+check(
+  not help_text:find("which-key-trigger", 1, true)
+    and not help_text:find("Unrelated action", 1, true),
+  "help only includes owned bindings and native navigation guidance"
+)
+check(
+  help_text:find("<Space>f", 1, true) and help_text:find("gg / G", 1, true),
+  "help shows the expanded local leader and preserved Vim motions"
+)
+vim.fn.maparg("<Esc>", "n", false, true).callback()
 check(not v.help and api.nvim_get_current_win() == v.win, "closing help restores result focus")
 results.filter(v, { text = "missing" })
 check(
   not results.selected(v) and not results.jump(v),
   "empty-state rows cannot select or jump to a result"
 )
-key("?")
+key("<LocalLeader>?")
 help = v.help
 api.nvim_win_close(source, true)
 results.close()

@@ -98,15 +98,15 @@ local function run()
   wait(function()
     return results.selected(v).text == "Unused local `options`."
   end, "next result skips multiline continuation")
-  api.nvim_input("?")
+  api.nvim_input(vim.keycode("<LocalLeader>?"))
   wait(function()
     return v.help
   end, "real help key opens popup")
-  api.nvim_input("q")
+  api.nvim_input("<Esc>")
   wait(function()
     return not v.help and api.nvim_get_current_win() == v.win
   end, "help closes back into list")
-  api.nvim_input("q")
+  api.nvim_input("<Esc>")
   wait(function()
     return not results.current("diagnostics")
   end, "diagnostic view closes")

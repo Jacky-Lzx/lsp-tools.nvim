@@ -38,7 +38,7 @@ vim.diagnostic.set(
 )
 vim.diagnostic.set(ns, b, { { lnum = 0, col = 0, message = "second error", severity = 1 } })
 local v = tools.diagnostics({ focus = true, group_by = {} })
-vim.fn.maparg("A", "n", false, true).callback()
+vim.fn.maparg("<LocalLeader>A", "n", false, true).callback()
 local function picker()
   return require("snacks.picker").get()[1]
 end

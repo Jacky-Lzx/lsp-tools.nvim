@@ -64,20 +64,26 @@ end
 local function help(v)
   close_help(v)
   close_preview(v)
-  local mappings = api.nvim_buf_get_keymap(v.out, "n")
+  local mappings = vim.tbl_values(v.keymaps)
   table.sort(mappings, function(a, b)
     return a.lhs < b.lhs
   end)
-  local lines = {}
+  vim.list_extend(mappings, {
+    { lhs = "gg / G", desc = "First / last line (Vim)" },
+    { lhs = "w / b / e", desc = "Word motions (Vim)" },
+    { lhs = "f / F", desc = "Find character (Vim)" },
+    { lhs = "/ / ?", desc = "Search forward / backward (Vim)" },
+  })
+  local lines, columns = {}, 0
   for _, mapping in ipairs(mappings) do
-    if mapping.desc then
-      lines[#lines + 1] = "  "
-        .. mapping.lhs
-        .. string.rep(" ", math.max(1, 10 - #mapping.lhs))
-        .. mapping.desc
-    end
+    columns = math.max(columns, vim.fn.strdisplaywidth(mapping.lhs))
   end
-  lines[#lines + 1] = "  /         Search list (native)"
+  for _, mapping in ipairs(mappings) do
+    lines[#lines + 1] = "  "
+      .. mapping.lhs
+      .. string.rep(" ", columns + 2 - vim.fn.strdisplaywidth(mapping.lhs))
+      .. mapping.desc
+  end
   local buf = api.nvim_create_buf(false, true)
   api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   vim.bo[buf].bufhidden, vim.bo[buf].modifiable = "wipe", false
@@ -95,11 +101,16 @@ local function help(v)
     title = " Result keys ",
   })
   v.help = { win = win, buf = buf }
-  for i, line in ipairs(lines) do
-    local key = line:match("^  (%S+)")
-    api.nvim_buf_set_extmark(buf, ns, i - 1, 2, { end_col = 2 + #key, hl_group = "Special" })
+  for i in ipairs(lines) do
+    api.nvim_buf_set_extmark(
+      buf,
+      ns,
+      i - 1,
+      2,
+      { end_col = 2 + #mappings[i].lhs, hl_group = "Special" }
+    )
   end
-  for _, lhs in ipairs({ "q", "<Esc>", "?" }) do
+  for _, lhs in ipairs({ "<Esc>", "<LocalLeader>q", "<LocalLeader>?" }) do
     vim.keymap.set("n", lhs, function()
       close_help(v)
       if panel.alive(v) then
@@ -455,6 +466,7 @@ function M.open(items, opts)
     focus = options.focus,
     persistent = true,
     filetype = "lsp-tools-results",
+    close_keys = {},
   })
   for name, value in pairs({
     wrap = false,
@@ -478,6 +490,7 @@ function M.open(items, opts)
     opts.pinned == nil and saved.pinned or opts.pinned, options.auto_preview
   v.raw, v.items, v.rows = {}, {}, {}
   v.line_rows, v.row_lines = {}, {}
+  v.keymaps, v.help_key = {}, view.key_label("<LocalLeader>?")
   v.selected_id, v.stops = saved.selected, {}
   sessions[v] = true
   v.on_close = function()
@@ -500,6 +513,8 @@ function M.open(items, opts)
   end
   local function map(lhs, fn, desc)
     vim.keymap.set("n", lhs, fn, { buffer = v.out, desc = desc })
+    local label = view.key_label(lhs)
+    v.keymaps[label] = { lhs = label, desc = desc }
   end
   local function fold()
     local _, row = selected(v)
@@ -508,7 +523,15 @@ function M.open(items, opts)
       render(v)
     end
   end
-  map("?", function()
+  local function close()
+    if api.nvim_get_current_win() == v.win and api.nvim_win_is_valid(v.ctx.win) then
+      api.nvim_set_current_win(v.ctx.win)
+    end
+    panel.close(v)
+  end
+  map("<Esc>", close, "Close results")
+  map("<LocalLeader>q", close, "Close results")
+  map("<LocalLeader>?", function()
     help(v)
   end, "Show key bindings")
   map("<CR>", function()
@@ -519,13 +542,13 @@ function M.open(items, opts)
       fold()
     end
   end, "Jump or fold")
-  map("o", function()
+  map("<LocalLeader>o", function()
     M.jump(v, true)
   end, "Jump and keep list focus")
-  map("p", function()
+  map("<LocalLeader>p", function()
     preview(v)
   end, "Preview source")
-  map("P", function()
+  map("<LocalLeader>P", function()
     v.auto_preview = not v.auto_preview
     if not v.auto_preview then
       close_preview(v)
@@ -547,7 +570,7 @@ function M.open(items, opts)
       render(v)
     end, "Fold groups")
   end
-  map("f", function()
+  map("<LocalLeader>f", function()
     vim.ui.input({ prompt = "Filter results: ", default = v.filter.text }, function(text)
       if text ~= nil and panel.alive(v) then
         v.filter.text = text
@@ -555,7 +578,7 @@ function M.open(items, opts)
       end
     end)
   end, "Filter results")
-  map("e", function()
+  map("<LocalLeader>e", function()
     if v.filter.severity then
       v.filter.severity = nil
     else
@@ -563,28 +586,28 @@ function M.open(items, opts)
     end
     render(v)
   end, "Toggle errors only")
-  map("s", function()
+  map("<LocalLeader>s", function()
     v.sort = v.sort == "position" and "severity" or v.sort == "severity" and "none" or "position"
     render(v)
   end, "Cycle sort")
-  map("g", function()
+  map("<LocalLeader>g", function()
     v.group_by = #v.group_by > 0 and {} or { "directory", "file" }
     render(v)
   end, "Toggle grouping")
-  map("F", function()
+  map("<LocalLeader>F", function()
     v.pinned = not v.pinned
     if not v.pinned then
       refresh(v)
     end
     render(v)
   end, "Pin results")
-  map("r", function()
+  map("<LocalLeader>r", function()
     refresh(v)
   end, "Refresh results")
-  map("Q", function()
+  map("<LocalLeader>Q", function()
     M.export(v)
   end, "Export results to quickfix")
-  map("b", function()
+  map("<LocalLeader>b", function()
     if api.nvim_win_is_valid(v.ctx.win) then
       api.nvim_set_current_win(v.ctx.win)
     end

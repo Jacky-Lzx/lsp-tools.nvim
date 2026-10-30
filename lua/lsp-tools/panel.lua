@@ -134,7 +134,7 @@ function M.open(name, ctx, opts)
     end
     M.close(s)
   end
-  for _, lhs in ipairs({ "q", "<Esc>" }) do
+  for _, lhs in ipairs(opts.close_keys or { "q", "<Esc>" }) do
     vim.keymap.set("n", lhs, close, { buffer = out, nowait = true, desc = "Close tool" })
   end
   s.group = vim.api.nvim_create_augroup("LspToolsPanel" .. out, { clear = true })

@@ -35,9 +35,9 @@ end
 results.filter(v, { text = "second" })
 check(#v.filtered == 1 and v.filtered[1].id == "second", "literal filtering")
 results.filter(v, { text = "" })
-key("e")
+key("<LocalLeader>e")
 check(#v.filtered == 2, "error filter")
-key("e")
+key("<LocalLeader>e")
 check(#v.filtered == 3, "error filter toggles off")
 local second_row
 for row, entry in ipairs(v.rows) do
@@ -48,11 +48,11 @@ end
 vim.api.nvim_win_set_cursor(v.win, { second_row, 0 })
 results.set_items(v, { items[3], items[1], items[2] })
 check(results.selected(v).id == "second", "updates preserve selected identity")
-key("p")
+key("<LocalLeader>p")
 check(v.preview and vim.api.nvim_win_is_valid(v.preview.win), "source preview opens")
 local preview = table.concat(vim.api.nvim_buf_get_lines(v.preview.buf, 0, -1, false), "\n")
 check(preview:find("bar", 1, true), "preview includes source text")
-key("o")
+key("<LocalLeader>o")
 check(
   vim.api.nvim_win_get_cursor(v.ctx.win)[1] == 2 and vim.api.nvim_get_current_win() == v.win,
   "jump can keep list focus"

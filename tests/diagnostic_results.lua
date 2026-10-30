@@ -45,9 +45,9 @@ local function key(lhs)
   vim.fn.maparg(lhs, "n", false, true).callback()
 end
 check(#v.items == 4, "all received diagnostics includes non-LSP producers")
-key("S")
+key("<LocalLeader>S")
 check(v.scope == "project" and #v.items == 3, "project scope excludes path-prefix siblings")
-key("S")
+key("<LocalLeader>S")
 check(v.scope == "buffer" and #v.items == 2, "buffer scope retains every namespace")
 local warning
 for _, item in ipairs(v.items) do
@@ -56,22 +56,22 @@ for _, item in ipairs(v.items) do
   end
 end
 results.select(v, warning.id)
-key("d")
+key("<LocalLeader>d")
 local detail = require("lsp-tools.panel").get("diagnostics")
 check(
   detail.items[detail.index].message == "lint warning",
   "details select the exact diagnostic among overlapping ranges"
 )
 require("lsp-tools.panel").close(detail)
-key("F")
+key("<LocalLeader>F")
 vim.diagnostic.set(ns, one, {})
 vim.wait(10, function()
   return false
 end, 1)
 check(#v.items == 2, "pinned overview keeps its snapshot")
-key("r")
+key("<LocalLeader>r")
 check(#v.items == 1 and v.items[1].source == "lint", "manual refresh updates a pinned snapshot")
-key("F")
+key("<LocalLeader>F")
 vim.diagnostic.set(lint, one, {})
 check(
   vim.wait(100, function()

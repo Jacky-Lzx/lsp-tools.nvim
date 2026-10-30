@@ -167,10 +167,10 @@ function M.open(results, opts)
   }, opts)
   options.context, options.refresh = ctx, refresh
   options.descriptions = vim.tbl_extend("force", opts.descriptions or {}, {
-    d = "Diagnostic details",
-    a = "Preview diagnostic fix",
-    A = "Fix and continue",
-    S = "Cycle all/project/buffer scope",
+    ["<LocalLeader>d"] = "Diagnostic details",
+    ["<LocalLeader>a"] = "Preview diagnostic fix",
+    ["<LocalLeader>A"] = "Fix and continue",
+    ["<LocalLeader>S"] = "Cycle all/project/buffer scope",
   })
   options.validate = function(item)
     local d = item.data.diagnostic
@@ -206,18 +206,18 @@ function M.open(results, opts)
     end
   end
   options.actions = vim.tbl_extend("force", opts.actions or {}, {
-    d = function(item, v)
+    ["<LocalLeader>d"] = function(item, v)
       detail(item, v, false)
     end,
-    a = function(item, v)
+    ["<LocalLeader>a"] = function(item, v)
       detail(item, v, true, false)
     end,
-    A = function(item, v)
+    ["<LocalLeader>A"] = function(item, v)
       detail(item, v, true, true)
     end,
   })
   options.keys = vim.tbl_extend("force", opts.keys or {}, {
-    S = function(v)
+    ["<LocalLeader>S"] = function(v)
       v.scope = v.scope == "all" and "project" or v.scope == "project" and "buffer" or "all"
       refresh(v)
     end,

@@ -34,6 +34,16 @@ end
 local function clean(value)
   return (tostring(value or ""):gsub("%s*[\r\n]+%s*", " "):gsub("[%z\1-\31\127]", " "))
 end
+function M.key_label(lhs)
+  lhs = lhs
+    :gsub("<[Ll]ocal[Ll]eader>", function()
+      return vim.g.maplocalleader or "\\"
+    end)
+    :gsub("<[Ll]eader>", function()
+      return vim.g.mapleader or "\\"
+    end)
+  return vim.fn.keytrans(vim.keycode(lhs))
+end
 local function canonical(path)
   local current, tail = vim.fs.normalize(path), {}
   while current do
@@ -259,6 +269,8 @@ function M.winbar(v)
     .. escape(table.concat(filters, " · "))
     .. "%=%#"
     .. prefix
-    .. "Meta# ? help "
+    .. "Meta# "
+    .. escape(v.help_key)
+    .. " help "
 end
 return M

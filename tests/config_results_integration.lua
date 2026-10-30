@@ -47,6 +47,58 @@ local function run()
   end, "configured Insert <C-t> loads plugin and imports results without an LSP")
   assert(spec._.loaded and p.closed and v.ctx.win == win and api.nvim_get_current_win() == win)
   assert(not package.loaded["lsp-tools.results.sources.lsp"])
+  api.nvim_set_current_win(v.win)
+  require("which-key")
+  wait(function()
+    for _, mapping in ipairs(api.nvim_buf_get_keymap(v.out, "n")) do
+      if mapping.desc and mapping.desc:find("which-key-trigger", 1, true) then
+        return true
+      end
+    end
+  end, "actual which-key installs its automatic buffer triggers")
+  local grouping = vim.deepcopy(v.group_by)
+  api.nvim_input("G")
+  wait(function()
+    return api.nvim_win_get_cursor(v.win)[1] == api.nvim_buf_line_count(v.out)
+  end, "native G reaches the final row")
+  api.nvim_input("gg")
+  wait(function()
+    return api.nvim_win_get_cursor(v.win)[1] == 1
+  end, "native gg works with actual which-key active")
+  assert(vim.deep_equal(grouping, v.group_by), "gg must not toggle grouping")
+  api.nvim_input("G0fa")
+  local last = api.nvim_buf_line_count(v.out)
+  local line = api.nvim_buf_get_lines(v.out, last - 1, last, false)[1]
+  local col = assert(line:find("alpha", 1, true)) - 1
+  wait(function()
+    return api.nvim_win_get_cursor(v.win)[2] == col
+  end, "native f finds a character")
+  api.nvim_input("e")
+  wait(function()
+    return api.nvim_win_get_cursor(v.win)[2] == col + 4
+  end, "native e moves to word end")
+  api.nvim_input("b")
+  wait(function()
+    return api.nvim_win_get_cursor(v.win)[2] == col
+  end, "native b moves to word start")
+  api.nvim_input("?alpha<CR>")
+  wait(function()
+    return vim.fn.getreg("/") == "alpha" and vim.fn.mode() == "n"
+  end, "question mark retains native backward search")
+  assert(not v.help)
+  api.nvim_input(vim.keycode("<LocalLeader>?"))
+  wait(function()
+    return v.help
+  end, "Space question mark opens result help")
+  local help = table.concat(api.nvim_buf_get_lines(v.help.buf, 0, -1, false), "\n")
+  assert(
+    help:find("<Space>f", 1, true) and not help:find("which-key-trigger", 1, true),
+    "owned help excludes actual which-key internals and displays the configured prefix"
+  )
+  api.nvim_input("<Esc>")
+  wait(function()
+    return not v.help and api.nvim_get_current_win() == v.win
+  end, "Escape closes help")
   results.select(v, v.items[1].id)
   api.nvim_set_current_win(v.win)
   api.nvim_input("<CR>")
@@ -54,7 +106,7 @@ local function run()
     return api.nvim_get_current_win() == win and api.nvim_win_get_cursor(win)[2] == 4
   end, "imported source jump")
   api.nvim_set_current_win(v.win)
-  api.nvim_input("q")
+  api.nvim_input("<Esc>")
   wait(function()
     return not results.current("picker")
   end, "snapshot closes")
@@ -95,6 +147,7 @@ local function run()
     else
       assert(#v.items == 1, "configured source projects canonical content")
     end
+    api.nvim_set_current_win(v.win)
     api.nvim_input(vim.g.mapleader .. binding[1])
     wait(function()
       return not results.current(binding[2])
