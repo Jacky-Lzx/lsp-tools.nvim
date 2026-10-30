@@ -12,6 +12,7 @@ local names = {
   "links",
   "inspect",
   "hierarchy",
+  "results",
 }
 local defaults =
   { code_actions = true, references = true, rename = true, outline = true, breadcrumbs = true }
@@ -252,6 +253,17 @@ end
 
 function M.type_hierarchy(opts)
   return call("hierarchy", "open", "type", opts)
+end
+
+---Open a persistent location/result list; item positions use one-based rows and byte columns.
+function M.results(items, opts)
+  return call("results", "open", items, opts)
+end
+function M.close_results(id)
+  local module = package.loaded["lsp-tools.results"]
+  if module then
+    module.close(id)
+  end
 end
 
 return M

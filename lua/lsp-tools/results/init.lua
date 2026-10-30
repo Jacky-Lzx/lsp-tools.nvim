@@ -1,0 +1,602 @@
+local M = {}
+local api = vim.api
+local panel = require("lsp-tools.panel")
+local model = require("lsp-tools.results.model")
+local config = {
+  position = "bottom",
+  width = 0.35,
+  height = 0.3,
+  focus = false,
+  group_by = { "file" },
+  sort = "position",
+  auto_preview = true,
+  debounce = 80,
+  max_items = 5000,
+}
+local enabled = false
+local sessions, cache, cache_order = {}, {}, {}
+local ns = api.nvim_create_namespace("lsp-tools.results")
+local render, refresh, preview
+local function stop(timer)
+  if timer and not timer:is_closing() then
+    timer:stop()
+    timer:close()
+  end
+end
+function M.current(id)
+  return panel.get("results-" .. (id or "results"))
+end
+local function selected(v)
+  if not panel.alive(v) then
+    return
+  end
+  local row = v.rows[api.nvim_win_get_cursor(v.win)[1] - 3]
+  return row and row.item, row
+end
+local function close_preview(v)
+  if
+    v.preview
+    and api.nvim_win_is_valid(v.preview.win)
+    and api.nvim_win_get_buf(v.preview.win) == v.preview.buf
+  then
+    pcall(api.nvim_win_close, v.preview.win, true)
+  end
+  if v.preview and api.nvim_buf_is_valid(v.preview.buf) then
+    pcall(api.nvim_buf_delete, v.preview.buf, { force = true })
+  end
+  v.preview = nil
+end
+local function remember(v)
+  cache[v.cache_key] = {
+    raw = v.raw,
+    filter = vim.deepcopy(v.filter),
+    folds = vim.deepcopy(v.folds),
+    sort = v.sort,
+    group_by = vim.deepcopy(v.group_by),
+    selected = v.selected_id,
+    pinned = v.pinned,
+    title = v.title,
+  }
+  for i = #cache_order, 1, -1 do
+    if cache_order[i] == v.cache_key then
+      table.remove(cache_order, i)
+    end
+  end
+  cache_order[#cache_order + 1] = v.cache_key
+  if #cache_order > 20 then
+    cache[table.remove(cache_order, 1)] = nil
+  end
+end
+function M.close(id)
+  panel.close(M.current(id))
+end
+local function target_window(v)
+  if
+    api.nvim_win_is_valid(v.ctx.win)
+    and api.nvim_win_get_tabpage(v.ctx.win) == v.tab
+    and vim.bo[api.nvim_win_get_buf(v.ctx.win)].buftype == ""
+  then
+    return v.ctx.win
+  end
+  if api.nvim_tabpage_is_valid(v.tab) then
+    for _, win in ipairs(api.nvim_tabpage_list_wins(v.tab)) do
+      if win ~= v.win and vim.bo[api.nvim_win_get_buf(win)].buftype == "" then
+        v.ctx.win = win
+        return win
+      end
+    end
+    api.nvim_set_current_win(v.win)
+    vim.cmd("aboveleft new")
+    v.ctx.win = api.nvim_get_current_win()
+    return v.ctx.win
+  end
+end
+local function location(item)
+  if not item.uri then
+    return
+  end
+  local pos = item.pos
+  return {
+    uri = item.uri,
+    range = {
+      start = { line = pos[1] - 1, character = pos[2] },
+      ["end"] = { line = pos[1] - 1, character = pos[2] },
+    },
+  }
+end
+function M.jump(v, keep_focus)
+  local item = selected(v)
+  if not item then
+    return false
+  end
+  if v.options.validate and not v.options.validate(item, v) then
+    v.status = "Result changed; refresh before jumping"
+    render(v)
+    return false
+  end
+  local loc = location(item)
+  if not loc then
+    v.status = "This result has no source location"
+    render(v)
+    return false
+  end
+  local win = target_window(v)
+  if not win then
+    return false
+  end
+  close_preview(v)
+  api.nvim_set_current_win(win)
+  local ok, handled = pcall(function()
+    if v.options.on_jump and v.options.on_jump(item, v) then
+      return true
+    end
+    return vim.lsp.util.show_document(loc, "utf-8", { focus = true })
+  end)
+  if not ok then
+    v.status = tostring(handled)
+    render(v)
+  end
+  if keep_focus and panel.alive(v) then
+    api.nvim_set_current_win(v.win)
+  end
+  return ok and handled
+end
+preview = function(v)
+  if not panel.alive(v) then
+    return
+  end
+  local item = selected(v)
+  if not item then
+    close_preview(v)
+    return
+  end
+  local lines =
+    { model.clean(item.filename or item.uri or "[no source]") .. ":" .. item.pos[1], "" }
+  if item.text ~= "" then
+    vim.list_extend(lines, vim.split(item.text, "\n", { plain = true }))
+    lines[#lines + 1] = ""
+  end
+  local source
+  local buf = item.bufnr or (item.uri and vim.uri_to_bufnr(item.uri))
+  if buf and api.nvim_buf_is_loaded(buf) then
+    source = api.nvim_buf_get_lines(
+      buf,
+      math.max(0, item.pos[1] - 4),
+      math.min(api.nvim_buf_line_count(buf), item.pos[1] + 6),
+      false
+    )
+  elseif item.filename then
+    local stat = vim.uv.fs_stat(item.filename)
+    if stat and stat.size <= 1024 * 1024 then
+      local ok, text = pcall(vim.fn.readfile, item.filename, "", item.pos[1] + 6)
+      if ok then
+        source = vim.list_slice(text, math.max(1, item.pos[1] - 3), item.pos[1] + 6)
+      end
+    else
+      source = { "Source unavailable or larger than preview limit; Enter opens the location." }
+    end
+  end
+  vim.list_extend(lines, source or { "No source preview available" })
+  close_preview(v)
+  local out = api.nvim_create_buf(false, true)
+  api.nvim_buf_set_lines(out, 0, -1, false, lines)
+  vim.bo[out].modifiable, vim.bo[out].bufhidden = false, "wipe"
+  local width, height =
+    math.max(1, math.floor(vim.o.columns * 0.6)),
+    math.max(1, math.min(#lines, math.floor((vim.o.lines - 4) * 0.5)))
+  local win = api.nvim_open_win(out, false, {
+    relative = "editor",
+    row = math.max(0, math.floor((vim.o.lines - height) / 2) - 1),
+    col = math.max(0, math.floor((vim.o.columns - width) / 2)),
+    width = width,
+    height = height,
+    border = "rounded",
+    title = " Preview ",
+    style = "minimal",
+    focusable = false,
+  })
+  vim.wo[win].wrap = true
+  v.preview = { win = win, buf = out }
+end
+local function schedule_preview(v)
+  stop(v.preview_timer)
+  v.preview_timer = nil
+  if not v.auto_preview or api.nvim_get_current_win() ~= v.win then
+    return
+  end
+  v.preview_timer = assert(vim.uv.new_timer())
+  local timer = v.preview_timer
+  timer:start(
+    v.options.debounce,
+    0,
+    vim.schedule_wrap(function()
+      stop(timer)
+      if v.preview_timer ~= timer then
+        return
+      end
+      v.preview_timer = nil
+      if panel.alive(v) then
+        preview(v)
+      end
+    end)
+  )
+end
+render = function(v)
+  if not panel.alive(v) then
+    return
+  end
+  local old = selected(v)
+  local id = v.selected_id or (old and old.id)
+  v.rows, v.filtered =
+    model.rows(v.items, { filter = v.filter, sort = v.sort, group_by = v.group_by }, v.folds)
+  local lines = {
+    v.title .. " · " .. #v.filtered .. "/" .. #v.items .. (v.pinned and " · pinned" or ""),
+    "Enter jump · o jump/keep list · p preview · f filter · e errors · s sort · g group · F pin · r refresh · Q export · q close",
+    v.status or "za fold · zM/zR fold all · ]q/[q navigate · / search",
+  }
+  local cursor, fallback = nil, nil
+  for i, row in ipairs(v.rows) do
+    if row.item then
+      local item = row.item
+      local severity = ({ "E", "W", "I", "H" })[item.severity] or "·"
+      local path = #v.group_by == 0
+          and model.clean(vim.fn.fnamemodify(item.filename or item.uri or "[no location]", ":~:.")) .. ":"
+        or ""
+      lines[#lines + 1] = string.rep("  ", row.depth)
+        .. severity
+        .. " "
+        .. path
+        .. item.pos[1]
+        .. ":"
+        .. (item.pos[2] + 1)
+        .. " "
+        .. model.clean(item.text)
+        .. (item.source ~= "" and " [" .. model.clean(item.source) .. "]" or "")
+        .. (item.code and " (" .. model.clean(item.code) .. ")" or "")
+      fallback = fallback or #lines
+      if item.id == id then
+        cursor = #lines
+      end
+    else
+      lines[#lines + 1] = string.rep("  ", row.depth)
+        .. (v.folds[row.key] and "▸ " or "▾ ")
+        .. model.clean(row.label)
+        .. " ("
+        .. row.count
+        .. ")"
+    end
+  end
+  if #v.rows == 0 then
+    lines[#lines + 1] = "No matching results"
+  end
+  panel.write(v, lines)
+  api.nvim_buf_clear_namespace(v.out, ns, 0, -1)
+  api.nvim_buf_set_extmark(v.out, ns, 0, 0, { end_col = #lines[1], hl_group = "Title" })
+  for i, row in ipairs(v.rows) do
+    local hl = row.item
+        and ({ "DiagnosticError", "DiagnosticWarn", "DiagnosticInfo", "DiagnosticHint" })[row.item.severity]
+      or not row.item and "Directory"
+    if hl then
+      api.nvim_buf_set_extmark(v.out, ns, i + 2, 0, { end_col = #lines[i + 3], hl_group = hl })
+    end
+  end
+  api.nvim_win_set_cursor(v.win, { cursor or fallback or 4, 0 })
+  v.selected_id = nil
+  schedule_preview(v)
+end
+function M.set_items(v, items, append)
+  if not panel.alive(v) then
+    return
+  end
+  local item = selected(v)
+  v.selected_id = item and item.id or v.selected_id
+  v.raw = append and vim.list_extend(vim.list_extend({}, v.raw), items) or items
+  v.items = model.normalize(v.raw, v.options.max_items)
+  if #v.raw > v.options.max_items then
+    v.status = "Result limit reached (" .. v.options.max_items .. ")"
+  end
+  render(v)
+end
+refresh = function(v)
+  if not panel.alive(v) or not v.options.refresh then
+    return
+  end
+  local ok, err = pcall(v.options.refresh, v)
+  if not ok then
+    v.status = tostring(err)
+    render(v)
+  end
+end
+function M.refresh(v)
+  refresh(v)
+end
+function M.schedule(v)
+  stop(v.refresh_timer)
+  v.refresh_timer = nil
+  if v.pinned or not panel.alive(v) then
+    return
+  end
+  v.refresh_timer = assert(vim.uv.new_timer())
+  local timer = v.refresh_timer
+  timer:start(
+    v.options.debounce,
+    0,
+    vim.schedule_wrap(function()
+      stop(timer)
+      if v.refresh_timer ~= timer then
+        return
+      end
+      v.refresh_timer = nil
+      refresh(v)
+    end)
+  )
+end
+function M.filter(v, filter)
+  v.filter = vim.tbl_extend("force", v.filter, filter or {})
+  render(v)
+end
+function M.export(v)
+  local entries = {}
+  for _, item in ipairs(v.filtered) do
+    if item.uri then
+      entries[#entries + 1] = {
+        bufnr = item.bufnr,
+        filename = item.filename,
+        lnum = item.pos[1],
+        col = item.pos[2] + 1,
+        end_lnum = item.end_pos and item.end_pos[1],
+        end_col = item.end_pos and item.end_pos[2] + 1,
+        text = item.text,
+        type = ({ "E", "W", "I", "H" })[item.severity] or "",
+      }
+    end
+  end
+  vim.fn.setqflist({}, " ", { title = v.title, items = entries })
+  v.status = "Exported " .. #entries .. " locations to quickfix"
+  render(v)
+end
+function M.open(items, opts)
+  if not enabled then
+    return false
+  end
+  opts = opts or {}
+  local id = opts.id or "results"
+  local existing = M.current(id)
+  if existing and opts.toggle then
+    panel.close(existing)
+    return false
+  end
+  local tab = api.nvim_get_current_tabpage()
+  local cache_key = tostring(tab) .. ":" .. id
+  if existing then
+    panel.close(existing)
+  end
+  local saved = cache[cache_key] or {}
+  local ctx = opts.context or require("lsp-tools.request").context()
+  if vim.bo[ctx.buf].buftype ~= "" then
+    for _, win in ipairs(api.nvim_tabpage_list_wins(tab)) do
+      if vim.bo[api.nvim_win_get_buf(win)].buftype == "" then
+        ctx = api.nvim_win_call(win, require("lsp-tools.request").context)
+        break
+      end
+    end
+  end
+  local options = vim.tbl_deep_extend("force", {}, config, opts)
+  local v = panel.open("results-" .. id, ctx, {
+    position = options.position,
+    width = options.width,
+    height = options.height,
+    focus = options.focus,
+    persistent = true,
+  })
+  v.cache_key, v.tab, v.options, v.title =
+    cache_key, tab, options, opts.title or saved.title or "Results"
+  v.filter, v.folds =
+    vim.deepcopy(opts.filter or saved.filter or {}), vim.deepcopy(saved.folds or {})
+  v.sort, v.group_by =
+    opts.sort or saved.sort or options.sort,
+    vim.deepcopy(opts.group_by or saved.group_by or options.group_by)
+  v.pinned, v.auto_preview =
+    opts.pinned == nil and saved.pinned or opts.pinned, options.auto_preview
+  v.raw, v.items, v.rows = {}, {}, {}
+  v.selected_id, v.stops = saved.selected, {}
+  sessions[v] = true
+  v.on_close = function()
+    if api.nvim_win_is_valid(v.win) then
+      local row = v.rows[api.nvim_win_get_cursor(v.win)[1] - 3]
+      v.selected_id = row and row.item and row.item.id or v.selected_id
+    end
+    remember(v)
+    stop(v.preview_timer)
+    stop(v.refresh_timer)
+    close_preview(v)
+    for _, cleanup in ipairs(v.stops) do
+      pcall(cleanup)
+    end
+    sessions[v] = nil
+    if options.on_close then
+      options.on_close(v)
+    end
+  end
+  local function map(lhs, fn, desc)
+    vim.keymap.set("n", lhs, fn, { buffer = v.out, desc = desc })
+  end
+  local function fold()
+    local _, row = selected(v)
+    if row and not row.item then
+      v.folds[row.key] = not v.folds[row.key]
+      render(v)
+    end
+  end
+  map("<CR>", function()
+    local item = selected(v)
+    if item then
+      M.jump(v)
+    else
+      fold()
+    end
+  end, "Jump or fold")
+  map("o", function()
+    M.jump(v, true)
+  end, "Jump and keep list focus")
+  map("p", function()
+    preview(v)
+  end, "Preview source")
+  map("P", function()
+    v.auto_preview = not v.auto_preview
+    if not v.auto_preview then
+      close_preview(v)
+    else
+      preview(v)
+    end
+  end, "Toggle automatic preview")
+  map("za", fold, "Toggle group")
+  for _, lhs in ipairs({ "zM", "zR" }) do
+    map(lhs, function()
+      if lhs == "zR" then
+        v.folds = {}
+      end
+      for _, row in ipairs(v.rows) do
+        if row.key then
+          v.folds[row.key] = lhs == "zM" or nil
+        end
+      end
+      render(v)
+    end, "Fold groups")
+  end
+  map("f", function()
+    vim.ui.input({ prompt = "Filter results: ", default = v.filter.text }, function(text)
+      if text ~= nil and panel.alive(v) then
+        v.filter.text = text
+        render(v)
+      end
+    end)
+  end, "Filter results")
+  map("e", function()
+    if v.filter.severity then
+      v.filter.severity = nil
+    else
+      v.filter.severity = vim.diagnostic.severity.ERROR
+    end
+    render(v)
+  end, "Toggle errors only")
+  map("s", function()
+    v.sort = v.sort == "position" and "severity" or v.sort == "severity" and "none" or "position"
+    render(v)
+  end, "Cycle sort")
+  map("g", function()
+    v.group_by = #v.group_by > 0 and {} or { "directory", "file" }
+    render(v)
+  end, "Toggle grouping")
+  map("F", function()
+    v.pinned = not v.pinned
+    render(v)
+  end, "Pin results")
+  map("r", function()
+    refresh(v)
+  end, "Refresh results")
+  map("Q", function()
+    M.export(v)
+  end, "Export results to quickfix")
+  map("b", function()
+    if api.nvim_win_is_valid(v.ctx.win) then
+      api.nvim_set_current_win(v.ctx.win)
+    end
+  end, "Return to source")
+  for lhs, direction in pairs({ ["]q"] = 1, ["[q"] = -1 }) do
+    map(lhs, function()
+      local row = api.nvim_win_get_cursor(v.win)[1] - 3
+      for _ = 1, vim.v.count1 do
+        repeat
+          row = row + direction
+        until row < 1 or row > #v.rows or v.rows[row].item
+        if row < 1 or row > #v.rows then
+          return
+        end
+      end
+      api.nvim_win_set_cursor(v.win, { row + 3, 0 })
+    end, "Navigate results")
+  end
+  for lhs, action in pairs(options.actions or {}) do
+    map(lhs, function()
+      local item = selected(v)
+      if item then
+        action(item, v)
+      end
+    end, "Result action")
+  end
+  api.nvim_create_autocmd("CursorMoved", {
+    group = v.group,
+    buffer = v.out,
+    callback = function()
+      schedule_preview(v)
+    end,
+  })
+  if options.follow then
+    api.nvim_create_autocmd("CursorMoved", {
+      group = v.group,
+      callback = function(ev)
+        if ev.buf == v.out or api.nvim_get_current_win() == v.win then
+          return
+        end
+        local pos = api.nvim_win_get_cursor(0)
+        for row, entry in ipairs(v.rows) do
+          if entry.item and entry.item.bufnr == ev.buf and entry.item.pos[1] == pos[1] then
+            api.nvim_win_set_cursor(v.win, { row + 3, 0 })
+            break
+          end
+        end
+      end,
+    })
+  end
+  if options.watch then
+    local cleanup = options.watch(v)
+    if cleanup then
+      v.stops[#v.stops + 1] = cleanup
+    end
+  end
+  M.set_items(v, items or saved.raw or {})
+  return v
+end
+function M.source(name, opts)
+  opts = opts or {}
+  local id = opts.id or name
+  if opts.toggle and M.current(id) then
+    M.close(id)
+    return false
+  end
+  return require("lsp-tools.results.sources." .. name).open(
+    M,
+    vim.tbl_deep_extend("force", {}, config[name] or {}, opts)
+  )
+end
+function M.selected(v)
+  return selected(v)
+end
+function M.render(v)
+  render(v)
+end
+function M.preview(v)
+  preview(v)
+end
+function M.disable()
+  enabled = false
+  for v in pairs(vim.tbl_extend("force", {}, sessions)) do
+    panel.close(v)
+  end
+end
+function M.setup(opts)
+  local next_config = vim.tbl_deep_extend("force", config, opts or {})
+  assert(
+    next_config.position == "bottom" or next_config.position == "right",
+    "results.position must be bottom or right"
+  )
+  assert(
+    next_config.max_items > 0 and next_config.max_items % 1 == 0,
+    "max_items must be a positive integer"
+  )
+  assert(next_config.debounce >= 0, "debounce must be nonnegative")
+  M.disable()
+  config, enabled = next_config, true
+end
+return M

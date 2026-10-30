@@ -28,6 +28,8 @@ function M.tool(name, opts)
     "max_width",
     "max_nodes",
     "max_depth",
+    "height",
+    "max_items",
   }) do
     if opts[key] ~= nil then
       assert(

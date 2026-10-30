@@ -307,6 +307,28 @@ letters, digits, underscores and hyphens. No local tag/environment parser is use
 Requests time out and stale cursor/buffer/window replies are discarded; leaving,
 detaching or disabling clears owned ranges and cancels pending work.
 
+## Optional persistent result lists
+
+Enable `results = true`, then call `require("lsp-tools").results(items, opts)`.
+An item accepts `id`, `bufnr`, `filename` or `uri`, `pos = { row, byte_column }`
+(one-based row, zero-based UTF-8 byte column), `text`, `source`, `severity`, `code`
+and optional source-specific `data`. Explicit IDs preserve selection across updates.
+
+Options include `id`, `title`, `position = "bottom" | "right"`, `height`, `width`,
+`focus = false`, `group_by = { "directory", "file" }`, `sort = "position" |
+"severity" | "none"`, `filter`, `follow`, `auto_preview`, `max_items` (5000), and
+`toggle`. Filters accept literal `text`, `bufnr`, `severity`, `source`, `code`,
+`root`, or an item `predicate`. Open lists outlive their source buffers. Closing
+releases preview windows, timers and source listeners; reopening restores filters,
+folds, selection and snapshots. The module remains unloaded until first use.
+
+Keys: Enter jumps or folds a group; `o` jumps while keeping list focus; `p` previews;
+`P` toggles auto-preview; `za`, `zM`, `zR` fold; `f` filters; `e` toggles errors;
+`s` cycles sorting; `g` toggles grouping; `F` pins; `r` refreshes; `]q`/`[q` move
+between results; `Q` exports filtered locations to quickfix; `q`/Escape closes.
+`/` searches the rendered list. Preview reads loaded buffer contents first and
+limits disk previews to 1 MiB. Results are never applied as edits.
+
 ## Reference navigation
 
 `require("lsp-tools").jump_reference(count, opts)` moves forward for a positive

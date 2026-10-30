@@ -50,7 +50,15 @@ function M.close(s, wiping)
     return
   end
   if vim.api.nvim_win_is_valid(s.win) and vim.api.nvim_win_get_buf(s.win) == s.out then
-    vim.api.nvim_win_close(s.win, true)
+    local ok = pcall(vim.api.nvim_win_close, s.win, true)
+    if not ok and vim.api.nvim_win_is_valid(s.win) then
+      local buf = vim.api.nvim_buf_is_valid(s.ctx.buf) and s.ctx.buf
+        or vim.api.nvim_create_buf(true, false)
+      vim.api.nvim_win_set_buf(s.win, buf)
+      for name, value in pairs(s.source_options or {}) do
+        vim.wo[s.win][name] = value
+      end
+    end
   end
   if vim.api.nvim_buf_is_valid(s.out) then
     vim.api.nvim_buf_delete(s.out, { force = true })
@@ -76,16 +84,29 @@ function M.open(name, ctx, opts)
   local out = vim.api.nvim_create_buf(false, true)
   vim.bo[out].bufhidden = "wipe"
   vim.bo[out].filetype = opts.filetype or "lsp-tools-" .. name
-  local width = opts.width or 0.35
-  width = math.max(
-    1,
-    math.min(vim.o.columns - 2, math.floor(width <= 1 and vim.o.columns * width or width))
-  )
-  local win = vim.api.nvim_open_win(
-    out,
-    opts.focus ~= false,
-    { split = "right", win = ctx.win, width = width }
-  )
+  local source_options = {}
+  for _, name in ipairs({
+    "number",
+    "relativenumber",
+    "wrap",
+    "spell",
+    "signcolumn",
+    "foldcolumn",
+    "winfixwidth",
+    "winfixheight",
+  }) do
+    source_options[name] = vim.wo[original][name]
+  end
+  local bottom = opts.position == "bottom"
+  local size = bottom and (opts.height or 0.3) or (opts.width or 0.35)
+  local available = bottom and math.max(1, vim.o.lines - 4) or math.max(1, vim.o.columns - 2)
+  size = math.max(1, math.min(available, math.floor(size <= 1 and available * size or size)))
+  local layout = {
+    split = bottom and "below" or "right",
+    win = bottom and -1 or (vim.api.nvim_win_is_valid(ctx.win) and ctx.win or -1),
+  }
+  layout[bottom and "height" or "width"] = size
+  local win = vim.api.nvim_open_win(out, opts.focus ~= false, layout)
   for option, value in pairs({
     number = false,
     relativenumber = false,
@@ -98,7 +119,7 @@ function M.open(name, ctx, opts)
     vim.wo[win][option] = value
   end
   local key = name .. ":" .. vim.api.nvim_get_current_tabpage()
-  local s = { key = key, out = out, win = win, ctx = ctx }
+  local s = { key = key, out = out, win = win, ctx = ctx, source_options = source_options }
   sessions[key] = s
   local function close()
     if vim.api.nvim_get_current_win() == win and vim.api.nvim_win_is_valid(ctx.win) then
@@ -122,7 +143,7 @@ function M.open(name, ctx, opts)
     callback = function(ev)
       if ev.buf == s.out then
         M.close(s, true)
-      elseif ev.buf == s.ctx.buf then
+      elseif not opts.persistent and ev.buf == s.ctx.buf then
         M.close(s)
       end
     end,
