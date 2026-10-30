@@ -142,6 +142,24 @@ require("lsp-tools").setup({
 })
 ```
 
+## Optional code action indicator
+
+Enable `lightbulb = true` to show `` at the end of the current line when a server
+offers an enabled code action. This replaces nvim-lightbulb; disable/remove that
+plugin so only one indicator queries the servers. New optional tools are opt-in.
+
+```lua
+require("lsp-tools").setup({
+  lightbulb = { debounce = 200, request_timeout = 1500, text = "", sign = false },
+})
+```
+
+The indicator uses asynchronous automatic-trigger requests with the requesting
+client's diagnostics. It never resolves or applies actions. Cursor movement,
+edits, window changes, Insert mode, detach, timeout and disable discard obsolete
+results and clear only this tool's decoration. Set `sign = true` for a sign-column
+indicator instead of virtual text. `hl` defaults to `DiagnosticHint`.
+
 ## Reference navigation
 
 `require("lsp-tools").jump_reference(count, opts)` moves forward for a positive

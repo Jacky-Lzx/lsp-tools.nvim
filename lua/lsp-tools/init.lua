@@ -5,6 +5,22 @@ local M = {}
 function M.setup(opts)
   opts = opts or {}
   assert(type(opts) == "table", "lsp-tools options must be a table")
+  -- New tools are opt-in, preserving existing installations' automatic behavior.
+  for _, name in ipairs({ "lightbulb" }) do
+    local value = opts[name]
+    assert(
+      value == nil or type(value) == "boolean" or type(value) == "table",
+      name .. " must be a boolean or table"
+    )
+    if value == false or type(value) == "table" and value.enabled == false then
+      local loaded = package.loaded["lsp-tools." .. name]
+      if loaded then
+        loaded.disable()
+      end
+    elseif value ~= nil then
+      require("lsp-tools." .. name).setup(type(value) == "table" and value or {})
+    end
+  end
   local actions = opts.code_actions
   assert(
     actions == nil or type(actions) == "boolean" or type(actions) == "table",

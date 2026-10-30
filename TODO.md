@@ -17,6 +17,12 @@ key mappings belong to the user's configuration.
 - [x] Document installation and migration without a code-actions.nvim dependency.
 - [x] Verify unit coverage, real Neovim LSP/Snacks integration, and terminal key/focus behavior.
 
+## Code action indicator
+
+- [x] Offer an opt-in virtual-text or sign indicator without nvim-lightbulb.
+- [x] Debounce automatic requests, preserve client diagnostics, and discard obsolete/slow results.
+- [x] Keep action resolution and application in the explicit code action workflow.
+
 ## Rename preview
 
 - [x] Preview the language server's actual rename edits, grouped by file.
