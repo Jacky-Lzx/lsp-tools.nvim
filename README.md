@@ -590,9 +590,9 @@ require("lsp-tools").cancel_rename()
 Rename calls the general `require("input-tools").input(opts, on_confirm)` API
 automatically when available; no per-rename configuration callback is required.
 It passes `vim_mode=true`, `position="cursor"`, `width=32`, `title="Rename"`,
-`title_pos="center"`,
+`title_pos="left"`,
 and the prepared/default name;
-the input opens beside the source cursor, the label is centered in the upper
+the input opens beside the source cursor, the label is left-aligned in the upper
 border, and only the name is editable.
 Rename starts in Insert mode; Escape enters Normal for native motions, `ciw`
 and undo/redo. Enter accepts the name, then the existing workspace-edit preview

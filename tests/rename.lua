@@ -92,12 +92,12 @@ package.loaded["input-tools"] = {
     check(opts.default == "foo", "general API receives prepared/default name")
     check(
       opts.title == "Rename"
-        and opts.title_pos == "center"
+        and opts.title_pos == "left"
         and opts.position == "cursor"
         and opts.width == 32
         and opts.vim_mode == true
         and opts.prompt == nil,
-      "rename requests a centered title without an inline label"
+      "rename requests a left-aligned title without an inline label"
     )
     general_callback = callback
   end,

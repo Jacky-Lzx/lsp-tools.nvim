@@ -272,7 +272,7 @@ local function input(token, default, new_name)
     local answered = false
     local ok, result = pcall(provider, {
       title = "Rename",
-      title_pos = "center",
+      title_pos = "left",
       position = "cursor",
       width = 32,
       vim_mode = true,

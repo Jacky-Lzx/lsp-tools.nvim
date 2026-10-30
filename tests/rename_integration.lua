@@ -139,8 +139,8 @@ local function run()
       assert(layout.width == 32, "rename uses a compact 32-column input")
       local box = vim.api.nvim_win_get_config(layout.win)
       assert(
-        box.title[1][1] == "Rename" and box.title_pos == "center",
-        "rename title is centered in the upper border"
+        box.title[1][1] == "Rename" and box.title_pos == "left",
+        "rename title is left-aligned in the upper border"
       )
       assert(
         vim.api.nvim_buf_get_lines(layout.buf, 0, 1, false)[1] == "foo",
