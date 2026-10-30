@@ -335,6 +335,25 @@ function M.filter(v, filter)
   v.filter = vim.tbl_extend("force", v.filter, filter or {})
   render(v)
 end
+function M.select(v, id)
+  local rows = model.rows(v.items, { filter = v.filter, sort = v.sort, group_by = v.group_by }, {})
+  local ancestors = {}
+  for _, row in ipairs(rows) do
+    if row.item and row.item.id == id then
+      for depth, key in pairs(ancestors) do
+        if depth <= row.depth then
+          v.folds[key] = nil
+        end
+      end
+      v.selected_id = id
+      render(v)
+      return true
+    elseif row.key then
+      ancestors[row.depth + 1] = row.key
+    end
+  end
+  return false
+end
 function M.export(v)
   local entries = {}
   for _, item in ipairs(v.filtered) do
@@ -524,6 +543,11 @@ function M.open(items, opts)
         action(item, v)
       end
     end, "Result action")
+  end
+  for lhs, action in pairs(options.keys or {}) do
+    map(lhs, function()
+      action(v)
+    end, "Result view action")
   end
   api.nvim_create_autocmd("CursorMoved", {
     group = v.group,

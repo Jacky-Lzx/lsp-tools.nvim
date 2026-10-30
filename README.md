@@ -329,6 +329,23 @@ between results; `Q` exports filtered locations to quickfix; `q`/Escape closes.
 `/` searches the rendered list. Preview reads loaded buffer contents first and
 limits disk previews to 1 MiB. Results are never applied as edits.
 
+## Diagnostic overview
+
+With `results = true` and `diagnostics = true`, `require("lsp-tools").diagnostics()`
+opens a live overview grouped by directory/file. `scope = "all"` (default) shows
+all diagnostics received by Neovim, including non-LSP producers. `scope = "buffer"`
+binds to the original buffer; `scope = "project"` uses an explicit `root`, Git root,
+or source directory. This does not claim to discover diagnostics in unopened files
+that the server has never reported. `S` cycles the three scopes, including when
+the current scope is empty. The standard result filters and sorting remain usable.
+
+`d` opens the exact selected diagnostic's existing detail view, even when several
+diagnostics overlap. `a` previews a fix; `A` previews a fix and continues across
+files after a diagnostic refresh confirms fewer matching messages. User cursor,
+window and text changes prevent automatic navigation. `F` pins the snapshot; `r`
+refreshes it manually. `namespace` restricts a producer; native source/code/severity
+metadata is preserved. Closed overviews have no diagnostic listeners or timers.
+
 ## Reference navigation
 
 `require("lsp-tools").jump_reference(count, opts)` moves forward for a positive

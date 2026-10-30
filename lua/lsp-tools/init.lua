@@ -259,6 +259,9 @@ end
 function M.results(items, opts)
   return call("results", "open", items, opts)
 end
+function M.diagnostics(opts)
+  return call("results", "source", "diagnostics", opts)
+end
 function M.close_results(id)
   local module = package.loaded["lsp-tools.results"]
   if module then

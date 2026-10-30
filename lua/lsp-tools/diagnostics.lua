@@ -215,11 +215,14 @@ function M.fix(s, advance)
       render(s)
       return
     end
-    require("lsp-tools.code_actions").pick(entries, function()
+    require("lsp-tools.code_actions").pick(entries, function(action, context)
       if not panel.alive(s) then
         return
       end
       s.status = "Fix applied"
+      if s.on_applied then
+        s.on_applied(d, action, context)
+      end
       if advance then
         s.advance = {
           key = signature(d),
@@ -256,11 +259,20 @@ function M.open(opts)
   local s = panel.open("diagnostics", ctx, { width = config.width, focus = opts.focus ~= false })
   sessions[s] = true
   s.filter, s.index = opts.filter or {}, 1
+  s.on_applied = opts.on_applied
   s.diagnostic_generation = 0
   s.items = items(s)
   for i, d in ipairs(s.items) do
     if d.lnum <= ctx.pos[1] - 1 then
       s.index = i
+    end
+  end
+  if opts.diagnostic then
+    for i, d in ipairs(s.items) do
+      if identity(d) == identity(opts.diagnostic) then
+        s.index = i
+        break
+      end
     end
   end
   s.on_close = function()
