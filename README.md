@@ -160,6 +160,23 @@ edits, window changes, Insert mode, detach, timeout and disable discard obsolete
 results and clear only this tool's decoration. Set `sign = true` for a sign-column
 indicator instead of virtual text. `hl` defaults to `DiagnosticHint`.
 
+## Optional LSP inspection
+
+Enable `inspect = true`, then call `require("lsp-tools").inspect()` for the current
+buffer's actual clients, roots, workspace folders, position encodings, supported
+methods and pending requests. It describes each tool's provider-selection policy.
+Use `r` to refresh, `y` to copy the report, `l` to open the native LSP log, `b` to
+return to the source, and `q` / Escape to close. `width` defaults to 0.5;
+`inspect({ focus = false })` keeps source focus. The structured read API is
+`require("lsp-tools.inspect").snapshot(bufnr)`.
+
+Request metadata is bounded to 80 entries per recorder. Recent optional-tool
+outcomes include response errors, timeout messages, empty results and durations;
+native `LspRequest` events show lifecycle status since this module was enabled.
+Native lifecycle completion does **not** prove a successful response: those events
+do not expose response contents. Existing tools' response errors remain in the
+native LSP log. No client handler is wrapped and no document text is recorded.
+
 ## Optional semantic links
 
 Enable `links = true` and map `require("lsp-tools").open_link()` to query the

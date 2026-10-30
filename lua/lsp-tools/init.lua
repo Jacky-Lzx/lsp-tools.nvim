@@ -1,12 +1,19 @@
 local M = {}
 
 ---Configure independently enabled LSP tools. No key mappings are installed.
----@param opts? {code_actions?: boolean|table, references?: boolean|table, rename?: boolean|table, outline?: boolean|table, breadcrumbs?: boolean|table}
+---@param opts? {code_actions?: boolean|table, references?: boolean|table, rename?: boolean|table, outline?: boolean|table, breadcrumbs?: boolean|table, lightbulb?: boolean|table, linked_editing?: boolean|table, diagnostics?: boolean|table, hover?: boolean|table, links?: boolean|table, inspect?: boolean|table}
 function M.setup(opts)
   opts = opts or {}
   assert(type(opts) == "table", "lsp-tools options must be a table")
   -- New tools are opt-in, preserving existing installations' automatic behavior.
-  for _, name in ipairs({ "lightbulb", "linked_editing", "diagnostics", "hover", "links" }) do
+  for _, name in ipairs({
+    "lightbulb",
+    "linked_editing",
+    "diagnostics",
+    "hover",
+    "links",
+    "inspect",
+  }) do
     local value = opts[name]
     assert(
       value == nil or type(value) == "boolean" or type(value) == "table",
@@ -153,6 +160,11 @@ end
 ---Open the server's document link at the cursor, optionally falling back to a path opener.
 function M.open_link(opts)
   return require("lsp-tools.links").open(opts)
+end
+
+---Inspect this buffer's clients, feature providers and recent request outcomes.
+function M.inspect(opts)
+  return require("lsp-tools.inspect").open(opts)
 end
 
 return M

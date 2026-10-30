@@ -98,9 +98,9 @@ key mappings belong to the user's configuration.
 
 ## LSP inspection
 
-- [ ] Inspect attached clients, project roots, and supported methods for the current buffer.
-- [ ] Explain client selection when multiple servers provide the same feature.
-- [ ] Expose recent request failures, timeouts, and empty results on demand.
+- [x] Inspect attached clients, project roots, and supported methods for the current buffer.
+- [x] Explain client selection when multiple servers provide the same feature.
+- [x] Expose optional tools' request failures, timeouts and empty results; show native lifecycle metadata and link to the LSP log.
 
 ## Shared behavior
 
