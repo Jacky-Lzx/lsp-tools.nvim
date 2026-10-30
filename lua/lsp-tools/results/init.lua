@@ -2,6 +2,7 @@ local M = {}
 local api = vim.api
 local panel = require("lsp-tools.panel")
 local model = require("lsp-tools.results.model")
+local view = require("lsp-tools.results.view")
 local config = {
   position = "bottom",
   width = 0.35,
@@ -12,6 +13,9 @@ local config = {
   auto_preview = true,
   debounce = 80,
   max_items = 5000,
+  icons = true,
+  indent_guides = true,
+  multiline = true,
 }
 local enabled = false
 local sessions, cache, cache_order = {}, {}, {}
@@ -30,7 +34,7 @@ local function selected(v)
   if not panel.alive(v) then
     return
   end
-  local row = v.rows[api.nvim_win_get_cursor(v.win)[1] - 3]
+  local row = v.line_rows[api.nvim_win_get_cursor(v.win)[1]]
   return row and row.item, row
 end
 local function close_preview(v)
@@ -45,6 +49,64 @@ local function close_preview(v)
     pcall(api.nvim_buf_delete, v.preview.buf, { force = true })
   end
   v.preview = nil
+end
+local function close_help(v)
+  if v.help then
+    if api.nvim_win_is_valid(v.help.win) then
+      pcall(api.nvim_win_close, v.help.win, true)
+    end
+    if api.nvim_buf_is_valid(v.help.buf) then
+      pcall(api.nvim_buf_delete, v.help.buf, { force = true })
+    end
+    v.help = nil
+  end
+end
+local function help(v)
+  close_help(v)
+  close_preview(v)
+  local mappings = api.nvim_buf_get_keymap(v.out, "n")
+  table.sort(mappings, function(a, b)
+    return a.lhs < b.lhs
+  end)
+  local lines = {}
+  for _, mapping in ipairs(mappings) do
+    if mapping.desc then
+      lines[#lines + 1] = "  "
+        .. mapping.lhs
+        .. string.rep(" ", math.max(1, 10 - #mapping.lhs))
+        .. mapping.desc
+    end
+  end
+  lines[#lines + 1] = "  /         Search list (native)"
+  local buf = api.nvim_create_buf(false, true)
+  api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+  vim.bo[buf].bufhidden, vim.bo[buf].modifiable = "wipe", false
+  vim.bo[buf].filetype = "lsp-tools-results"
+  local width, height =
+    math.max(1, math.min(64, vim.o.columns - 4)), math.max(1, math.min(#lines, vim.o.lines - 6))
+  local win = api.nvim_open_win(buf, true, {
+    relative = "editor",
+    row = math.max(0, math.floor((vim.o.lines - height) / 2) - 1),
+    col = math.max(0, math.floor((vim.o.columns - width) / 2)),
+    width = width,
+    height = height,
+    style = "minimal",
+    border = "rounded",
+    title = " Result keys ",
+  })
+  v.help = { win = win, buf = buf }
+  for i, line in ipairs(lines) do
+    local key = line:match("^  (%S+)")
+    api.nvim_buf_set_extmark(buf, ns, i - 1, 2, { end_col = 2 + #key, hl_group = "Special" })
+  end
+  for _, lhs in ipairs({ "q", "<Esc>", "?" }) do
+    vim.keymap.set("n", lhs, function()
+      close_help(v)
+      if panel.alive(v) then
+        api.nvim_set_current_win(v.win)
+      end
+    end, { buffer = buf, nowait = true, desc = "Close help" })
+  end
 end
 local function remember(v)
   cache[v.cache_key] = {
@@ -181,6 +243,7 @@ preview = function(v)
   local out = api.nvim_create_buf(false, true)
   api.nvim_buf_set_lines(out, 0, -1, false, lines)
   vim.bo[out].modifiable, vim.bo[out].bufhidden = false, "wipe"
+  vim.bo[out].filetype = "lsp-tools-results"
   local width, height =
     math.max(1, math.floor(vim.o.columns * 0.6)),
     math.max(1, math.min(#lines, math.floor((vim.o.lines - 4) * 0.5)))
@@ -225,62 +288,39 @@ render = function(v)
   if not panel.alive(v) then
     return
   end
-  local old = selected(v)
+  local old, old_row = selected(v)
   local id = v.selected_id or (old and old.id)
+  local key = old_row and old_row.key
   v.rows, v.filtered =
     model.rows(v.items, { filter = v.filter, sort = v.sort, group_by = v.group_by }, v.folds)
-  local lines = {
-    v.title .. " · " .. #v.filtered .. "/" .. #v.items .. (v.pinned and " · pinned" or ""),
-    "Enter jump · o jump/keep list · p preview · f filter · e errors · s sort · g group · F pin · r refresh · Q export · q close",
-    v.status or "za fold · zM/zR fold all · ]q/[q navigate · / search",
-  }
-  local cursor, fallback = nil, nil
-  for i, row in ipairs(v.rows) do
-    if row.item then
-      local item = row.item
-      local severity = ({ "E", "W", "I", "H" })[item.severity] or "·"
-      local path = #v.group_by == 0
-          and model.clean(vim.fn.fnamemodify(item.filename or item.uri or "[no location]", ":~:.")) .. ":"
-        or ""
-      lines[#lines + 1] = string.rep("  ", row.depth)
-        .. severity
-        .. " "
-        .. path
-        .. item.pos[1]
-        .. ":"
-        .. (item.column_unknown and "?" or item.pos[2] + 1)
-        .. " "
-        .. model.clean(item.text)
-        .. (item.source ~= "" and " [" .. model.clean(item.source) .. "]" or "")
-        .. (item.code and " (" .. model.clean(item.code) .. ")" or "")
-      fallback = fallback or #lines
-      if item.id == id then
-        cursor = #lines
-      end
-    else
-      lines[#lines + 1] = string.rep("  ", row.depth)
-        .. (v.folds[row.key] and "▸ " or "▾ ")
-        .. model.clean(row.label)
-        .. " ("
-        .. row.count
-        .. ")"
-    end
-  end
-  if #v.rows == 0 then
-    lines[#lines + 1] = "No matching results"
-  end
-  panel.write(v, lines)
+  local layout = view.layout(v)
+  v.line_rows, v.row_lines = layout.line_rows, layout.row_lines
+  panel.write(v, layout.lines)
   api.nvim_buf_clear_namespace(v.out, ns, 0, -1)
-  api.nvim_buf_set_extmark(v.out, ns, 0, 0, { end_col = #lines[1], hl_group = "Title" })
-  for i, row in ipairs(v.rows) do
-    local hl = row.item
-        and ({ "DiagnosticError", "DiagnosticWarn", "DiagnosticInfo", "DiagnosticHint" })[row.item.severity]
-      or not row.item and "Directory"
-    if hl then
-      api.nvim_buf_set_extmark(v.out, ns, i + 2, 0, { end_col = #lines[i + 3], hl_group = hl })
+  for line, spans in ipairs(layout.highlights) do
+    for _, span in ipairs(spans) do
+      api.nvim_buf_set_extmark(
+        v.out,
+        ns,
+        line - 1,
+        span[1],
+        { end_col = span[2], hl_group = span[3] }
+      )
     end
   end
-  api.nvim_win_set_cursor(v.win, { cursor or fallback or 4, 0 })
+  vim.wo[v.win].winbar = view.winbar(v)
+  local cursor, fallback
+  for index, row in ipairs(v.rows) do
+    if row.item then
+      fallback = fallback or v.row_lines[index]
+      if row.item.id == id then
+        cursor = v.row_lines[index]
+      end
+    elseif row.key == key and not v.selected_id then
+      cursor = v.row_lines[index]
+    end
+  end
+  api.nvim_win_set_cursor(v.win, { cursor or fallback or 1, 0 })
   v.selected_id = nil
   schedule_preview(v)
 end
@@ -414,7 +454,19 @@ function M.open(items, opts)
     height = options.height,
     focus = options.focus,
     persistent = true,
+    filetype = "lsp-tools-results",
   })
+  for name, value in pairs({
+    wrap = false,
+    list = false,
+    foldenable = false,
+    cursorline = true,
+    cursorlineopt = "line",
+    fillchars = "eob: ",
+    winhighlight = "CursorLine:LspToolsResultsCursorLine,WinBar:LspToolsResultsWinBar,WinBarNC:LspToolsResultsWinBarNC",
+  }) do
+    vim.wo[v.win][name] = value
+  end
   v.cache_key, v.tab, v.options, v.title =
     cache_key, tab, options, opts.title or saved.title or "Results"
   v.filter, v.folds =
@@ -425,17 +477,19 @@ function M.open(items, opts)
   v.pinned, v.auto_preview =
     opts.pinned == nil and saved.pinned or opts.pinned, options.auto_preview
   v.raw, v.items, v.rows = {}, {}, {}
+  v.line_rows, v.row_lines = {}, {}
   v.selected_id, v.stops = saved.selected, {}
   sessions[v] = true
   v.on_close = function()
     if api.nvim_win_is_valid(v.win) then
-      local row = v.rows[api.nvim_win_get_cursor(v.win)[1] - 3]
+      local row = v.line_rows[api.nvim_win_get_cursor(v.win)[1]]
       v.selected_id = row and row.item and row.item.id or v.selected_id
     end
     remember(v)
     stop(v.preview_timer)
     stop(v.refresh_timer)
     close_preview(v)
+    close_help(v)
     for _, cleanup in ipairs(v.stops) do
       pcall(cleanup)
     end
@@ -454,6 +508,9 @@ function M.open(items, opts)
       render(v)
     end
   end
+  map("?", function()
+    help(v)
+  end, "Show key bindings")
   map("<CR>", function()
     local item = selected(v)
     if item then
@@ -534,7 +591,8 @@ function M.open(items, opts)
   end, "Return to source")
   for lhs, direction in pairs({ ["]q"] = 1, ["[q"] = -1 }) do
     map(lhs, function()
-      local row = api.nvim_win_get_cursor(v.win)[1] - 3
+      local current = v.line_rows[api.nvim_win_get_cursor(v.win)[1]]
+      local row = current and current.index or (direction > 0 and 0 or #v.rows + 1)
       for _ = 1, vim.v.count1 do
         repeat
           row = row + direction
@@ -543,7 +601,7 @@ function M.open(items, opts)
           return
         end
       end
-      api.nvim_win_set_cursor(v.win, { row + 3, 0 })
+      api.nvim_win_set_cursor(v.win, { v.row_lines[row], 0 })
     end, "Navigate results")
   end
   for lhs, action in pairs(options.actions or {}) do
@@ -552,12 +610,12 @@ function M.open(items, opts)
       if item then
         action(item, v)
       end
-    end, "Result action")
+    end, (options.descriptions or {})[lhs] or "Result action")
   end
   for lhs, action in pairs(options.keys or {}) do
     map(lhs, function()
       action(v)
-    end, "Result view action")
+    end, (options.descriptions or {})[lhs] or "Result view action")
   end
   api.nvim_create_autocmd("CursorMoved", {
     group = v.group,
@@ -576,7 +634,7 @@ function M.open(items, opts)
         local pos = api.nvim_win_get_cursor(0)
         for row, entry in ipairs(v.rows) do
           if entry.item and entry.item.bufnr == ev.buf and entry.item.pos[1] == pos[1] then
-            api.nvim_win_set_cursor(v.win, { row + 3, 0 })
+            api.nvim_win_set_cursor(v.win, { v.row_lines[row], 0 })
             break
           end
         end
@@ -618,6 +676,7 @@ function M.preview(v)
 end
 function M.disable()
   enabled = false
+  view.disable()
   if package.loaded["lsp-tools.results.picker"] then
     package.loaded["lsp-tools.results.picker"].cancel()
   end
@@ -637,6 +696,7 @@ function M.setup(opts)
   )
   assert(next_config.debounce >= 0, "debounce must be nonnegative")
   M.disable()
+  view.setup()
   config, enabled = next_config, true
 end
 return M

@@ -322,10 +322,23 @@ Options include `id`, `title`, `position = "bottom" | "right"`, `height`, `width
 releases preview windows, timers and source listeners; reopening restores filters,
 folds, selection and snapshots. The module remains unloaded until first use.
 
+The Trouble-inspired layout puts the title, count and active filters in the
+winbar. The body uses file icons, tree guides and multiline messages, with muted
+source/code/position metadata and severity-colored icons. Paths are relative to
+the source window's cwd; file groups retain directory context for duplicate names.
+`icons = false`, `indent_guides = false`, or `multiline = false` disable individual
+decorations under `results`. File icons reuse an already loaded nvim-web-devicons
+provider and otherwise use a generic icon; no extra plugin is required.
+The `LspToolsResults*` highlight groups follow the active colorscheme and can be
+overridden. Lists use a cursor line and hide empty-buffer markers.
+If a statusline plugin manages winbars, exclude the `lsp-tools-results` filetype
+from its winbar handling so it preserves the list's own title and count.
+
 Keys: Enter jumps or folds a group; `o` jumps while keeping list focus; `p` previews;
 `P` toggles auto-preview; `za`, `zM`, `zR` fold; `f` filters; `e` toggles errors;
 `s` cycles sorting; `g` toggles grouping; `F` pins; `r` refreshes; `]q`/`[q` move
-between results; `Q` exports filtered locations to quickfix; `q`/Escape closes.
+between results; `Q` exports filtered locations to quickfix; `?` shows keys in an
+owned help popup; `q`/Escape closes.
 `/` searches the rendered list. Preview reads loaded buffer contents first and
 limits disk previews to 1 MiB. Results are never applied as edits.
 

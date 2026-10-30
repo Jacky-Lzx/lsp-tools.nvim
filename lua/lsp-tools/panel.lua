@@ -94,6 +94,13 @@ function M.open(name, ctx, opts)
     "foldcolumn",
     "winfixwidth",
     "winfixheight",
+    "winbar",
+    "winhighlight",
+    "cursorline",
+    "cursorlineopt",
+    "list",
+    "fillchars",
+    "foldenable",
   }) do
     source_options[name] = vim.wo[original][name]
   end

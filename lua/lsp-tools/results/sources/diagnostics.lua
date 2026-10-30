@@ -166,6 +166,12 @@ function M.open(results, opts)
     sort = "severity",
   }, opts)
   options.context, options.refresh = ctx, refresh
+  options.descriptions = vim.tbl_extend("force", opts.descriptions or {}, {
+    d = "Diagnostic details",
+    a = "Preview diagnostic fix",
+    A = "Fix and continue",
+    S = "Cycle all/project/buffer scope",
+  })
   options.validate = function(item)
     local d = item.data.diagnostic
     if

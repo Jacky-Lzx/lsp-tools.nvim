@@ -42,7 +42,7 @@ check(#v.filtered == 3, "error filter toggles off")
 local second_row
 for row, entry in ipairs(v.rows) do
   if entry.item and entry.item.id == "second" then
-    second_row = row + 3
+    second_row = v.row_lines[row]
   end
 end
 vim.api.nvim_win_set_cursor(v.win, { second_row, 0 })
@@ -65,7 +65,7 @@ check(
 local group_row
 for i, row in ipairs(v.rows) do
   if row.key then
-    group_row = i + 3
+    group_row = v.row_lines[i]
     break
   end
 end

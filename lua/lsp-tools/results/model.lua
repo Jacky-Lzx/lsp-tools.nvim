@@ -108,6 +108,8 @@ function M.rows(items, opts, folds)
       if not group then
         group = {
           key = key,
+          field = field,
+          value = value,
           label = field == "file" and vim.fn.fnamemodify(value, ":t") or value,
           children = {},
           groups = {},
@@ -123,8 +125,9 @@ function M.rows(items, opts, folds)
   end
   local rows = {}
   local function walk(parent, depth)
-    for _, child in ipairs(parent.children) do
+    for i, child in ipairs(parent.children) do
       child.depth = depth
+      child.last = i == #parent.children
       rows[#rows + 1] = child
       if not child.item and not folds[child.key] then
         walk(child, depth + 1)

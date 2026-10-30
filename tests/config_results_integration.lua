@@ -81,6 +81,11 @@ local function run()
       return v
     end, "configured " .. binding[1] .. " opens result view")
     assert(api.nvim_get_current_win() == win, "opening retains source focus")
+    require("lualine").refresh({ scope = "tabpage", place = { "winbar" }, force = true })
+    assert(
+      vim.wo[v.win].winbar:find("LspToolsResultsTitle", 1, true),
+      "lualine refresh preserves the result title bar"
+    )
     if binding[2] == "lsp" then
       wait(function()
         return v.status and v.status:find("unsupported", 1, true)

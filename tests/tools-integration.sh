@@ -15,3 +15,4 @@ python3 "$root/tests/terminal.py" hover_integration.lua
 python3 "$root/tests/terminal.py" workflows_integration.lua
 python3 "$root/tests/terminal.py" hierarchy_integration.lua
 python3 "$root/tests/terminal.py" results_integration.lua
+python3 "$root/tests/terminal.py" results_appearance_integration.lua
