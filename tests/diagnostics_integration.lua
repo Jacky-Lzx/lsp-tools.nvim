@@ -8,13 +8,11 @@ tools.setup({ diagnostics = true, references = false, breadcrumbs = false, outli
 local buf = vim.api.nvim_get_current_buf()
 vim.api.nvim_buf_set_name(buf, vim.fn.tempname() .. ".lua")
 vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "hello world", "next" })
-local id = assert(
-  vim.lsp.start({
-    name = "diagnostic-test",
-    cmd = { "python3", vim.env.LSP_TOOLS_ROOT .. "/tests/server.py" },
-    root_dir = vim.fn.getcwd(),
-  })
-)
+local id = assert(vim.lsp.start({
+  name = "diagnostic-test",
+  cmd = { "python3", vim.env.LSP_TOOLS_ROOT .. "/tests/server.py" },
+  root_dir = vim.fn.getcwd(),
+}))
 local client = vim.lsp.get_client_by_id(id)
 assert(vim.wait(5000, function()
   return client.initialized

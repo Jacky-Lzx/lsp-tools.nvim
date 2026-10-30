@@ -20,6 +20,21 @@ check(not package.loaded["lsp-tools.references"], "disabled reference tool stays
 check(not package.loaded["lsp-tools.rename"], "disabled rename tool stays unloaded")
 check(not package.loaded["lsp-tools.outline"], "disabled outline tool stays unloaded")
 check(not package.loaded["lsp-tools.breadcrumbs"], "disabled breadcrumbs stay unloaded")
+for _, name in ipairs({
+  "lightbulb",
+  "linked_editing",
+  "diagnostics",
+  "hover",
+  "links",
+  "inspect",
+  "hierarchy",
+}) do
+  check(
+    not package.loaded["lsp-tools." .. name],
+    name .. " stays unloaded until explicitly enabled"
+  )
+  check(not pcall(tools.setup, { [name] = "bad" }), "invalid " .. name .. " options fail")
+end
 check(tools.breadcrumbs() == "", "initially disabled breadcrumbs render empty")
 check(not tools.open_outline(), "opening an initially disabled outline does nothing")
 check(not package.loaded["code_actions"], "the old plugin is not loaded")

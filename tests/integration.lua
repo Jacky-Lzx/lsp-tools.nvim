@@ -160,6 +160,9 @@ local function run()
   end, "native apply=true remains supported")
   assert(not current(), "native automatic apply bypasses picker")
   client:stop(true)
+  wait(function()
+    return vim.lsp.get_client_by_id(id) == nil
+  end, "fixture transport exits before editor teardown")
   vim.fn.delete(project, "rf")
   local report = "lsp-tools code actions: real LSP/Snacks integration passed ("
     .. backend

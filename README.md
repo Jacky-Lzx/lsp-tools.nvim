@@ -652,3 +652,10 @@ must be installed on `PATH`. The `beamer` case covers frames, nested lists/items
 source jumps, breadcrumbs and structure/all mode switching. Set `TEXQUILL_BIN`
 to test a specific server build, or `LSP_TOOLS_BEAMER_FILE` to inspect an existing
 presentation containing the fixture's frame/item names without modifying it.
+
+Run `sh tests/tools-integration.sh` for the optional tools: real TeXquill linked
+editing and document links, LuaLS hover documentation, clangd call/type hierarchies,
+LSP/Snacks diagnostic fixes, and terminal rendering/key/focus checks. It requires
+`texquill` (or `NVIM_TEXQUILL`), `lua-language-server`, `clangd`, Python 3, and an
+installed Snacks checkout. `python3 tests/terminal.py workflows_integration.lua`
+runs just the code-action indicator, diagnostic-fix and inspection terminal flow.

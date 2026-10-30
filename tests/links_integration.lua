@@ -3,32 +3,24 @@ local directory = vim.fn.tempname()
 vim.fn.mkdir(directory, "p")
 local buf = vim.api.nvim_get_current_buf()
 vim.api.nvim_buf_set_name(buf, directory .. "/main.tex")
-vim.api.nvim_buf_set_lines(
-  buf,
-  0,
-  -1,
-  false,
-  {
-    "\\documentclass{article}",
-    "\\begin{document}",
-    "\\href{https://example.com/semantic}{Link}",
-    "\\end{document}",
-  }
-)
+vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
+  "\\documentclass{article}",
+  "\\begin{document}",
+  "\\href{https://example.com/semantic}{Link}",
+  "\\end{document}",
+})
 vim.bo[buf].filetype = "tex"
 local executable = vim.env.NVIM_TEXQUILL or vim.fn.exepath("texquill")
 assert(executable ~= "", "Install texquill or set NVIM_TEXQUILL")
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities.workspace.didChangeWatchedFiles.dynamicRegistration = false
-local id = assert(
-  vim.lsp.start({
-    name = "links-real-texquill",
-    cmd = { executable, "--stdio" },
-    root_dir = directory,
-    capabilities = capabilities,
-    init_options = { distribution = { enabled = false } },
-  })
-)
+local id = assert(vim.lsp.start({
+  name = "links-real-texquill",
+  cmd = { executable, "--stdio" },
+  root_dir = directory,
+  capabilities = capabilities,
+  init_options = { distribution = { enabled = false } },
+}))
 local client = vim.lsp.get_client_by_id(id)
 assert(vim.wait(5000, function()
   return client.initialized

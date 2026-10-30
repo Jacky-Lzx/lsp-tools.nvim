@@ -17,6 +17,7 @@ local function run()
   require("snacks.picker").setup()
   local tools = require("lsp-tools")
   tools.setup({
+    lightbulb = { debounce = 10, text = "!" },
     diagnostics = true,
     inspect = true,
     references = false,
@@ -36,6 +37,19 @@ local function run()
   wait(function()
     return client.initialized
   end, "workflow server initializes")
+  local bulb_ns = vim.api.nvim_create_namespace("lsp-tools.lightbulb")
+  wait(function()
+    return #vim.api.nvim_buf_get_extmarks(buf, bulb_ns, 0, -1, {}) == 1
+  end, "real LSP code action indicator appears")
+  if tui then
+    vim.cmd("redraw!")
+    local position = vim.api.nvim_win_get_position(win)
+    local line = ""
+    for col = position[2] + 1, position[2] + vim.api.nvim_win_get_width(win) do
+      line = line .. vim.fn.screenstring(position[1] + 1, col)
+    end
+    assert(line:find("!", 1, true), "code action indicator is visible in terminal")
+  end
   local ns = vim.lsp.diagnostic.get_namespace(id, false)
   vim.diagnostic.set(
     ns,

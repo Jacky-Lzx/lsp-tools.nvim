@@ -34,15 +34,12 @@ local function key(lhs)
   vim.fn.maparg(lhs, "n", false, true).callback()
 end
 check(calls[1].params.position.character == 2, "hover uses per-client encoding")
-calls[1].callback(
-  nil,
-  {
-    contents = {
-      kind = "markdown",
-      value = "```lua\nfoo(x)\n```\n[Docs](https://example.com/docs)",
-    },
-  }
-)
+calls[1].callback(nil, {
+  contents = {
+    kind = "markdown",
+    value = "```lua\nfoo(x)\n```\n[Docs](https://example.com/docs)",
+  },
+})
 check(
   text():find("foo(x)", 1, true) and vim.bo[s.out].filetype == "markdown",
   "Markdown content survives in pinned buffer"
@@ -85,5 +82,22 @@ key("r")
 pending = calls[#calls]
 hover.disable()
 check(pending.cancelled and not panel.alive(s), "disable cancels requests and closes pinned window")
+vim.api.nvim_set_current_win(win)
+hover.setup()
+s = hover.open()
+pending = calls[#calls]
+local replacement = vim.api.nvim_create_buf(false, true)
+local tool_win = s.win
+vim.api.nvim_win_set_buf(tool_win, replacement)
+check(
+  pending.cancelled and not panel.alive(s),
+  "replacing tool buffer cancels its outstanding request"
+)
+check(
+  vim.api.nvim_win_is_valid(tool_win) and vim.api.nvim_win_get_buf(tool_win) == replacement,
+  "replaced tool window is preserved"
+)
+vim.api.nvim_win_close(tool_win, true)
+hover.disable()
 print(("hover: %d assertions passed"):format(count))
 vim.cmd("qa!")
