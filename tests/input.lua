@@ -41,7 +41,7 @@ package.loaded["input-tools"] = {}
 input.input(opts, callback)
 check(global_calls == 2, "old plugin without the general API uses fallback")
 local title_options =
-  { title = "Rename", title_pos = "center", position = "cursor", default = "foo" }
+  { title = "Rename", title_pos = "center", position = "cursor", width = 32, default = "foo" }
 vim.ui.input = function(options, confirm)
   check(
     options.prompt == "Rename: " and options.default == "foo",
@@ -51,6 +51,7 @@ vim.ui.input = function(options, confirm)
     options.title == nil
       and options.title_pos == nil
       and options.position == nil
+      and options.width == nil
       and confirm == callback,
     "fallback strips presentation-only fields"
   )

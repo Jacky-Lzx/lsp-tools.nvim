@@ -265,22 +265,19 @@ local function input(token, default, new_name)
     token.stage = "input"
     local provider = config.input or require("lsp-tools.input").input
     local answered = false
-    local ok, err = pcall(
-      provider,
-      {
-        title = "Rename",
-        title_pos = "center",
-        position = "cursor",
-        default = default,
-        scope = "cursor",
-      },
-      function(value)
-        if not answered then
-          answered = true
-          rename(token, value)
-        end
+    local ok, err = pcall(provider, {
+      title = "Rename",
+      title_pos = "center",
+      position = "cursor",
+      width = 32,
+      default = default,
+      scope = "cursor",
+    }, function(value)
+      if not answered then
+        answered = true
+        rename(token, value)
       end
-    )
+    end)
     if not ok then
       fail(token, "Cannot open rename input: " .. tostring(err))
     end

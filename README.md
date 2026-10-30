@@ -589,8 +589,8 @@ require("lsp-tools").cancel_rename()
 
 Rename calls the general `require("input-tools").input(opts, on_confirm)` API
 automatically when available; no per-rename configuration callback is required.
-It passes `position="cursor"`, `title="Rename"`, `title_pos="center"`, and the
-prepared/default name;
+It passes `position="cursor"`, `width=32`, `title="Rename"`, `title_pos="center"`,
+and the prepared/default name;
 the input opens beside the source cursor, the label is centered in the upper
 border, and only the name is editable.
 Fallback providers receive the title as a conventional inline prompt.

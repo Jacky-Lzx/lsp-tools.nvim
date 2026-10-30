@@ -94,6 +94,7 @@ package.loaded["input-tools"] = {
       opts.title == "Rename"
         and opts.title_pos == "center"
         and opts.position == "cursor"
+        and opts.width == 32
         and opts.prompt == nil,
       "rename requests a centered title without an inline label"
     )

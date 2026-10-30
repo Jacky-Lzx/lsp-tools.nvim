@@ -133,6 +133,7 @@ local function run()
           == math.max(0, math.min(input_origin.curscol - 1, vim.o.columns - layout.outer_width)),
         "rename uses the source cursor screen column"
       )
+      assert(layout.width == 32, "rename uses a compact 32-column input")
       local box = vim.api.nvim_win_get_config(layout.win)
       assert(
         box.title[1][1] == "Rename" and box.title_pos == "center",
