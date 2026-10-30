@@ -59,6 +59,18 @@ check(
   "native jump honors visual columns after tab and Unicode"
 )
 check(results.selected(v).data.native_index == 2, "explicit jump leaves the selected result active")
+vim.o.switchbuf = "useopen,usetab"
+for _, destination in ipairs({ "split", "vsplit", "tab" }) do
+  api.nvim_set_current_win(v.win)
+  check(results.jump(v, false, destination), "native quickfix " .. destination .. " jump")
+  local target = api.nvim_get_current_win()
+  check(
+    target ~= owner and target ~= v.win and api.nvim_win_get_cursor(target)[2] == 5,
+    "native columns in new destination"
+  )
+  check(vim.o.switchbuf == "useopen,usetab", "switchbuf restored")
+  api.nvim_win_close(target, true)
+end
 local id = v.native_list.id
 vim.fn.setqflist({}, "a", { id = id, items = { { bufnr = a, lnum = 2, text = "appended" } } })
 check(
@@ -95,6 +107,22 @@ check(
 api.nvim_set_current_win(other)
 results.refresh(v)
 check(v.items[1].text == "owner entry", "panel focus cannot switch location-list ownership")
+results.select(v, v.items[2].id)
+for _, destination in ipairs({ "split", "vsplit", "tab" }) do
+  check(results.jump(v, false, destination), "owner-bound loclist " .. destination .. " jump")
+  local target = api.nvim_get_current_win()
+  check(
+    target ~= owner
+      and api.nvim_win_get_buf(target) == a
+      and api.nvim_win_get_cursor(target)[1] == 3,
+    "loclist destination inherits correct owner"
+  )
+  check(
+    vim.fn.getloclist(owner, { idx = 0 }).idx == 2,
+    "original owner's native index synchronized"
+  )
+  api.nvim_win_close(target, true)
+end
 api.nvim_win_close(owner, true)
 check(
   api.nvim_win_is_valid(v.win) and v.status:find("Source window closed", 1, true),

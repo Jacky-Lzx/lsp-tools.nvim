@@ -184,7 +184,12 @@ local function location(item)
     },
   }
 end
-function M.jump(v, keep_focus)
+function M.jump(v, keep_focus, destination)
+  destination = destination or "current"
+  assert(
+    vim.tbl_contains({ "current", "split", "vsplit", "tab" }, destination),
+    "invalid jump destination"
+  )
   local item = selected(v)
   if not item then
     return false
@@ -207,7 +212,12 @@ function M.jump(v, keep_focus)
   close_preview(v)
   api.nvim_set_current_win(win)
   local ok, handled = pcall(function()
-    if v.options.on_jump and v.options.on_jump(item, v) then
+    if destination == "tab" then
+      vim.cmd("tab split")
+    elseif destination ~= "current" then
+      vim.cmd("belowright " .. destination)
+    end
+    if v.options.on_jump and v.options.on_jump(item, v, destination) then
       return true
     end
     return vim.lsp.util.show_document(loc, "utf-8", { focus = true })
@@ -565,6 +575,16 @@ function M.open(items, opts)
   map("<LocalLeader>o", function()
     M.jump(v, true)
   end, "Jump and keep list focus")
+  for action, destination in pairs({
+    jump_split = "split",
+    jump_vsplit = "vsplit",
+    jump_tab = "tab",
+  }) do
+    local suffix = ({ split = "-", vsplit = "|", tab = "t" })[destination]
+    v.bindings:map(action, "<prefix>" .. suffix, function()
+      M.jump(v, false, destination)
+    end, "Jump in " .. destination)
+  end
   map("<LocalLeader>p", function()
     preview(v)
   end, "Preview source")

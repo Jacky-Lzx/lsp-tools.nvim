@@ -170,8 +170,14 @@ local function metadata(line, item, v)
   end
 end
 function M.layout(v)
-  v.display_cwd =
-    canonical(api.nvim_win_is_valid(v.ctx.win) and vim.fn.getcwd(v.ctx.win) or vim.fn.getcwd())
+  v.display_cwd = canonical(
+    api.nvim_win_is_valid(v.ctx.win)
+        and vim.fn.getcwd(
+          v.ctx.win,
+          api.nvim_tabpage_get_number(api.nvim_win_get_tabpage(v.ctx.win))
+        )
+      or vim.fn.getcwd()
+  )
   v.display_paths = {}
   local out = {
     lines = {},

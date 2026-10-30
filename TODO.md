@@ -102,8 +102,6 @@ key mappings belong to the user's configuration.
 - [x] Explain client selection when multiple servers provide the same feature.
 - [x] Expose optional tools' request failures, timeouts and empty results; show native lifecycle metadata and link to the LSP log.
 
-## Shared behavior
-
 ## Result interaction milestones
 
 - [x] Persistent diagnostics/LSP/quickfix/loclist views and picker snapshots.
@@ -111,7 +109,7 @@ key mappings belong to the user's configuration.
 - [x] Shared configurable action mappings and effective per-panel key help.
 - [x] Focusable previews, source line numbers, configurable context and side layout.
 - [x] Interactive diagnostic filters and named presets.
-- [ ] Split/vsplit/tab result jumps.
+- [x] Split/vsplit/tab result jumps.
 - [ ] Session query history with stale snapshot validation.
 - [ ] Plugin health checks for dependencies, syntax and integration conflicts.
 

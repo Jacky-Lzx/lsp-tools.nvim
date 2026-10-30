@@ -3,7 +3,14 @@ local saved = {}
 local function project(v)
   local root = vim.api.nvim_buf_is_valid(v.ctx.buf) and vim.fs.root(v.ctx.buf, { ".git" }) or nil
   root = root
-    or (vim.api.nvim_win_is_valid(v.ctx.win) and vim.fn.getcwd(v.ctx.win) or vim.fn.getcwd())
+    or (
+      vim.api.nvim_win_is_valid(v.ctx.win)
+        and vim.fn.getcwd(
+          v.ctx.win,
+          vim.api.nvim_tabpage_get_number(vim.api.nvim_win_get_tabpage(v.ctx.win))
+        )
+      or vim.fn.getcwd()
+    )
   return vim.uv.fs_realpath(root) or root
 end
 local function alive(v)

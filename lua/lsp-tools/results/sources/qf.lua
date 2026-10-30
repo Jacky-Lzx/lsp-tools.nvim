@@ -113,13 +113,27 @@ function M.open(results, opts, local_list)
       and list.id == item.data.list_id
       and list.changedtick == item.data.changedtick
   end
-  options.on_jump = function(item)
+  options.on_jump = function(item, v, destination)
     local command = local_list and "ll" or "cc"
-    if local_list then
+    if local_list and destination == "current" then
       api.nvim_set_current_win(owner)
+    end
+    -- A split inherits a copy of its owner's location list. Let the native jump
+    -- resolve visual columns and search patterns in that destination window.
+    local switchbuf = vim.o.switchbuf
+    if destination ~= "current" then
+      vim.o.switchbuf = ""
+    end
+    local ok, err = pcall(function()
       vim.cmd[command]({ args = { tostring(item.data.native_index) } })
-    else
-      vim.cmd[command]({ args = { tostring(item.data.native_index) } })
+    end)
+    vim.o.switchbuf = switchbuf
+    if not ok then
+      error(err)
+    end
+    if local_list and destination ~= "current" then
+      vim.fn.setloclist(owner, {}, "a", { id = item.data.list_id, idx = item.data.native_index })
+      refresh(v)
     end
     return true
   end

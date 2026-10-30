@@ -14,14 +14,10 @@ vim.diagnostic.set(
   buf,
   { { lnum = 0, col = 0, message = "bad", severity = 1, source = "compiler", code = "E1" } }
 )
-vim.diagnostic.set(
-  two,
-  buf,
-  {
-    { lnum = 0, col = 0, message = "spelling", severity = 2, source = "Harper", code = "W1" },
-    { lnum = 0, col = 0, message = "hint", severity = 4, source = "Harper", code = "H1" },
-  }
-)
+vim.diagnostic.set(two, buf, {
+  { lnum = 0, col = 0, message = "spelling", severity = 2, source = "Harper", code = "W1" },
+  { lnum = 0, col = 0, message = "hint", severity = 4, source = "Harper", code = "H1" },
+})
 local v = tools.diagnostics({ focus = true })
 local results, filters = require("lsp-tools.results"), require("lsp-tools.results.filters")
 local count = 0

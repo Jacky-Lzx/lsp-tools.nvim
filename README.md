@@ -374,6 +374,13 @@ focus; `<LocalLeader>p` previews; `<LocalLeader>P` toggles auto-preview; `za`, `
 `<LocalLeader>Q` exports filtered locations to quickfix; `<LocalLeader>?` shows
 keys in an owned help popup; `<LocalLeader>q`/Escape closes.
 
+`<LocalLeader>-`, `<LocalLeader>|`, and `<LocalLeader>t` jump in a horizontal
+split, vertical split, or new tab. The actions are `jump_split`, `jump_vsplit`,
+and `jump_tab`; Enter remains `jump` in the source window. The list stays open
+in its original tab. Stale results are rejected before creating a destination.
+Native quickfix/location-list jumps preserve visual columns, search patterns and
+the original list's current index, including location-list window ownership.
+
 `gg`, `G`, word motions, character searches, yank and macro commands retain their
 Vim behavior. `/` and `?` search forward and backward. The default `<LocalLeader>`
 is `\`; it follows your `maplocalleader` setting (often Space). Help shows that
