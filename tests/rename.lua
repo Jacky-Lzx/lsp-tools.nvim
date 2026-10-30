@@ -91,7 +91,10 @@ package.loaded["input-tools"] = {
   input = function(opts, callback)
     check(opts.default == "foo", "general API receives prepared/default name")
     check(
-      opts.title == "Rename" and opts.title_pos == "center" and opts.prompt == nil,
+      opts.title == "Rename"
+        and opts.title_pos == "center"
+        and opts.position == "cursor"
+        and opts.prompt == nil,
       "rename requests a centered title without an inline label"
     )
     general_callback = callback

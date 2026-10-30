@@ -267,7 +267,13 @@ local function input(token, default, new_name)
     local answered = false
     local ok, err = pcall(
       provider,
-      { title = "Rename", title_pos = "center", default = default, scope = "cursor" },
+      {
+        title = "Rename",
+        title_pos = "center",
+        position = "cursor",
+        default = default,
+        scope = "cursor",
+      },
       function(value)
         if not answered then
           answered = true

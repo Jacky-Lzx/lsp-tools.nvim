@@ -91,7 +91,7 @@ local function run()
   local function current()
     return require("snacks.picker").get()[1]
   end
-  local general_api, general_calls
+  local general_api, general_calls, input_origin
   if native_input then
     local spec = require("lazy.core.config").plugins["lsp-tools.nvim"]
     local opts = require("lazy.core.plugin").values(spec, "opts", false)
@@ -100,6 +100,9 @@ local function run()
     general_api, general_calls = input_tools.input, 0
     input_tools.input = function(options, confirm)
       general_calls = general_calls + 1
+      local cursor = vim.api.nvim_win_get_cursor(0)
+      input_origin = vim.fn.screenpos(0, cursor[1], cursor[2] + 1)
+      assert(options.position == "cursor", "rename requests the cursor input position")
       return general_api(options, confirm)
     end
   end
@@ -121,7 +124,15 @@ local function run()
       assert(vim.fn.getcmdline() == "foo", "prepareRename prefills native input")
       assert(vim.ui.input == require("snacks.input").input, "global Snacks provider remains active")
       local layout = require("input-tools").get_layout()
-      assert(layout.row == 3, "rename input keeps the configured top position")
+      assert(
+        layout.row == input_origin.row or layout.row + layout.outer_height == input_origin.row - 1,
+        "rename frame is beside the original cursor"
+      )
+      assert(
+        layout.col
+          == math.max(0, math.min(input_origin.curscol - 1, vim.o.columns - layout.outer_width)),
+        "rename uses the source cursor screen column"
+      )
       local box = vim.api.nvim_win_get_config(layout.win)
       assert(
         box.title[1][1] == "Rename" and box.title_pos == "center",
