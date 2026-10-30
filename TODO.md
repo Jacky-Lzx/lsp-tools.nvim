@@ -53,6 +53,13 @@ key mappings belong to the user's configuration.
 - [x] Cancel obsolete requests and preserve other winbar providers on setup and disable.
 - [x] Verify real LuaLS, installed lualine, terminal rendering, split cursors, and live edits.
 
+## Linked editing
+
+- [x] Synchronize validated server ranges with Unicode positions, cancellation and timeouts.
+- [x] Preserve undo/redo, empty intermediate names, LaTeX stars and Unicode names.
+- [x] Support common server word patterns and explicit custom validators.
+- [x] Verify real TeXquill through an attached Neovim UI.
+
 ## Diagnostic workflow
 
 - [ ] Show full messages, sources, codes, and related locations.

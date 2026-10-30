@@ -6,7 +6,7 @@ function M.setup(opts)
   opts = opts or {}
   assert(type(opts) == "table", "lsp-tools options must be a table")
   -- New tools are opt-in, preserving existing installations' automatic behavior.
-  for _, name in ipairs({ "lightbulb" }) do
+  for _, name in ipairs({ "lightbulb", "linked_editing" }) do
     local value = opts[name]
     assert(
       value == nil or type(value) == "boolean" or type(value) == "table",

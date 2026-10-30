@@ -160,6 +160,29 @@ edits, window changes, Insert mode, detach, timeout and disable discard obsolete
 results and clear only this tool's decoration. Set `sign = true` for a sign-column
 indicator instead of virtual text. `hl` defaults to `DiagnosticHint`.
 
+## Optional linked editing
+
+Enable `linked_editing = true` to synchronize server-provided linked ranges (for
+example HTML tags or LaTeX environment names). This replaces configuration-side
+linked-editing adapters. It uses one capable client per buffer, ordered by client
+ID, and disables native linked editing for that client/buffer to prevent duplicate
+edits. To return to native behavior after disabling this tool, explicitly call
+`vim.lsp.linked_editing_range.enable(true)`.
+
+```lua
+require("lsp-tools").setup({ linked_editing = { request_timeout = 1500 } })
+```
+
+Only non-overlapping, single-line ranges with identical text are synchronized.
+Changes join the original undo block. Empty names remain editable during `ciw`.
+Common repeated-character-class `wordPattern` expressions are supported, including
+TeXquill's Unicode/star-friendly pattern. Unsupported ECMAScript expressions stop
+the session with a warning; supply `validate = function(text, server_pattern)` for
+a custom validator returning a boolean. A server without a pattern uses ASCII
+letters, digits, underscores and hyphens. No local tag/environment parser is used.
+Requests time out and stale cursor/buffer/window replies are discarded; leaving,
+detaching or disabling clears owned ranges and cancels pending work.
+
 ## Reference navigation
 
 `require("lsp-tools").jump_reference(count, opts)` moves forward for a positive
