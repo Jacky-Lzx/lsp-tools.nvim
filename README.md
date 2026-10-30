@@ -810,3 +810,7 @@ real LSP dynamic capability registration and removal with a stdio fixture.
 Run the same opt-in command with `config_results_integration.lua` for the actual
 Snacks `<C-t>` first-use path before LSP attachment and the configured diagnostic,
 LSP, quickfix and loclist toggles after replacing Trouble.
+Set `LSP_TOOLS_TEST_DEBUGGING=1` for the same check with the configuration's debugging
+feature enabled. This verifies that DAP and result-window winbar exclusions merge
+correctly and that focus changes, live diagnostics and lualine refreshes do not
+replace the result title with a filename.

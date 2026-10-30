@@ -5,7 +5,8 @@ local function run()
   vim.env.NVIM_CONFIG_ROOT, vim.env.NVIM_SMOKE_TEST = config, "1"
   vim.env.NVIM_LAZY_LOCKFILE = directory .. "/lock.json"
   vim.opt.rtp:prepend(config)
-  require("config.context").initialize({ profiles = {}, features = {} })
+  local debugging = vim.env.LSP_TOOLS_TEST_DEBUGGING == "1"
+  require("config.context").initialize({ profiles = {}, features = { debugging = debugging } })
   vim.g.loaded_wakatime = true
   vim.o.loadplugins = true
   dofile(config .. "/init.lua")
@@ -133,11 +134,73 @@ local function run()
       return v
     end, "configured " .. binding[1] .. " opens result view")
     assert(api.nvim_get_current_win() == win, "opening retains source focus")
-    require("lualine").refresh({ scope = "tabpage", place = { "winbar" }, force = true })
+    local lualine = require("lualine")
+    local excluded = lualine.get_config().options.disabled_filetypes.winbar
+    assert(
+      vim.tbl_contains(excluded, "lsp-tools-results"),
+      "resolved winbar exclusions retain result windows"
+    )
+    if debugging then
+      for _, filetype in ipairs({ "dap-view", "dap-view-term", "dap-repl" }) do
+        assert(vim.tbl_contains(excluded, filetype), "resolved exclusions also retain " .. filetype)
+      end
+    end
+    lualine.refresh({ scope = "tabpage", place = { "winbar" }, force = true })
     assert(
       vim.wo[v.win].winbar:find("LspToolsResultsTitle", 1, true),
       "lualine refresh preserves the result title bar"
     )
+    if binding[2] == "diagnostics" then
+      local foreign_bars = {}
+      api.nvim_create_autocmd("OptionSet", {
+        group = v.group,
+        pattern = "winbar",
+        callback = function()
+          if api.nvim_win_is_valid(v.win) then
+            local bar = vim.wo[v.win].winbar
+            if not bar:find("LspToolsResultsTitle", 1, true) then
+              foreign_bars[#foreign_bars + 1] = bar
+            end
+          end
+        end,
+      })
+      local deadline, iteration = vim.uv.hrtime() + 3e9, 0
+      while vim.uv.hrtime() < deadline do
+        iteration = iteration + 1
+        api.nvim_set_current_win(iteration % 2 == 0 and v.win or win)
+        vim.diagnostic.set(
+          ns,
+          buf,
+          { { lnum = 0, col = 4, message = "warning " .. iteration, severity = 2 } }
+        )
+        lualine.refresh({ scope = "tabpage", place = { "winbar" }, force = true })
+        local next_frame = vim.uv.hrtime() + 100e6
+        while vim.uv.hrtime() < next_frame do
+          coroutine.yield()
+        end
+        assert(
+          vim.wo[v.win].winbar:find("LspToolsResultsTitle", 1, true),
+          "focus, diagnostic and timer refreshes keep the result winbar stable"
+        )
+      end
+      wait(function()
+        return v.items[1].text == "warning " .. iteration
+      end, "live diagnostics continue refreshing while the title stays stable")
+      assert(
+        #foreign_bars == 0,
+        "no intermediate filename/empty winbar was written: " .. vim.inspect(foreign_bars)
+      )
+      vim.cmd("redraw!")
+      local first = vim.fn.screenpos(v.win, 1, 1)
+      local bar = ""
+      for col = first.col, first.col + api.nvim_win_get_width(v.win) - 1 do
+        bar = bar .. vim.fn.screenstring(first.row - 1, col)
+      end
+      assert(
+        bar:find("Diagnostics", 1, true) and not bar:find("[No Name]", 1, true),
+        "actual terminal retains the diagnostics title after repeated refreshes"
+      )
+    end
     if binding[2] == "lsp" then
       wait(function()
         return v.status and v.status:find("unsupported", 1, true)
@@ -166,10 +229,11 @@ local function step()
     )
     vim.cmd("cquit 1")
   elseif coroutine.status(thread) == "dead" then
-    vim.fn.writefile(
-      { "configured terminal: lazy Snacks <C-t>, diagnostic/LSP/quickfix/loclist toggles passed" },
-      vim.env.LSP_TOOLS_TEST_TMP .. "/result"
-    )
+    vim.fn.writefile({
+      "configured terminal: lazy picker, native Vim keys, clean help, stable winbars (debugging="
+        .. tostring(vim.env.LSP_TOOLS_TEST_DEBUGGING == "1")
+        .. ") and result toggles passed",
+    }, vim.env.LSP_TOOLS_TEST_TMP .. "/result")
     vim.cmd("qa!")
   else
     vim.defer_fn(step, 10)
