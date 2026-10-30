@@ -90,6 +90,12 @@ key mappings belong to the user's configuration.
 - [ ] Preserve expansion state and preview concrete source locations.
 - [ ] Gate operations on the attached server's capabilities.
 
+## Semantic document links
+
+- [x] Open encoded server targets, resolve lazy links, and choose between providers.
+- [x] Preserve existing path openers as a fallback without stale or cancelled opens.
+- [x] Verify Unicode ranges, cancellation, timeout and real TeXquill links.
+
 ## LSP inspection
 
 - [ ] Inspect attached clients, project roots, and supported methods for the current buffer.

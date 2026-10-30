@@ -6,7 +6,7 @@ function M.setup(opts)
   opts = opts or {}
   assert(type(opts) == "table", "lsp-tools options must be a table")
   -- New tools are opt-in, preserving existing installations' automatic behavior.
-  for _, name in ipairs({ "lightbulb", "linked_editing", "diagnostics", "hover" }) do
+  for _, name in ipairs({ "lightbulb", "linked_editing", "diagnostics", "hover", "links" }) do
     local value = opts[name]
     assert(
       value == nil or type(value) == "boolean" or type(value) == "table",
@@ -148,6 +148,11 @@ end
 ---Pin hover documentation in a searchable Markdown side window.
 function M.hover(opts)
   return require("lsp-tools.hover").open(opts)
+end
+
+---Open the server's document link at the cursor, optionally falling back to a path opener.
+function M.open_link(opts)
+  return require("lsp-tools.links").open(opts)
 end
 
 return M

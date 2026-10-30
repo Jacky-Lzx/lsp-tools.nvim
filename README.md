@@ -160,6 +160,31 @@ edits, window changes, Insert mode, detach, timeout and disable discard obsolete
 results and clear only this tool's decoration. Set `sign = true` for a sign-column
 indicator instead of virtual text. `hl` defaults to `DiagnosticHint`.
 
+## Optional semantic links
+
+Enable `links = true` and map `require("lsp-tools").open_link()` to query the
+server's `documentLink` at the cursor. Unresolved links use `documentLink/resolve`
+when supported. Different targets from multiple clients prompt through your
+existing `vim.ui.select`; cancelling never opens a fallback. Duplicate targets
+are shown once. Positions use each client's encoding and exclusive range ends.
+
+```lua
+require("lsp-tools").setup({
+  links = {
+    request_timeout = 3000,
+    open = function(uri) vim.ui.open(uri) end,
+    fallback = function() require("my-path-opener").open_at_cursor() end,
+  },
+})
+```
+
+`open` defaults to `vim.ui.open`. With no supported/resolved link (including
+request failure/timeout), `fallback` runs once; the default opens `<cfile>` through
+`vim.ui.open`. Override either callback per invocation with `open_link(opts)`.
+No fallback runs for a stale source, cancelled selection or failed target opener.
+Movement, edits, source/window changes, detach and disable discard obsolete work.
+The plugin installs no `go` or Visual-mode mappings.
+
 ## Optional pinned documentation
 
 Enable `hover = true`, then call `require("lsp-tools").hover()` to pin the source
