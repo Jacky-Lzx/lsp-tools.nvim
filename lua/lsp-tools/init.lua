@@ -276,4 +276,8 @@ function M.loclist(opts)
   return call("results", "source", "loclist", opts)
 end
 
+function M.locations(opts)
+  return call("results", "source", "lsp", opts)
+end
+
 return M

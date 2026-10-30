@@ -77,6 +77,9 @@ function M.rows(items, opts, folds)
   end, items)
   if opts.sort ~= "none" then
     table.sort(filtered, function(a, b)
+      if a.section_order and b.section_order and a.section_order ~= b.section_order then
+        return a.section_order < b.section_order
+      end
       if opts.sort == "severity" and (a.severity or 9) ~= (b.severity or 9) then
         return (a.severity or 9) < (b.severity or 9)
       end

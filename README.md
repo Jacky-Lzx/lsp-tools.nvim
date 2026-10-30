@@ -363,6 +363,25 @@ default 150 ms). Polling stops on close. `F` pins; `r` refreshes; unpinning refr
 immediately. Stale snapshots refuse native jumps until refreshed. `Q` explicitly
 exports the filtered view as a new quickfix list. `toggle = true` toggles the view.
 
+## Persistent LSP locations
+
+With `results = true`, `locations(opts)` queries definitions, references,
+implementations, type definitions and declarations into labeled sections. Set
+`method = "references"` (or another plural name / protocol method) to query one
+section; `include_declaration = false` omits reference declarations. Multiple
+providers are deduplicated by converted location while retaining provider IDs.
+`Location` and `LocationLink` use each client's encoding and selection range.
+
+Results remain available while moving between source files. `r` queries the
+source window's current position; `follow_symbol = true` enables debounced queries
+while that window's cursor moves. `F` pins automatic following. Edits/detach mark
+snapshots stale; changed source/target text or files refuse jumps until refreshed.
+Late replies after source cursor changes and closed views are discarded. Slow
+clients time out (`request_timeout`, default 3000 ms); errors and unsupported
+sections remain visible. Large/unavailable files show an unknown column until
+native navigation loads them; jumps and quickfix export retain protocol encoding.
+Location queries require no Snacks picker or Trouble dependency.
+
 ## Reference navigation
 
 `require("lsp-tools").jump_reference(count, opts)` moves forward for a positive

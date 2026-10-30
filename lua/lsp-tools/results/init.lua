@@ -248,7 +248,7 @@ render = function(v)
         .. path
         .. item.pos[1]
         .. ":"
-        .. (item.pos[2] + 1)
+        .. (item.column_unknown and "?" or item.pos[2] + 1)
         .. " "
         .. model.clean(item.text)
         .. (item.source ~= "" and " [" .. model.clean(item.source) .. "]" or "")
@@ -358,16 +358,23 @@ function M.export(v)
   local entries = {}
   for _, item in ipairs(v.filtered) do
     if item.uri then
-      entries[#entries + 1] = {
-        bufnr = item.bufnr,
-        filename = item.filename,
-        lnum = item.pos[1],
-        col = item.pos[2] + 1,
-        end_lnum = item.end_pos and item.end_pos[1],
-        end_col = item.end_pos and item.end_pos[2] + 1,
-        text = item.text,
-        type = ({ "E", "W", "I", "H" })[item.severity] or "",
-      }
+      if v.options.to_quickfix then
+        local converted = v.options.to_quickfix(item)
+        if converted then
+          entries[#entries + 1] = converted
+        end
+      else
+        entries[#entries + 1] = {
+          bufnr = item.bufnr,
+          filename = item.filename,
+          lnum = item.pos[1],
+          col = item.pos[2] + 1,
+          end_lnum = item.end_pos and item.end_pos[1],
+          end_col = item.end_pos and item.end_pos[2] + 1,
+          text = item.text,
+          type = ({ "E", "W", "I", "H" })[item.severity] or "",
+        }
+      end
     end
   end
   vim.fn.setqflist({}, " ", { title = v.title, items = entries })
