@@ -14,6 +14,9 @@ local links = {
   Title = "Title",
   CursorLine = "CursorLine",
   Folded = "Normal",
+  PreviewPath = "Directory",
+  PreviewLine = "CursorLine",
+  PreviewRange = "Visual",
   WinBar = "WinBar",
   WinBarNC = "WinBarNC",
 }

@@ -230,54 +230,8 @@ preview = function(v)
     close_preview(v)
     return
   end
-  local lines =
-    { model.clean(item.filename or item.uri or "[no source]") .. ":" .. item.pos[1], "" }
-  if item.text ~= "" then
-    vim.list_extend(lines, vim.split(item.text, "\n", { plain = true }))
-    lines[#lines + 1] = ""
-  end
-  local source
-  local buf = item.bufnr or (item.uri and vim.uri_to_bufnr(item.uri))
-  if buf and api.nvim_buf_is_loaded(buf) then
-    source = api.nvim_buf_get_lines(
-      buf,
-      math.max(0, item.pos[1] - 4),
-      math.min(api.nvim_buf_line_count(buf), item.pos[1] + 6),
-      false
-    )
-  elseif item.filename then
-    local stat = vim.uv.fs_stat(item.filename)
-    if stat and stat.size <= 1024 * 1024 then
-      local ok, text = pcall(vim.fn.readfile, item.filename, "", item.pos[1] + 6)
-      if ok then
-        source = vim.list_slice(text, math.max(1, item.pos[1] - 3), item.pos[1] + 6)
-      end
-    else
-      source = { "Source unavailable or larger than preview limit; Enter opens the location." }
-    end
-  end
-  vim.list_extend(lines, source or { "No source preview available" })
   close_preview(v)
-  local out = api.nvim_create_buf(false, true)
-  api.nvim_buf_set_lines(out, 0, -1, false, lines)
-  vim.bo[out].modifiable, vim.bo[out].bufhidden = false, "wipe"
-  vim.bo[out].filetype = "lsp-tools-results"
-  local width, height =
-    math.max(1, math.floor(vim.o.columns * 0.6)),
-    math.max(1, math.min(#lines, math.floor((vim.o.lines - 4) * 0.5)))
-  local win = api.nvim_open_win(out, false, {
-    relative = "editor",
-    row = math.max(0, math.floor((vim.o.lines - height) / 2) - 1),
-    col = math.max(0, math.floor((vim.o.columns - width) / 2)),
-    width = width,
-    height = height,
-    border = "rounded",
-    title = " Preview ",
-    style = "minimal",
-    focusable = false,
-  })
-  vim.wo[win].wrap = true
-  v.preview = { win = win, buf = out }
+  v.preview = require("lsp-tools.results.preview").open(item)
 end
 local function schedule_preview(v)
   stop(v.preview_timer)

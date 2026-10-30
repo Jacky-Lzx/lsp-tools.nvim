@@ -358,6 +358,13 @@ triggers. User-supplied `actions` / `keys` remain literal mappings. Preview read
 loaded buffer contents first and limits disk previews to 1 MiB. Results are never
 applied as edits.
 
+Preview code uses the source language's Tree-sitter highlight queries, falling
+back to Vim syntax files when a parser or query is unavailable. Only the code
+excerpt is parsed; paths and diagnostic messages have separate colors. The target
+line and UTF-8 range are highlighted. Source buffers stay unchanged and unopened
+files are read without loading their buffers or starting language/filetype hooks.
+Preview buffers retain the widget filetype so statusline integrations keep working.
+
 ## Diagnostic overview
 
 With `results = true` and `diagnostics = true`, `require("lsp-tools").diagnostics()`

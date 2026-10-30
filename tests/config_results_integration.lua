@@ -100,6 +100,31 @@ local function run()
   wait(function()
     return not v.help and api.nvim_get_current_win() == v.win
   end, "Escape closes help")
+  api.nvim_buf_set_lines(buf, 0, -1, false, { 'local alpha = "hello"', "return alpha" })
+  vim.bo[buf].filetype = "lua"
+  results.select(v, v.items[1].id)
+  api.nvim_input(vim.keycode("<LocalLeader>p"))
+  wait(function()
+    return v.preview
+  end, "configured preview opens")
+  local preview = v.preview
+  assert(preview.highlight_backend == "treesitter" and preview.filetype == "lua")
+  require("lualine").refresh({ scope = "tabpage", place = { "winbar" }, force = true })
+  assert(vim.wo[preview.win].winbar == "", "lualine leaves the preview float alone")
+  vim.cmd("redraw!")
+  local keyword = vim.fn.screenpos(preview.win, preview.code_start, 1)
+  local literal = vim.fn.screenpos(preview.win, preview.code_start, 16)
+  assert(
+    keyword.row > 0
+      and literal.row > 0
+      and vim.fn.screenattr(keyword.row, keyword.col)
+        ~= vim.fn.screenattr(literal.row, literal.col),
+    "actual configured preview displays distinct Lua keyword/string colors"
+  )
+  assert(
+    vim.fn.screenpos(preview.win, 1, 1).row > 0,
+    "preview metadata stays visible despite the source scrolloff"
+  )
   results.select(v, v.items[1].id)
   api.nvim_set_current_win(v.win)
   api.nvim_input("<CR>")

@@ -27,7 +27,13 @@ local function run()
   local function buffer(name)
     local buf = api.nvim_create_buf(true, false)
     api.nvim_buf_set_name(buf, root .. "/" .. name)
-    api.nvim_buf_set_lines(buf, 0, -1, false, { "😀alpha", "local options = {}", "return alpha" })
+    api.nvim_buf_set_lines(
+      buf,
+      0,
+      -1,
+      false,
+      { 'local value = "😀hello"', "local options = {}", "return value" }
+    )
     return buf
   end
   local one, two = buffer("lua/results/init.lua"), buffer("lua/sources/init.lua")
@@ -125,6 +131,36 @@ local function run()
       return vim.fn.foldclosed(first) == -1
     end)
   end, "native zo restores the diagnostic lines")
+  results.select(v, v.items[1].id)
+  api.nvim_input(vim.keycode("<LocalLeader>p"))
+  wait(function()
+    return v.preview
+  end, "preview opens with language highlighting")
+  local p = v.preview
+  assert(
+    p.highlight_backend == "treesitter" and p.filetype == "lua",
+    "preview uses actual Lua highlight queries"
+  )
+  vim.cmd("redraw!")
+  local function preview_attr(row, needle)
+    local text = api.nvim_buf_get_lines(p.buf, row - 1, row, false)[1]
+    local byte = assert(text:find(needle, 1, true))
+    local cell = vim.fn.screenpos(p.win, row, byte)
+    assert(cell.row > 0 and cell.col > 0, "preview segment is visible")
+    return vim.fn.screenattr(cell.row, cell.col)
+  end
+  assert(
+    preview_attr(p.code_start, "local") ~= preview_attr(p.code_start, "hello"),
+    "Lua keywords and strings have distinct colors in the actual preview"
+  )
+  assert(
+    preview_attr(p.code_start, "local") ~= preview_attr(p.code_start + 1, "local"),
+    "the target line has a visible background"
+  )
+  assert(
+    preview_attr(1, "init.lua") ~= preview_attr(3, "类型错误"),
+    "path and diagnostic message have distinct preview colors"
+  )
   api.nvim_win_set_cursor(v.win, { first + 1, 0 })
   api.nvim_input("]q")
   wait(function()
@@ -197,7 +233,7 @@ local function step()
     vim.fn.writefile({
       "result appearance: "
         .. value
-        .. ", bottom/right layouts, segment colors, multiline navigation and help keys passed",
+        .. ", bottom/right layouts, preview syntax colors, multiline navigation and help keys passed",
     }, vim.env.LSP_TOOLS_TEST_TMP .. "/result")
     vim.cmd("qa!")
   else
