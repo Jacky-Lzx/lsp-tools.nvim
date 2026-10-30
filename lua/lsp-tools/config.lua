@@ -20,6 +20,12 @@ end
 -- Validate supplied options without importing the implementation or its defaults.
 function M.tool(name, opts)
   require("lsp-tools.keymaps").validate(opts)
+  if name == "results" and opts.history ~= nil then
+    assert(
+      type(opts.history) == "number" and opts.history >= 0 and opts.history % 1 == 0,
+      "results.history must be a nonnegative integer"
+    )
+  end
   if name == "results" and opts.presets then
     assert(type(opts.presets) == "table", "results.presets must be a table")
     for key, value in pairs(opts.presets) do

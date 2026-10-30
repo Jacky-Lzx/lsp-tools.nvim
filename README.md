@@ -404,6 +404,16 @@ Configure `results.preview = { before = 3, after = 6, layout = "float", width = 
 height = 0.5 }`. Layout also accepts `"right"` or `"bottom"`. Width/height are
 fractions of the editor. Previews stay read-only and leave source buffers intact.
 
+The `history` action (default `<LocalLeader>H`) or
+`require("lsp-tools").results_history({ focus = true })` opens recent session
+queries. It restores the source, results, filters, selection, grouping and native
+fold state as a pinned snapshot without sending a request. Source edits, target
+buffer/disk changes, detached providers and replaced native lists block stale
+jumps. Refresh explicitly reruns the saved LSP origin, or reloads current
+diagnostics/quickfix/loclist data. An imported picker snapshot without a refresh
+provider must be searched again. `results.history = 20` bounds retained queries;
+`0` disables recording. History is in memory only and disappears on Neovim exit.
+
 ## Diagnostic overview
 
 The `filters` action (default `<LocalLeader>/`) opens an interactive field menu:

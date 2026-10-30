@@ -229,7 +229,7 @@ function M.open(results, opts)
       desc = "Cycle all/project/buffer scope",
       action = function(v)
         v.scope = v.scope == "all" and "project" or v.scope == "project" and "buffer" or "all"
-        refresh(v)
+        results.refresh(v)
       end,
     },
   })

@@ -272,6 +272,9 @@ end
 function M.results(items, opts)
   return call("results", "open", items, opts)
 end
+function M.results_history(opts)
+  return call("results", "history", opts)
+end
 function M.diagnostics(opts)
   return call("results", "source", "diagnostics", opts)
 end

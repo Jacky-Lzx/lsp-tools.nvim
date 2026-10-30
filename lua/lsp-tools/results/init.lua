@@ -17,6 +17,7 @@ local config = {
   icons = true,
   indent_guides = true,
   multiline = true,
+  history = 20,
 }
 local enabled = false
 local sessions, cache, cache_order = {}, {}, {}
@@ -347,6 +348,11 @@ function M.set_items(v, items, append)
     v.status = "Result limit reached (" .. v.options.max_items .. ")"
   end
   render(v)
+  if v.options.history > 0 then
+    local history = require("lsp-tools.results.history")
+    history.stamp(v)
+    history.capture(v)
+  end
 end
 refresh = function(v)
   if not panel.alive(v) or not v.options.refresh then
@@ -436,12 +442,8 @@ function M.open(items, opts)
   end
   local tab = api.nvim_get_current_tabpage()
   local cache_key = tostring(tab) .. ":" .. id
-  if existing then
-    panel.close(existing)
-  end
-  local saved = cache[cache_key] or {}
   local ctx = opts.context or require("lsp-tools.request").context()
-  if vim.bo[ctx.buf].buftype ~= "" then
+  if not api.nvim_buf_is_valid(ctx.buf) or vim.bo[ctx.buf].buftype ~= "" then
     for _, win in ipairs(api.nvim_tabpage_list_wins(tab)) do
       if vim.bo[api.nvim_win_get_buf(win)].buftype == "" then
         ctx = api.nvim_win_call(win, require("lsp-tools.request").context)
@@ -449,6 +451,13 @@ function M.open(items, opts)
       end
     end
   end
+  if existing then
+    panel.close(existing)
+  end
+  if not api.nvim_buf_is_valid(ctx.buf) then
+    ctx = require("lsp-tools.request").context()
+  end
+  local saved = cache[cache_key] or {}
   local options = vim.tbl_deep_extend("force", {}, config, opts)
   local v = panel.open("results-" .. id, ctx, {
     position = options.position,
@@ -500,6 +509,9 @@ function M.open(items, opts)
     end
     folds.capture(v)
     remember(v)
+    if v.options.history > 0 then
+      require("lsp-tools.results.history").capture(v)
+    end
     folds.release(v)
     stop(v.preview_timer)
     stop(v.refresh_timer)
@@ -599,6 +611,10 @@ function M.open(items, opts)
   v.bindings:map("filters", "<prefix>/", function()
     require("lsp-tools.results.filters").open(M, v)
   end, "Filter panel and presets")
+  v.bindings:map("history", "<prefix>H", function()
+    require("lsp-tools.results.history").capture(v)
+    M.history({ focus = true })
+  end, "Browse result history")
   map("<LocalLeader>P", function()
     v.auto_preview = not v.auto_preview
     if not v.auto_preview then
@@ -712,6 +728,12 @@ function M.open(items, opts)
       v.stops[#v.stops + 1] = cleanup
     end
   end
+  if options._state then
+    for field, value in pairs(options._state) do
+      v[field] = value
+    end
+    options._state = nil
+  end
   M.set_items(v, items or saved.raw or {})
   return v
 end
@@ -729,6 +751,9 @@ function M.source(name, opts)
 end
 function M.from_picker(picker, opts)
   return require("lsp-tools.results.picker").open(M, picker, opts)
+end
+function M.history(opts)
+  return require("lsp-tools.results.history").open(M, opts)
 end
 function M.selected(v)
   return selected(v)
@@ -760,6 +785,12 @@ function M.setup(opts)
     "max_items must be a positive integer"
   )
   assert(next_config.debounce >= 0, "debounce must be nonnegative")
+  assert(
+    type(next_config.history) == "number"
+      and next_config.history >= 0
+      and next_config.history % 1 == 0,
+    "history must be a nonnegative integer"
+  )
   M.disable()
   view.setup()
   config, enabled = next_config, true
