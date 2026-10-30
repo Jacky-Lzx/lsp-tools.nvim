@@ -399,6 +399,15 @@ fractions of the editor. Previews stay read-only and leave source buffers intact
 
 ## Diagnostic overview
 
+The `filters` action (default `<LocalLeader>/`) opens an interactive field menu:
+literal text, severity (including Error+Warning), source, diagnostic code and
+namespace. Filters combine and affect only this view. Reset clears the view filter.
+Configure durable named combinations with e.g.
+`results = { presets = { Build = { severity = { 1, 2 }, source = "compiler" } } }`.
+Save/load from the menu also supports project-scoped presets for this Neovim session.
+Namespace IDs and buffer IDs are session-local; prefer source/code filters in
+configuration presets. Cancelled or closed dialogs do not change a view.
+
 With `results = true` and `diagnostics = true`, `require("lsp-tools").diagnostics()`
 opens a live overview grouped by directory/file. `scope = "all"` (default) shows all
 diagnostics received by Neovim, including non-LSP producers. `scope = "buffer"` binds to

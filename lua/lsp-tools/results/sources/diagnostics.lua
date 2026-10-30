@@ -50,6 +50,7 @@ function M.open(results, opts)
           end_pos = { (d.end_lnum or d.lnum) + 1, d.end_col or d.col },
           text = d.message,
           severity = d.severity,
+          namespace = d.namespace,
           code = d.code,
           source = d.source or "",
           data = { diagnostic = d, signature = key, tick = api.nvim_buf_get_changedtick(d.bufnr) },

@@ -576,6 +576,9 @@ function M.open(items, opts)
       api.nvim_set_current_win(v.preview.win)
     end
   end, "Focus source preview")
+  v.bindings:map("filters", "<prefix>/", function()
+    require("lsp-tools.results.filters").open(M, v)
+  end, "Filter panel and presets")
   map("<LocalLeader>P", function()
     v.auto_preview = not v.auto_preview
     if not v.auto_preview then

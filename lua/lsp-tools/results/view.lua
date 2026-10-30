@@ -261,7 +261,20 @@ function M.winbar(v)
     filters[#filters + 1] = '"' .. v.filter.text .. '"'
   end
   if v.filter.severity then
-    filters[#filters + 1] = vim.diagnostic.severity[v.filter.severity] or "severity"
+    if type(v.filter.severity) == "table" then
+      filters[#filters + 1] = table.concat(
+        vim.tbl_map(function(level)
+          return vim.diagnostic.severity[level] or tostring(level)
+        end, v.filter.severity),
+        "+"
+      )
+    else
+      filters[#filters + 1] = vim.diagnostic.severity[v.filter.severity] or "severity"
+    end
+  end
+  if v.filter.namespace then
+    filters[#filters + 1] = (vim.diagnostic.get_namespaces()[v.filter.namespace] or {}).name
+      or "namespace"
   end
   for _, field in ipairs({ "source", "code" }) do
     if v.filter[field] then

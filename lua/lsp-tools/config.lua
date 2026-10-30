@@ -20,6 +20,15 @@ end
 -- Validate supplied options without importing the implementation or its defaults.
 function M.tool(name, opts)
   require("lsp-tools.keymaps").validate(opts)
+  if name == "results" and opts.presets then
+    assert(type(opts.presets) == "table", "results.presets must be a table")
+    for key, value in pairs(opts.presets) do
+      assert(
+        type(key) == "string" and type(value) == "table",
+        "presets must map names to filter tables"
+      )
+    end
+  end
   if name == "results" and opts.preview then
     assert(type(opts.preview) == "table", "results.preview must be a table")
     for _, key in ipairs({ "before", "after" }) do
@@ -37,7 +46,9 @@ function M.tool(name, opts)
     for _, key in ipairs({ "width", "height" }) do
       assert(
         opts.preview[key] == nil
-          or type(opts.preview[key]) == "number" and opts.preview[key] > 0 and opts.preview[key] <= 1,
+          or type(opts.preview[key]) == "number"
+            and opts.preview[key] > 0
+            and opts.preview[key] <= 1,
         "preview size must be a fraction between 0 and 1"
       )
     end

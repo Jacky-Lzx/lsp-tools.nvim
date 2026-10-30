@@ -46,7 +46,16 @@ function M.matches(item, filter)
   if filter.bufnr and item.bufnr ~= filter.bufnr then
     return false
   end
-  if filter.severity and item.severity ~= filter.severity then
+  if
+    filter.severity
+    and (
+      type(filter.severity) == "table" and not vim.tbl_contains(filter.severity, item.severity)
+      or type(filter.severity) ~= "table" and item.severity ~= filter.severity
+    )
+  then
+    return false
+  end
+  if filter.namespace and item.namespace ~= filter.namespace then
     return false
   end
   if filter.source and item.source ~= filter.source then
