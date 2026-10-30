@@ -492,7 +492,9 @@ function M.open(items, opts)
     fillchars = "eob: ,fold: ",
     winhighlight = "CursorLine:LspToolsResultsCursorLine,WinBar:LspToolsResultsWinBar,WinBarNC:LspToolsResultsWinBarNC,Folded:LspToolsResultsFolded",
   }) do
-    vim.wo[v.win][name] = value
+    -- Keep these local: global fold changes refresh every Treesitter fold cache,
+    -- including stale entries for buffers that have already been wiped.
+    vim.wo[v.win][0][name] = value
   end
   v.cache_key, v.tab, v.options, v.title =
     cache_key, tab, options, opts.title or saved.title or "Results"
