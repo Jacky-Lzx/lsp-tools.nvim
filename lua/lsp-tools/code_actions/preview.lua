@@ -104,15 +104,14 @@ function M.lines(action, encoding, root, read_contents)
     local after = edited(before, edits, encoding, action.edit.changeAnnotations)
     group(uri).edits = group(uri).edits + #edits
     files[uri] = after
-    local diff = (vim.text and vim.text.diff or vim.diff)(
-      table.concat(before, "\n") .. "\n",
-      table.concat(after, "\n") .. "\n",
-      { result_type = "unified", ctxlen = 3 }
-    )
-    if diff ~= "" then
-      local name = label(uri, root)
-      emit(uri, { "--- " .. name, "+++ " .. name })
-      emit(uri, vim.split(diff, "\n", { trimempty = true }))
+    local name = label(uri, root)
+    local patch = require("git_tools.diff").unified(before, after, {
+      old_path = name,
+      new_path = name,
+      context = 3,
+    })
+    if #patch > 0 then
+      emit(uri, patch)
     end
   end
   local edit = action.edit

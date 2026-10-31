@@ -49,6 +49,8 @@ check(has("ok", "results (deferred)"), "enabled deferred tools reported")
 check(
   not package.loaded["lsp-tools.results"]
     and not package.loaded["lsp-tools.rename"]
+    and not package.loaded["git_tools.diff"]
+    and not package.loaded["selection_tools.picker"]
     and not package.loaded["snacks.picker"],
   "health does not load interactive implementations or providers"
 )

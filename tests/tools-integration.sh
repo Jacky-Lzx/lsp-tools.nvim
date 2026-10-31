@@ -3,6 +3,7 @@ set -eu
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 export LSP_TOOLS_ROOT="$root"
 export SELECTION_TOOLS_DIR="${SELECTION_TOOLS_DIR:-$root/../selection-tools.nvim}"
+export GIT_TOOLS_DIR="${GIT_TOOLS_DIR:-$root/../git-tools.nvim}"
 test_tmp=$(mktemp -d)
 trap 'rm -rf "$test_tmp"' EXIT HUP INT TERM
 export LSP_TOOLS_TEST_TMP="$test_tmp"

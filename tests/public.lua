@@ -39,6 +39,10 @@ end
 check(tools.breadcrumbs() == "", "initially disabled breadcrumbs render empty")
 check(not tools.open_outline(), "opening an initially disabled outline does nothing")
 check(not package.loaded["code_actions"], "the old plugin is not loaded")
+check(
+  not package.loaded["git_tools.diff"],
+  "the diff engine stays deferred until a preview needs it"
+)
 tools.setup({ code_actions = { backend = "vim", resolve_timeout = 50 } })
 local adapter = vim.ui.select
 check(adapter ~= original, "public setup enables the code action adapter")

@@ -1,3 +1,4 @@
+vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR or (vim.env.LSP_TOOLS_ROOT .. "/../git-tools.nvim"))
 vim.opt.rtp:prepend(vim.env.LSP_TOOLS_ROOT)
 vim.opt.rtp:prepend(
   vim.env.SELECTION_TOOLS_DIR or (vim.env.LSP_TOOLS_ROOT .. "/../selection-tools.nvim")

@@ -11,7 +11,8 @@ starter configuration, see [Quick start](../README.md#quick-start).
 Remove the old code-actions.nvim specification, replace `require("code_actions")`
 with `require("lsp-tools")`, and move its setup options under `code_actions`.
 lsp-tools includes that implementation; it does not load or depend on the old
-plugin. Install selection-tools.nvim for code-action and rename previews.
+plugin. Install selection-tools.nvim and the local git-tools.nvim checkout for code-action
+and rename previews.
 
 After setup, native `vim.lsp.buf.code_action()` and the default `gra` mapping use
 the preview picker. Confirm with Enter, cancel with Escape. These bindings apply
@@ -21,7 +22,7 @@ Ordinary `vim.ui.select` requests keep using your existing provider.
 ## Health checks
 
 Run `:checkhealth lsp-tools` from a source buffer to inspect the Neovim version,
-enabled/deferred tools, selection-tools, optional delta, preview parsers and syntax
+enabled/deferred tools, selection-tools, git-tools, optional delta, preview parsers and syntax
 fallbacks, attached LSP providers, and lualine winbar ownership. This does not open
 tools or modify source buffers. Missing capabilities depend on the attached server.
 Other winbar providers must preserve the `lsp-tools-results` filetype.
@@ -75,7 +76,11 @@ as `context`, `filter`, `range`, and `apply` to `vim.lsp.buf.code_action()`.
 `layout.height`, `layout.preview_height`, `layout.input_position` and
 `layout.reverse`. Previous Snacks `preset`, `win` and nested layout trees must be
 replaced with selection-tools options. Item collection, LSP resolution, validation
-and application stay with lsp-tools; selection-tools owns windows and diff frames.
+and application stay with lsp-tools; selection-tools owns windows and preview
+frames. git-tools owns unified diff generation and native/delta rendering, using
+a host view contract rather than importing selection-tools. The optional
+`git_tools.integrations.selection.diff(opts)` provider can be registered by callers.
+The previous `selection_tools.providers.diff` module has moved to git-tools.
 Rename and code-action pickers use `resume = false` and cannot resume stale edits.
 
 Set `backend = "delta"` to format diffs with the optional
@@ -613,7 +618,7 @@ recommended example and can be configured buffer-locally on LSP attachment.
 
 ```sh
 ./tests/run.sh
-SELECTION_TOOLS_DIR=../selection-tools.nvim ./tests/integration.sh
+SELECTION_TOOLS_DIR=../selection-tools.nvim GIT_TOOLS_DIR=../git-tools.nvim ./tests/integration.sh
 ./tests/tui.sh # run from a terminal; exercises actual mapped keys and focus
 ./tests/references-integration.sh # requires lua-language-server (or LUA_LS=/path/to/server)
 ./tests/references-integration.sh tui # real terminal keys and Ctrl-O
@@ -635,9 +640,10 @@ and select-provider ownership without loading code-actions.nvim. The TUI test
 opens real terminal Neovim, triggers Normal/Visual mappings through key input,
 confirms with Enter, cancels with Escape, and checks source-buffer focus recovery.
 
-Renderer unit tests live in selection-tools (`tests/diff.lua` and
-`tests/transactions.lua`) and cover native output, literal delta arguments, ANSI
-output, cancellation, resize and fallback. Integration tests additionally exercise a missing
+Renderer and generation tests live in git-tools (`tests/render.lua` and
+`tests/unified.lua`); selection-tools keeps generic transaction/frame lifecycle
+tests. These cover native output, literal delta arguments, ANSI output, cancellation,
+resize and fallback. Integration tests additionally exercise a missing
 executable and a timed-out process. If delta is installed, they test its real ANSI
 output, switching between delta and command-only previews, and failure fallback.
 

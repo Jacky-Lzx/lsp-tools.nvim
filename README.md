@@ -42,7 +42,14 @@ Use [lazy.nvim](https://github.com/folke/lazy.nvim):
 ```lua
 {
   "Jacky-Lzx/lsp-tools.nvim",
-  dependencies = { "Jacky-Lzx/selection-tools.nvim" },
+  dependencies = {
+    "Jacky-Lzx/selection-tools.nvim",
+    {
+      dir = vim.fn.expand("~/Documents/Github/nvim_plugins/git-tools.nvim"),
+      name = "git-tools.nvim", -- Point dir at your local git-tools checkout.
+      main = "git_tools",
+    },
+  },
   event = "LspAttach",
   opts = {
     results = { auto_preview = true },
@@ -88,9 +95,11 @@ Use [lazy.nvim](https://github.com/folke/lazy.nvim):
 }
 ```
 
-Code-action and rename windows use the public selection-tools APIs, including
-its shared native/delta diff provider. Use a version with `before_confirm` and
-`selection_tools.providers.diff`; `:checkhealth lsp-tools` checks availability.
+Code-action and rename windows use selection-tools' public transaction APIs;
+git-tools generates patches and renders native/delta previews. git-tools is a
+new local plugin: clone or place its checkout at the `dir` above, or adjust that
+path. It is not assumed to have a published remote release.
+`:checkhealth lsp-tools` checks both dependencies without loading their UIs.
 
 The keys above are suggestions; lsp-tools installs no global editor mappings.
 The diagnostic overview opens with focus in your source window. Use `<C-w>j` to
@@ -179,9 +188,9 @@ and diagnostic details. Other tools are opt-in: pinned hover documentation,
 call/type hierarchies, linked editing, semantic links, a code-action indicator,
 and LSP inspection.
 
-selection-tools is needed for code-action and rename pickers. For the other
-tools, disable those integrations with `code_actions = false, rename = false`
-and omit that dependency. Snacks is optional, for importing existing picker
+selection-tools and git-tools are needed for code-action and rename pickers.
+For the other tools, disable those integrations with
+`code_actions = false, rename = false` and omit those dependencies. Snacks is optional, for importing existing picker
 results. No plenary or external diff executable is required. Delta is
 optional and falls back to native rendering if unavailable.
 

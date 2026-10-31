@@ -3,6 +3,7 @@ set -eu
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 export LSP_TOOLS_ROOT="$root"
 export SELECTION_TOOLS_DIR="${SELECTION_TOOLS_DIR:-$root/../selection-tools.nvim}"
+export GIT_TOOLS_DIR="${GIT_TOOLS_DIR:-$root/../git-tools.nvim}"
 export SNACKS_DIR="${SNACKS_DIR:-$HOME/.local/share/nvim/lazy/snacks.nvim}"
 test_tmp=$(mktemp -d)
 trap 'rm -rf "$test_tmp"' EXIT HUP INT TERM
@@ -23,7 +24,7 @@ LSP_TOOLS_BACKEND=delta LSP_TOOLS_DELTA_COMMAND="$test_tmp/slow-delta" \
   LSP_TOOLS_DELTA_TIMEOUT=50 LSP_TOOLS_EXPECT_DELTA=0 \
   nvim --headless -u NONE -i NONE -l "$root/tests/integration.lua"
 if command -v delta >/dev/null 2>&1; then
-  LSP_TOOLS_BACKEND=delta nvim --headless -u NONE -i NONE -l "$root/tests/integration.lua"
+  LSP_TOOLS_BACKEND=delta LSP_TOOLS_EXPECT_DELTA=1 nvim --headless -u NONE -i NONE -l "$root/tests/integration.lua"
   LSP_TOOLS_BACKEND=delta LSP_TOOLS_DELTA_FAIL=1 LSP_TOOLS_EXPECT_DELTA=0 \
     nvim --headless -u NONE -i NONE -l "$root/tests/integration.lua"
 fi

@@ -108,15 +108,24 @@ function M.check()
     health.ok("Enabled: " .. table.concat(enabled, ", "))
   end
   health.start("Optional dependencies")
-  if available("lua/selection_tools/providers/diff.lua") then
-    health.ok("selection-tools transaction and diff APIs available on runtimepath")
+  if available("lua/selection_tools/init.lua") then
+    health.ok("selection-tools picker API available on runtimepath")
   elseif config.enabled.code_actions or config.enabled.rename then
     health.error(
-      "selection-tools diff API unavailable; enabled code action/rename previews require it",
+      "selection-tools unavailable; enabled code action/rename pickers require it",
       { "Install/update Jacky-Lzx/selection-tools.nvim, or disable code_actions and rename" }
     )
   else
     health.info("selection-tools unavailable; native result views do not require it")
+  end
+  if available("lua/git_tools/diff/init.lua") then
+    health.ok("git-tools diff API available on runtimepath")
+  elseif config.enabled.code_actions or config.enabled.rename then
+    health.error("git-tools unavailable; enabled code action/rename previews require it", {
+      "Install/load git-tools.nvim, or disable code_actions and rename",
+    })
+  else
+    health.info("git-tools unavailable; native result views do not require it")
   end
   for _, name in ipairs({ "code_actions", "rename" }) do
     local opts = config.options[name] or {}

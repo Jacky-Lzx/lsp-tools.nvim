@@ -3,7 +3,8 @@ set -eu
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 export LSP_TOOLS_ROOT="$root"
 export SELECTION_TOOLS_DIR="${SELECTION_TOOLS_DIR:-$root/../selection-tools.nvim}"
-nvim() { command nvim --cmd 'lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR)' "$@"; }
+export GIT_TOOLS_DIR="${GIT_TOOLS_DIR:-$root/../git-tools.nvim}"
+nvim() { command nvim --cmd 'lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)' "$@"; }
 test_tmp=$(mktemp -d)
 trap 'rm -rf "$test_tmp"' EXIT HUP INT TERM
 export XDG_STATE_HOME="$test_tmp/state"
