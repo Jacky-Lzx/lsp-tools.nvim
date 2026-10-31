@@ -121,7 +121,7 @@ end
 vim.notify = function(message)
   notices[#notices + 1] = message
 end
-package.loaded["snacks.picker"] = {
+package.loaded["lsp-tools.selection"] = {
   pick = function(options)
     captured = options
     picker = { selected = options.items[1] }
@@ -177,7 +177,17 @@ local function context(item)
   end
   function p:highlight() end
   function p:set_title() end
-  return { item = item, picker = picker, preview = p }
+  return {
+    item = item,
+    picker = picker,
+    preview = p,
+    is_cancelled = function()
+      return false
+    end,
+    set_lines = function(lines)
+      p:set_lines(lines)
+    end,
+  }
 end
 local function flush()
   vim.wait(10, function()
@@ -323,7 +333,10 @@ if vim.v.vim_did_enter == 0 then
   vim.api.nvim_exec_autocmds("UIEnter", {})
   flush()
   vim.ui.select({ "ordinary" }, {}, function() end)
-  check(after_ui == 1, "UIEnter reinstalls adapter after Snacks installs its select provider")
+  check(
+    after_ui == 1,
+    "UIEnter reinstalls adapter after another plugin installs its select provider"
+  )
 end
 options, current_picker = open({ entry("Disable while resolving") })
 ctx = context(options.items[1])

@@ -36,7 +36,7 @@ vim.lsp.get_client_by_id = function(id)
     end
   end
 end
-package.loaded["snacks.picker"] = {
+package.loaded["lsp-tools.selection"] = {
   pick = function(opts)
     picker_options = opts
     picker = { item = opts.items[1], closed = false, closes = 0 }
@@ -216,7 +216,7 @@ check(
 calls[#calls].callback(nil, edit)
 flush()
 picker:close()
-check(picker.closes == 1, "external picker closure never re-enters Snacks close")
+check(picker.closes == 1, "external picker closure never re-enters picker close")
 check(
   vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == "😀foo foo",
   "Escape cancels without edits"

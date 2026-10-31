@@ -70,16 +70,16 @@ local function run()
   end
   vim.api.nvim_input(" a")
   local function picker()
-    return require("snacks.picker").get()[1]
+    return require("lsp-tools.selection").current()
   end
   wait(function()
     return picker() and picker():current()
   end, "first code-action key opens picker")
   local p = picker()
   wait(function()
-    return p.preview.win.buf
+    return vim.api.nvim_win_get_buf(p.preview_win)
       and table
-        .concat(vim.api.nvim_buf_get_lines(p.preview.win.buf, 0, -1, false), "\n")
+        .concat(vim.api.nvim_buf_get_lines(vim.api.nvim_win_get_buf(p.preview_win), 0, -1, false), "\n")
         :find("你好😀", 1, true)
   end, "first action resolves and previews")
   assert(

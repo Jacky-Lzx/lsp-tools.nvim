@@ -1,3 +1,6 @@
+vim.opt.rtp:prepend(
+  vim.env.SELECTION_TOOLS_DIR or (vim.env.LSP_TOOLS_ROOT .. "/../selection-tools.nvim")
+)
 local function run()
   vim.opt.rtp:prepend(vim.env.LSP_TOOLS_ROOT)
   vim.opt.rtp:prepend(vim.env.SNACKS_DIR)
@@ -20,7 +23,6 @@ local function run()
   end
   if not configured then
     require("snacks").setup({ picker = { enabled = true }, input = { enabled = true } })
-    require("snacks.picker").setup()
     tools.setup({ code_actions = false, references = false, rename = { backend = backend } })
     vim.g.mapleader = " "
     vim.keymap.set("n", "<leader>rn", function()
@@ -89,7 +91,7 @@ local function run()
     end, "real LuaLS semantic analysis is ready")
   end
   local function current()
-    return require("snacks.picker").get()[1]
+    return require("lsp-tools.selection").current()
   end
   local general_api, general_calls, input_origin
   if native_input then
@@ -106,6 +108,7 @@ local function run()
       return general_api(options, confirm)
     end
   end
+  local input_provider_before = vim.ui.input
   local input_seen = false
   if not tui then
     vim.ui.input = function(opts, callback)
@@ -125,7 +128,10 @@ local function run()
           and vim.api.nvim_get_mode().mode:sub(1, 1) == "i"
       end, "input-tools rename input opens")
       assert(vim.api.nvim_get_current_line() == "foo", "prepareRename prefills Vim-mode input")
-      assert(vim.ui.input == require("snacks.input").input, "global Snacks provider remains active")
+      assert(
+        vim.ui.input == input_provider_before,
+        "rename preserves the existing global input provider"
+      )
       local layout = require("input-tools").get_layout()
       assert(
         layout.row == input_origin.row or layout.row + layout.outer_height == input_origin.row - 1,
@@ -197,9 +203,9 @@ local function run()
   if native_input then
     assert(general_calls == 1, "rename must invoke the general input-tools API exactly once")
   end
-  assert(#picker:items() == (real and 1 or 2), "one picker row per affected file")
+  assert(#picker.opts.items == (real and 1 or 2), "one picker row per affected file")
   assert(
-    picker.opts.title:find(real and "1 file · 3 edits" or "2 files · 3 edits", 1, true),
+    picker.opts.prompt:find(real and "1 file · 3 edits" or "2 files · 3 edits", 1, true),
     "complete edit totals appear in title"
   )
   assert(
@@ -207,7 +213,7 @@ local function run()
     "preview does not mutate the source"
   )
   local function text()
-    local b = picker.preview.win.buf
+    local b = vim.api.nvim_win_get_buf(picker.preview_win)
     return b
         and vim.api.nvim_buf_is_valid(b)
         and table.concat(vim.api.nvim_buf_get_lines(b, 0, -1, false), "\n")
@@ -218,7 +224,7 @@ local function run()
   end, "diff renders the new name")
   if backend == "delta" or configured then
     wait(function()
-      return vim.bo[picker.preview.win.buf].buftype == "terminal"
+      return vim.bo[vim.api.nvim_win_get_buf(picker.preview_win)].buftype == "terminal"
     end, "delta ANSI diff is rendered")
   end
   if not real then
@@ -226,9 +232,8 @@ local function run()
       picker:current().lines[1]:find("Rename symbol", 1, true),
       "change annotations appear in preview"
     )
-    local other_item = picker:items()[2]
-    picker.list:move(picker.list.reverse and 1 or 2, true)
-    picker:show_preview()
+    local other_item = picker.opts.items[2]
+    picker:move(1)
     wait(function()
       return picker:current() == other_item and text():find("bar", 1, true)
     end, "file list navigates the second diff")
@@ -236,7 +241,7 @@ local function run()
   if tui then
     vim.api.nvim_input("<CR>")
   else
-    picker.opts.confirm(picker)
+    picker:confirm()
   end
   wait(function()
     return not current()
@@ -261,7 +266,7 @@ local function run()
       not vim.uv.fs_stat(project .. "/main.lua"),
       "text renames do not save buffers automatically"
     )
-    -- Cancellation and a stale second file use fresh requests and real Snacks UI.
+    -- Cancellation and a stale second file use fresh requests and real selection-tools UI.
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, original)
     vim.api.nvim_buf_set_lines(other, 0, -1, false, { "foo" })
     vim.api.nvim_win_set_cursor(0, { 1, 10 })
@@ -299,7 +304,7 @@ local function run()
     vim.notify = function(message)
       notice = message
     end
-    picker.opts.confirm(picker)
+    picker:confirm()
     assert(
       not picker.closed and notice:find("changed since preview", 1, true),
       "stale other file blocks the entire rename"
@@ -314,14 +319,16 @@ local function run()
     require("input-tools").input = general_api
   end
   client:stop(true)
-  io.stdout:write(
-    "lsp-tools rename: "
-      .. (real and "real LuaLS" or "real LSP fixture")
-      .. " passed (prepare, input, diff, full apply"
-      .. (real and ", shadowing" or ", multi-file, annotations, cancel, stale guards")
-      .. (tui and ", TUI" or "")
-      .. ")\n"
-  )
+  local report = "lsp-tools rename: "
+    .. (real and "real LuaLS" or "real LSP fixture")
+    .. " passed (prepare, input, diff, full apply"
+    .. (real and ", shadowing" or ", multi-file, annotations, cancel, stale guards")
+    .. (tui and ", TUI" or "")
+    .. ")"
+  io.stdout:write(report .. "\n")
+  if tui and vim.env.LSP_TOOLS_TEST_TMP then
+    vim.fn.writefile({ report }, vim.env.LSP_TOOLS_TEST_TMP .. "/result")
+  end
   vim.cmd("qa!")
 end
 
@@ -330,7 +337,13 @@ if vim.env.LSP_TOOLS_TUI == "1" then
   local function step()
     local ok, err = coroutine.resume(thread)
     if not ok then
-      io.stderr:write(tostring(err) .. "\n")
+      io.stderr:write(tostring(err) .. "\n" .. debug.traceback(thread))
+      if vim.env.LSP_TOOLS_TEST_TMP then
+        vim.fn.writefile(
+          { tostring(err), debug.traceback(thread) },
+          vim.env.LSP_TOOLS_TEST_TMP .. "/result"
+        )
+      end
       vim.cmd("cquit 1")
     elseif coroutine.status(thread) ~= "dead" then
       vim.defer_fn(step, 10)

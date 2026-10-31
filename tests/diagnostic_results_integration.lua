@@ -1,7 +1,8 @@
+vim.opt.rtp:prepend(
+  vim.env.SELECTION_TOOLS_DIR or (vim.env.LSP_TOOLS_ROOT .. "/../selection-tools.nvim")
+)
 vim.opt.rtp:prepend(vim.env.LSP_TOOLS_ROOT)
 vim.opt.rtp:prepend(vim.env.SNACKS_DIR or (vim.fn.stdpath("data") .. "/lazy/snacks.nvim"))
-require("snacks").setup({ picker = { enabled = true } })
-require("snacks.picker").setup()
 local tools = require("lsp-tools")
 tools.setup({
   results = { debounce = 1, auto_preview = false },
@@ -40,19 +41,19 @@ vim.diagnostic.set(ns, b, { { lnum = 0, col = 0, message = "second error", sever
 local v = tools.diagnostics({ focus = true, group_by = {} })
 vim.fn.maparg("<LocalLeader>A", "n", false, true).callback()
 local function picker()
-  return require("snacks.picker").get()[1]
+  return require("lsp-tools.selection").current()
 end
 wait(function()
   return picker() and picker():current()
 end, "overview opens actual code-action picker")
 local p = picker()
 wait(function()
-  return p.preview.win.buf
+  return vim.api.nvim_win_get_buf(p.preview_win)
     and table
-      .concat(vim.api.nvim_buf_get_lines(p.preview.win.buf, 0, -1, false), "\n")
+      .concat(vim.api.nvim_buf_get_lines(vim.api.nvim_win_get_buf(p.preview_win), 0, -1, false), "\n")
       :find("你好😀", 1, true)
 end, "overview fix resolves actual edit")
-p.opts.confirm(p, p:current())
+p:confirm()
 wait(function()
   return v.advance ~= nil
 end, "advance waits for confirmed diagnostic refresh")

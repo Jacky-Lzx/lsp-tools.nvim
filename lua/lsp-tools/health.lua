@@ -108,15 +108,15 @@ function M.check()
     health.ok("Enabled: " .. table.concat(enabled, ", "))
   end
   health.start("Optional dependencies")
-  if available("lua/snacks/picker/init.lua") then
-    health.ok("Snacks picker available on runtimepath")
+  if available("lua/selection_tools/providers/diff.lua") then
+    health.ok("selection-tools transaction and diff APIs available on runtimepath")
   elseif config.enabled.code_actions or config.enabled.rename then
     health.error(
-      "Snacks picker unavailable; enabled code action/rename previews require it",
-      { "Install/load folke/snacks.nvim, or disable code_actions and rename" }
+      "selection-tools diff API unavailable; enabled code action/rename previews require it",
+      { "Install/update Jacky-Lzx/selection-tools.nvim, or disable code_actions and rename" }
     )
   else
-    health.info("Snacks picker unavailable; native result views do not require it")
+    health.info("selection-tools unavailable; native result views do not require it")
   end
   for _, name in ipairs({ "code_actions", "rename" }) do
     local opts = config.options[name] or {}

@@ -11,7 +11,7 @@ starter configuration, see [Quick start](../README.md#quick-start).
 Remove the old code-actions.nvim specification, replace `require("code_actions")`
 with `require("lsp-tools")`, and move its setup options under `code_actions`.
 lsp-tools includes that implementation; it does not load or depend on the old
-plugin. Keep Snacks installed for code-action and rename previews.
+plugin. Install selection-tools.nvim for code-action and rename previews.
 
 After setup, native `vim.lsp.buf.code_action()` and the default `gra` mapping use
 the preview picker. Confirm with Enter, cancel with Escape. These bindings apply
@@ -21,7 +21,7 @@ Ordinary `vim.ui.select` requests keep using your existing provider.
 ## Health checks
 
 Run `:checkhealth lsp-tools` from a source buffer to inspect the Neovim version,
-enabled/deferred tools, Snacks, optional delta, preview parsers and syntax
+enabled/deferred tools, selection-tools, optional delta, preview parsers and syntax
 fallbacks, attached LSP providers, and lualine winbar ownership. This does not open
 tools or modify source buffers. Missing capabilities depend on the attached server.
 Other winbar providers must preserve the `lsp-tools-results` filetype.
@@ -39,7 +39,7 @@ require("lsp-tools").setup({
       args = {}, -- e.g. { "--line-numbers", "--side-by-side" }
       timeout = 2000, -- milliseconds
     },
-    picker = { layout = { preset = "default" } },
+    picker = { layout = { width = 0.85, height = 0.8, preview_height = 0.7 } },
   },
 })
 ```
@@ -50,7 +50,7 @@ The newer optional tools below are enabled explicitly. Set `code_actions = false
 pending requests. Disabling restores the previous select provider when the
 adapter still owns it, and preserves providers installed by other plugins.
 Repeated setup is supported; supplied code action options merge with previous
-options. Requiring the plugin alone registers no behavior and loads no Snacks UI.
+options. Requiring the plugin alone registers no behavior and loads no picker UI.
 
 Interactive tools (rename, outline, diagnostic details, pinned documentation,
 links, inspection and hierarchies) retain their settings at setup and initialize
@@ -71,12 +71,16 @@ engine has initialized. None of these checks opens a UI.
 `require("lsp-tools").code_action(opts)` forwards native code action options such
 as `context`, `filter`, `range`, and `apply` to `vim.lsp.buf.code_action()`.
 
-`picker` customizes Snacks appearance. Item collection, preview, confirmation,
-and close callbacks are owned by this plugin.
+`picker` accepts selection-tools picker options, such as `layout.width`,
+`layout.height`, `layout.preview_height`, `layout.input_position` and
+`layout.reverse`. Previous Snacks `preset`, `win` and nested layout trees must be
+replaced with selection-tools options. Item collection, LSP resolution, validation
+and application stay with lsp-tools; selection-tools owns windows and diff frames.
+Rename and code-action pickers use `resume = false` and cannot resume stale edits.
 
 Set `backend = "delta"` to format diffs with the optional
 [delta](https://dandavison.github.io/delta/) executable. Its ANSI colors are rendered
-in the Snacks preview buffer. Delta runs asynchronously with the preview window's
+in an owned selection-tools preview buffer. Delta runs asynchronously with the preview window's
 width, dark/light mode, true color, and paging disabled. Extra arguments are passed
 directly as an argument list, never through a shell; delta can read your normal
 Git configuration. Missing delta, startup errors, unsuccessful exits, empty output,
@@ -495,7 +499,7 @@ such as Snacks' LSP references picker can continue to be used separately.
 `require("lsp-tools").rename()` prepares the symbol at the current cursor position,
 prefills its name through the general `input-tools.input()` API when available
 (or your existing `vim.ui.input` provider otherwise), and requests one
-rename after you enter the new name. A Snacks picker then lists affected files,
+rename after you enter the new name. A selection-tools picker then lists affected files,
 their edit counts, and their diffs. Select a file to inspect it. The title reports
 totals and states that Enter applies **all** listed changes; Escape cancels.
 Reviewing a different file does not restrict the edit to that file. Text edits
@@ -512,7 +516,7 @@ require("lsp-tools").setup({
       args = { "--file-style=omit", "--hunk-header-style=file line-number syntax" },
       timeout = 2000,
     },
-    picker = { layout = { preset = "default" } },
+    picker = { layout = { width = 0.85, height = 0.8, preview_height = 0.7 } },
   },
 })
 
@@ -609,11 +613,11 @@ recommended example and can be configured buffer-locally on LSP attachment.
 
 ```sh
 ./tests/run.sh
-SNACKS_DIR=~/.local/share/nvim/lazy/snacks.nvim ./tests/integration.sh
+SELECTION_TOOLS_DIR=../selection-tools.nvim ./tests/integration.sh
 ./tests/tui.sh # run from a terminal; exercises actual mapped keys and focus
 ./tests/references-integration.sh # requires lua-language-server (or LUA_LS=/path/to/server)
 ./tests/references-integration.sh tui # real terminal keys and Ctrl-O
-./tests/rename-integration.sh # deterministic real LSP client/server and Snacks
+./tests/rename-integration.sh # deterministic real LSP client/server and selection-tools
 LSP_TOOLS_BACKEND=delta ./tests/rename-integration.sh tui # actual input, Enter/Escape
 LSP_TOOLS_REAL_LSP=1 ./tests/rename-integration.sh # real LuaLS semantic rename
 ```
@@ -622,7 +626,7 @@ Unit tests cover preview isolation, Unicode edits, unsaved/multiple files,
 resource-operation order, late responses, resolve caching, failure/timeout,
 confirmation, cancellation, fallback selection, and setup lifecycle.
 Integration tests start a real Neovim LSP client against a local fixture server
-and open an actual Snacks picker. No network or language server installation is
+and open an actual selection-tools picker. No network or language server installation is
 required. The fixture is a protocol test, not a compatibility claim for every
 language server.
 
@@ -631,8 +635,9 @@ and select-provider ownership without loading code-actions.nvim. The TUI test
 opens real terminal Neovim, triggers Normal/Visual mappings through key input,
 confirms with Enter, cancels with Escape, and checks source-buffer focus recovery.
 
-Renderer tests cover native output, literal delta arguments, ANSI output,
-cancellation and fallback. Integration tests additionally exercise a missing
+Renderer unit tests live in selection-tools (`tests/diff.lua` and
+`tests/transactions.lua`) and cover native output, literal delta arguments, ANSI
+output, cancellation, resize and fallback. Integration tests additionally exercise a missing
 executable and a timed-out process. If delta is installed, they test its real ANSI
 output, switching between delta and command-only previews, and failure fallback.
 
@@ -838,7 +843,7 @@ presentation containing the fixture's frame/item names without modifying it.
 
 Run `sh tests/tools-integration.sh` for the optional tools: real TeXquill linked
 editing and document links, LuaLS hover documentation, clangd call/type hierarchies,
-LSP/Snacks diagnostic fixes, persistent LuaLS locations, picker imports, and terminal
+LSP/selection-tools diagnostic fixes, persistent LuaLS locations, picker imports, and terminal
 rendering/key/focus checks. It requires
 `texquill` (or `NVIM_TEXQUILL`), `lua-language-server`, `clangd`, Python 3, and an
 installed Snacks checkout. `python3 tests/terminal.py workflows_integration.lua`

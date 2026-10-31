@@ -2,6 +2,7 @@
 set -eu
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 export LSP_TOOLS_ROOT="$root"
+export SELECTION_TOOLS_DIR="${SELECTION_TOOLS_DIR:-$root/../selection-tools.nvim}"
 export SNACKS_DIR="${SNACKS_DIR:-$HOME/.local/share/nvim/lazy/snacks.nvim}"
 test_tmp=$(mktemp -d)
 trap 'rm -rf "$test_tmp"' EXIT HUP INT TERM

@@ -1,3 +1,6 @@
+vim.opt.rtp:prepend(
+  vim.env.SELECTION_TOOLS_DIR or (vim.env.LSP_TOOLS_ROOT .. "/../selection-tools.nvim")
+)
 local function run()
   vim.opt.rtp:prepend(vim.env.LSP_TOOLS_ROOT)
   vim.opt.rtp:prepend(vim.env.SNACKS_DIR or (vim.fn.stdpath("data") .. "/lazy/snacks.nvim"))
@@ -13,8 +16,6 @@ local function run()
       coroutine.yield()
     end
   end
-  require("snacks").setup({ picker = { enabled = true } })
-  require("snacks.picker").setup()
   local tools = require("lsp-tools")
   tools.setup({
     lightbulb = { debounce = 10, text = "!" },
@@ -63,23 +64,23 @@ local function run()
     require("lsp-tools.diagnostics").fix(s, true)
   end
   local function picker()
-    return require("snacks.picker").get()[1]
+    return require("lsp-tools.selection").current()
   end
   wait(function()
     return picker() and picker():current()
   end, "diagnostic key opens actual preview")
   local p = picker()
   wait(function()
-    return p.preview.win.buf
+    return vim.api.nvim_win_get_buf(p.preview_win)
       and table
-        .concat(vim.api.nvim_buf_get_lines(p.preview.win.buf, 0, -1, false), "\n")
+        .concat(vim.api.nvim_buf_get_lines(vim.api.nvim_win_get_buf(p.preview_win), 0, -1, false), "\n")
         :find("你好😀", 1, true)
   end, "resolved edit preview")
   assert(vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == "hello world")
   if tui then
     vim.api.nvim_input("<CR>")
   else
-    p.opts.confirm(p, p:current())
+    p:confirm()
   end
   wait(function()
     return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == "你好😀 world"

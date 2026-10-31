@@ -42,7 +42,7 @@ Use [lazy.nvim](https://github.com/folke/lazy.nvim):
 ```lua
 {
   "Jacky-Lzx/lsp-tools.nvim",
-  dependencies = { "folke/snacks.nvim" },
+  dependencies = { "Jacky-Lzx/selection-tools.nvim" },
   event = "LspAttach",
   opts = {
     results = { auto_preview = true },
@@ -88,11 +88,9 @@ Use [lazy.nvim](https://github.com/folke/lazy.nvim):
 }
 ```
 
-Enable the Snacks picker in your Snacks configuration:
-
-```lua
-require("snacks").setup({ picker = { enabled = true } })
-```
+Code-action and rename windows use the public selection-tools APIs, including
+its shared native/delta diff provider. Use a version with `before_confirm` and
+`selection_tools.providers.diff`; `:checkhealth lsp-tools` checks availability.
 
 The keys above are suggestions; lsp-tools installs no global editor mappings.
 The diagnostic overview opens with focus in your source window. Use `<C-w>j` to
@@ -181,9 +179,10 @@ and diagnostic details. Other tools are opt-in: pinned hover documentation,
 call/type hierarchies, linked editing, semantic links, a code-action indicator,
 and LSP inspection.
 
-Snacks is needed for code-action and rename pickers. For the other tools, disable
-those two integrations with `code_actions = false, rename = false` and omit the
-Snacks dependency. No plenary or external diff executable is required. Delta is
+selection-tools is needed for code-action and rename pickers. For the other
+tools, disable those integrations with `code_actions = false, rename = false`
+and omit that dependency. Snacks is optional, for importing existing picker
+results. No plenary or external diff executable is required. Delta is
 optional and falls back to native rendering if unavailable.
 
 ## Documentation

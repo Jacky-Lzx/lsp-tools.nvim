@@ -1,8 +1,8 @@
 vim.opt.rtp:prepend(vim.env.LSP_TOOLS_ROOT)
-vim.opt.rtp:prepend(vim.env.SNACKS_DIR or (vim.fn.stdpath("data") .. "/lazy/snacks.nvim"))
+vim.opt.rtp:prepend(
+  vim.env.SELECTION_TOOLS_DIR or (vim.env.LSP_TOOLS_ROOT .. "/../selection-tools.nvim")
+)
 vim.o.columns, vim.o.lines = 160, 40
-require("snacks").setup({ picker = { enabled = true } })
-require("snacks.picker").setup()
 local tools = require("lsp-tools")
 tools.setup({ diagnostics = true, references = false, breadcrumbs = false, outline = false })
 local buf = vim.api.nvim_get_current_buf()
@@ -35,7 +35,7 @@ vim.diagnostic.set(ns, buf, { diagnostic })
 local s = tools.diagnostic()
 assert(require("lsp-tools.diagnostics").fix(s, true))
 local function picker()
-  return require("snacks.picker").get()[1]
+  return require("lsp-tools.selection").current()
 end
 assert(vim.wait(5000, function()
   return picker() and picker():current()
@@ -43,15 +43,15 @@ end, 10))
 local p = picker()
 assert(
   vim.wait(5000, function()
-    return p.preview.win.buf
+    return vim.api.nvim_win_get_buf(p.preview_win)
       and table
-        .concat(vim.api.nvim_buf_get_lines(p.preview.win.buf, 0, -1, false), "\n")
+        .concat(vim.api.nvim_buf_get_lines(vim.api.nvim_win_get_buf(p.preview_win), 0, -1, false), "\n")
         :find("你好😀", 1, true)
   end, 10),
   "diagnostic fix uses actual resolved preview"
 )
 assert(vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == "hello world")
-p.opts.confirm(p, p:current())
+p:confirm()
 assert(vim.wait(3000, function()
   return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == "你好😀 world"
 end, 10))
@@ -60,5 +60,7 @@ vim.diagnostic.set(ns, buf, {})
 assert(not s.advance and #s.items == 0)
 require("lsp-tools.diagnostics").disable()
 client:stop(true)
-print("diagnostics integration: real LSP resolve, Snacks preview, apply and refresh passed")
+print(
+  "diagnostics integration: real LSP resolve, selection-tools preview, apply and refresh passed"
+)
 vim.cmd("qa!")

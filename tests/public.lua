@@ -42,7 +42,10 @@ check(not package.loaded["code_actions"], "the old plugin is not loaded")
 tools.setup({ code_actions = { backend = "vim", resolve_timeout = 50 } })
 local adapter = vim.ui.select
 check(adapter ~= original, "public setup enables the code action adapter")
-check(not package.loaded["snacks.picker"], "Snacks is loaded only when opening code actions")
+check(
+  not package.loaded["selection_tools.picker"],
+  "selection UI stays deferred until opening code actions"
+)
 tools.setup()
 check(vim.ui.select == adapter, "public setup is idempotent")
 local forwarded

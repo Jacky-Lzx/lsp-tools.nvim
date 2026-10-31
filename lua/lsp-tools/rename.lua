@@ -147,16 +147,7 @@ local function show(token, edit, baseline)
   local generation = 0
   local options = vim.tbl_deep_extend("force", {
     format = "text",
-    layout = { preset = "default", preview = true },
-    win = {
-      input = {
-        keys = {
-          ["<CR>"] = { "confirm", mode = { "n", "i" } },
-          ["<Esc>"] = { "close", mode = { "n", "i" } },
-        },
-      },
-      list = { keys = { ["<CR>"] = "confirm", ["<Esc>"] = "close" } },
-    },
+    layout = { width = 0.85, height = 0.8, preview_height = 0.7 },
   }, config.picker)
   -- Collection, preview, and application are always owned by this module.
   options.title = ("Rename to %s · %d %s · %d %s%s · Enter applies all"):format(
@@ -181,8 +172,19 @@ local function show(token, edit, baseline)
     token.stop_render = render.start(ctx, item.lines, config, function()
       return not token.closed and generation == current and ctx.picker:current() == item
     end)
+    return {
+      close = function()
+        token.stop_render()
+      end,
+      resize = function()
+        token.stop_render()
+        token.stop_render = render.start(ctx, item.lines, config, function()
+          return not token.closed and generation == current
+        end)
+      end,
+    }
   end
-  options.confirm = function(picker)
+  options.confirm = function(picker, _, accept, is_cancelled, reject)
     if token.closed or not picker:current() then
       return
     end
@@ -195,6 +197,9 @@ local function show(token, edit, baseline)
     end)
     if not valid then
       notify(tostring(problem) .. ". Request rename again before applying.")
+      if reject then
+        reject()
+      end
       return
     end
     -- Enter confirms the full displayed edit, including all described annotations.
@@ -221,7 +226,16 @@ local function show(token, edit, baseline)
         approved(edits)
       end
     end
-    close(token)
+    if is_cancelled and is_cancelled() then
+      return
+    end
+    if accept then
+      if not accept() then
+        return
+      end
+    else
+      close(token)
+    end
     local success, err =
       pcall(vim.lsp.util.apply_workspace_edit, applied, token.client.offset_encoding)
     if not success then
@@ -232,7 +246,7 @@ local function show(token, edit, baseline)
     close(token, true)
   end
   local opened, picker = pcall(function()
-    return require("snacks.picker").pick(options)
+    return require("lsp-tools.selection").pick(options)
   end)
   if not opened then
     fail(token, "Cannot open rename preview: " .. tostring(picker))

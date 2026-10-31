@@ -5,7 +5,7 @@ local function notify(message)
 end
 
 function M.open(actions, opts, on_choice, config, on_applied)
-  local closed, generation, confirming = false, 0, false
+  local closed, generation = false, 0
   local picker
   local stop_render = function() end
   local items, pending = {}, {}
@@ -102,16 +102,7 @@ function M.open(actions, opts, on_choice, config, on_applied)
     title = "Code Actions",
     items = items,
     format = "text",
-    layout = { preset = "default", preview = true },
-    win = {
-      input = {
-        keys = {
-          ["<CR>"] = { "confirm", mode = { "n", "i" } },
-          ["<Esc>"] = { "close", mode = { "n", "i" } },
-        },
-      },
-      list = { keys = { ["<CR>"] = "confirm", ["<Esc>"] = "close" } },
-    },
+    layout = { width = 0.85, height = 0.8, preview_height = 0.7 },
   }, config.picker)
   options.preview = function(ctx)
     generation = generation + 1
@@ -121,9 +112,10 @@ function M.open(actions, opts, on_choice, config, on_applied)
     if not item then
       return
     end
-    ctx.preview:reset()
-    ctx.preview:set_title("Preview")
-    ctx.preview:set_lines({ "Resolving code action…" })
+    if not ctx.has_preview then
+      ctx.set_lines({ "Resolving code action…" })
+    end
+    local displayed
     resolve(item, function(action, err)
       vim.schedule(function()
         if closed or current ~= generation or ctx.picker:current() ~= item then
@@ -143,36 +135,63 @@ function M.open(actions, opts, on_choice, config, on_applied)
             return not closed and current == generation and ctx.picker:current() == item
           end
         )
+        displayed = err and { err }
+          or ok and lines
+          or { "Preview unavailable: " .. tostring(lines) }
       end)
     end)
+    return {
+      close = function()
+        stop_render()
+      end,
+      resize = function()
+        if displayed and not ctx.is_cancelled() then
+          stop_render()
+          stop_render = require("lsp-tools.code_actions.render").start(ctx, displayed, config)
+        end
+      end,
+    }
   end
-  options.confirm = function(picker, item)
-    if not item or confirming then
+  options.confirm = function(picker, item, accept, is_cancelled, reject)
+    if not item then
       return
     end
-    confirming = true
     resolve(item, function(action, err)
       vim.schedule(function()
-        confirming = false
-        if closed then
+        if closed or is_cancelled and is_cancelled() then
           return
         end
         if err then
           notify(err)
+          if reject then
+            reject()
+          end
           return
         end
         local entry = item.entry
         local client = vim.lsp.get_client_by_id(entry.ctx.client_id)
         if not client or not vim.api.nvim_buf_is_valid(entry.ctx.bufnr) then
           notify("The language server or original buffer is no longer available")
+          if reject then
+            reject()
+          end
           return
         end
         if vim.api.nvim_buf_get_changedtick(entry.ctx.bufnr) ~= item.tick then
           notify("The buffer changed. Request code actions again before applying.")
+          if reject then
+            reject()
+          end
           return
         end
-        close()
-        picker:close()
+        if accept then
+          if not accept() then
+            return
+          end
+        else
+          close()
+          picker:close()
+        end
         -- Apply the cached resolved action, avoiding a second resolve request.
         -- Native code_action still owns requests, ranges, diagnostics and filters.
         local ok, problem = pcall(function()
@@ -194,13 +213,15 @@ function M.open(actions, opts, on_choice, config, on_applied)
       end)
     end)
   end
-  options.on_close = function()
+  options.on_close = function(_, outcome)
     if not closed then
       close()
-      on_choice(nil)
+      if not outcome or outcome.reason ~= "confirm" then
+        on_choice(nil)
+      end
     end
   end
-  picker = require("snacks.picker").pick(options)
+  picker = require("lsp-tools.selection").pick(options)
   if not closed then
     active[close] = function()
       picker:close()
