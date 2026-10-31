@@ -158,7 +158,7 @@ local function run()
     "the target line has a visible background"
   )
   assert(
-    preview_attr(1, "init.lua") ~= preview_attr(3, "类型错误"),
+    preview_attr(1, "init.lua") ~= preview_attr(4, "类型错误"),
     "path and diagnostic message have distinct preview colors"
   )
   api.nvim_win_set_cursor(v.win, { first + 1, 0 })

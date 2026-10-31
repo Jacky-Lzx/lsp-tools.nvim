@@ -124,15 +124,39 @@ end
 function M.open(item, opts, owner)
   opts = opts or {}
   local path = model.clean(item.filename or item.uri or "[no source]")
+  if not path:find("://", 1, true) then
+    path = vim.fn.fnamemodify(path, ":~:.")
+  end
+  local width =
+    math.max(1, math.min(vim.o.columns - 4, math.floor(vim.o.columns * (opts.width or 0.6))))
+  local level = ({ "Error", "Warning", "Information", "Hint" })[item.severity]
+  local severity = ({ "DiagnosticError", "DiagnosticWarn", "DiagnosticInfo", "DiagnosticHint" })[item.severity]
+    or "LspToolsResultsText"
   local lines =
     { path .. ":" .. item.pos[1] .. ":" .. (item.column_unknown and "?" or item.pos[2] + 1), "" }
+  local metadata = {}
+  for _, value in ipairs({ item.source or "", item.code or "" }) do
+    if tostring(value) ~= "" then
+      metadata[#metadata + 1] = model.clean(value)
+    end
+  end
+  if #metadata > 0 then
+    lines[2] = table.concat(metadata, "  ·  ")
+    lines[#lines + 1] = ""
+  end
   local message_first = #lines
   if item.text ~= "" then
     vim.list_extend(lines, vim.split(item.text, "\n", { plain = true }))
     lines[#lines + 1] = ""
   end
   local code, first, ft = source(item, opts)
-  local offset, message_last = #lines, #lines - 1
+  local message_last = #lines - 1
+  local divider = #lines
+  local label = "── Source "
+  lines[#lines + 1] = label
+    .. string.rep("─", math.max(0, width - 8 - vim.fn.strdisplaywidth(label)))
+  lines[#lines + 1] = ""
+  local offset = #lines
   vim.list_extend(
     lines,
     code and #code > 0 and code
@@ -149,6 +173,12 @@ function M.open(item, opts, owner)
     0,
     { end_col = #path, hl_group = "LspToolsResultsPreviewPath" }
   )
+  local filename = path:match("[^/]+$") or path
+  api.nvim_buf_set_extmark(buf, ns, 0, #path - #filename, {
+    end_col = #path,
+    hl_group = "LspToolsResultsPreviewFile",
+    priority = 110,
+  })
   api.nvim_buf_set_extmark(
     buf,
     ns,
@@ -156,8 +186,19 @@ function M.open(item, opts, owner)
     #path,
     { end_col = #lines[1], hl_group = "LspToolsResultsPosition" }
   )
-  local severity = ({ "DiagnosticError", "DiagnosticWarn", "DiagnosticInfo", "DiagnosticHint" })[item.severity]
-    or "LspToolsResultsText"
+  if #metadata > 0 then
+    api.nvim_buf_set_extmark(
+      buf,
+      ns,
+      1,
+      0,
+      { end_col = #lines[2], hl_group = "LspToolsResultsPreviewMeta" }
+    )
+  end
+  api.nvim_buf_set_extmark(buf, ns, divider, 0, {
+    end_col = #lines[divider + 1],
+    hl_group = "LspToolsResultsPreviewDivider",
+  })
   for row = message_first, message_last - 1 do
     api.nvim_buf_set_extmark(buf, ns, row, 0, { end_col = #lines[row + 1], hl_group = severity })
   end
@@ -184,9 +225,7 @@ function M.open(item, opts, owner)
       { end_col = #lines[offset + 1], hl_group = "LspToolsResultsMeta" }
     )
   end
-  local width, height =
-    math.max(1, math.floor(vim.o.columns * (opts.width or 0.6))),
-    math.max(1, math.min(#lines, math.floor((vim.o.lines - 4) * (opts.height or 0.5))))
+  local height = math.max(1, math.min(#lines, math.floor((vim.o.lines - 4) * (opts.height or 0.5))))
   local window = {
     relative = "editor",
     row = math.max(0, math.floor((vim.o.lines - height) / 2) - 1),
@@ -194,7 +233,13 @@ function M.open(item, opts, owner)
     width = width,
     height = height,
     border = "rounded",
-    title = " Preview ",
+    title = { { " " .. (level or "Source preview") .. " ", severity } },
+    title_pos = "left",
+    footer = code
+        and #code > 0
+        and (" " .. (ft ~= "" and ft or "source") .. " · " .. first .. "–" .. (first + #code - 1) .. " ")
+      or " Source unavailable ",
+    footer_pos = "right",
     style = "minimal",
     focusable = true,
   }
@@ -204,12 +249,15 @@ function M.open(item, opts, owner)
       or height
   end
   local win = api.nvim_open_win(buf, false, window)
-  vim.wo[win].wrap, vim.wo[win].foldenable = true, false
-  vim.wo[win].scrolloff, vim.wo[win].sidescrolloff = 0, 0
+  vim.wo[win][0].wrap, vim.wo[win][0].foldenable = true, false
+  vim.wo[win][0].scrolloff, vim.wo[win][0].sidescrolloff = 0, 0
+  vim.wo[win][0].winhighlight =
+    "Normal:LspToolsResultsPreviewNormal,NormalFloat:LspToolsResultsPreviewNormal,FloatBorder:LspToolsResultsPreviewBorder,FloatFooter:LspToolsResultsPreviewMeta"
   vim.b[buf].lsp_tools_preview =
     { start = offset + 1, finish = offset + (code and #code or 0), first = first or 1 }
-  vim.wo[win].number, vim.wo[win].relativenumber = true, false
-  vim.wo[win].statuscolumn = "%#LineNr#%4{v:lua.require'lsp-tools.results.preview'.line_number()} "
+  vim.wo[win][0].number, vim.wo[win][0].relativenumber = true, false
+  vim.wo[win][0].statuscolumn =
+    "  %#LineNr#%4{v:lua.require'lsp-tools.results.preview'.line_number()}  "
   if owner then
     local bindings = require("lsp-tools.keymaps").new(buf, owner.options)
     bindings:map("return_list", { "<Esc>", "<prefix>b" }, owner.return_list, "Return to results")

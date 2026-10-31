@@ -402,6 +402,9 @@ excerpt is parsed; paths and diagnostic messages have separate colors. The targe
 line and UTF-8 range are highlighted. Source buffers stay unchanged and unopened
 files are read without loading their buffers or starting language/filetype hooks.
 Preview buffers retain the widget filetype so statusline integrations keep working.
+The preview separates the file path, producer/code, diagnostic message and source
+excerpt. Floating borders show the severity and excerpt language/line range;
+`LspToolsResultsPreview*` highlight groups follow the active colorscheme.
 Use the `focus_preview` action (default `<LocalLeader>w`) to enter the preview and
 use native scrolling/search/yank commands. Escape returns to the original list.
 Source line numbers exclude the metadata header. In the preview,

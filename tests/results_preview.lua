@@ -28,6 +28,8 @@ local item = {
   end_pos = { 2, 11 },
   text = 'local false "diagnostic"',
   severity = 1,
+  source = "lua_ls",
+  code = "assign-type-mismatch",
 }
 local v = results.open({ item }, { focus = true })
 local function check(value, message)
@@ -49,6 +51,24 @@ local function marks(p, name)
   )
 end
 local p = preview()
+local header = api.nvim_buf_get_lines(p.buf, 0, p.code_start - 1, false)
+check(
+  header[2] == "lua_ls  ·  assign-type-mismatch",
+  "preview separates source and diagnostic code from the message"
+)
+check(
+  table.concat(header, "\n"):find("── Source", 1, true),
+  "a divider separates metadata from the source excerpt"
+)
+local window = api.nvim_win_get_config(p.win)
+check(
+  window.title[1][1] == " Error " and window.footer[1][1]:find("lua", 1, true),
+  "float border carries severity and source-language context"
+)
+check(
+  vim.wo[p.win].winhighlight:find("LspToolsResultsPreviewNormal", 1, true),
+  "preview uses theme-linked float colors"
+)
 check(
   p.filetype == "lua" and p.highlight_backend == "treesitter",
   "loaded Lua uses Tree-sitter highlighting"
