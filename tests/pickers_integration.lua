@@ -110,6 +110,29 @@ local function run()
       end, "Escape closes selection picker")
     end
   end
+  local function check_preview(p)
+    local item = assert(p:current())
+    wait(function()
+      local buf = api.nvim_win_get_buf(p.preview_win)
+      return api.nvim_buf_get_lines(buf, item.pos[1] - 1, item.pos[1], false)[1] == item.code
+        and api.nvim_win_get_cursor(p.preview_win)[1] == item.pos[1]
+    end, "preview displays the selected symbol's actual source code")
+    assert(
+      vim.bo[api.nvim_win_get_buf(p.preview_win)].filetype == "lua",
+      "symbol source preview retains Lua syntax"
+    )
+    local top = api.nvim_win_call(p.preview_win, function()
+      return vim.fn.line("w0")
+    end)
+    local bottom = api.nvim_win_call(p.preview_win, function()
+      return vim.fn.line("w$")
+    end)
+    assert(
+      top <= item.pos[1] and bottom >= item.pos[1],
+      "selected symbol is visible in the preview"
+    )
+    assert(api.nvim_get_current_win() == p.input_win, "source preview keeps search input focused")
+  end
   local function choose(p, text)
     if vim.env.LSP_TOOLS_TUI then
       api.nvim_input(text)
@@ -124,6 +147,9 @@ local function run()
         and item
         and (item.name == text or item.text == text)
     end, "typed query selects the expected result: " .. text)
+    if p:current().name then
+      check_preview(p)
+    end
     if vim.env.LSP_TOOLS_TUI then
       api.nvim_input("<CR>")
     else
@@ -198,6 +224,7 @@ local function run()
   end
   p = ready()
   assert(p.preview_win and api.nvim_win_is_valid(p.preview_win), "source preview is mounted")
+  check_preview(p)
   check_rows(p, "Function")
   choose(p, "beta")
   assert(
@@ -235,6 +262,7 @@ local function run()
     p,
     require("lsp-tools.symbols.icons")[vim.lsp.protocol.SymbolKind[p:current().kind]].hl
   )
+  check_preview(p)
   close()
   local ns = api.nvim_create_namespace("picker-integration")
   local other = api.nvim_create_buf(true, false)

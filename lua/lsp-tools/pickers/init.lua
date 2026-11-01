@@ -366,7 +366,21 @@ function M.open(kind, opts)
     multi = false,
     live = kind == "workspace_symbols",
     query = opts.query or "",
-    preview = { enabled = true },
+    preview = {
+      enabled = true,
+      providers = vim.list_extend({
+        function(ctx)
+          if not ctx.item.data.unresolved then
+            return false -- Let selection-tools preview the source at item.pos.
+          end
+          ctx.set_lines(
+            { ctx.item.name, "", ctx.item.detail, "", "Confirm to resolve this symbol's location." },
+            "text"
+          )
+          return true
+        end,
+      }, vim.deepcopy((opts.picker.preview or {}).providers or {})),
+    },
     result_layout = opts.picker.result_layout or "grep",
     syntax = vim.tbl_deep_extend(
       "force",
@@ -390,15 +404,6 @@ function M.open(kind, opts)
       end
       if active == s then
         active = nil
-      end
-    end,
-    previewer = function(ctx)
-      if ctx.item.data.unresolved then
-        ctx.set_lines(
-          { ctx.item.name, "", ctx.item.detail, "", "Confirm to resolve this symbol's location." },
-          "text"
-        )
-        return true
       end
     end,
   })
