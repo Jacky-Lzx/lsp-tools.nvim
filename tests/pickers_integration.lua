@@ -265,9 +265,9 @@ local function run()
   check_preview(p)
   close()
   local ns = api.nvim_create_namespace("picker-integration")
-  local other = api.nvim_create_buf(true, false)
-  api.nvim_buf_set_name(other, directory .. "/other.lua")
-  api.nvim_buf_set_lines(other, 0, -1, false, { "other" })
+  local other_file = directory .. "/other.lua"
+  vim.fn.writefile({ "other", "unopened diagnostic" }, other_file)
+  local other = vim.fn.bufadd(other_file)
   vim.diagnostic.set(
     ns,
     buf,
@@ -276,7 +276,7 @@ local function run()
   vim.diagnostic.set(
     ns,
     other,
-    { { lnum = 0, col = 0, message = "elsewhere error", severity = 1, source = "test-lint" } }
+    { { lnum = 1, col = 3, message = "elsewhere error", severity = 1, source = "test-lint" } }
   )
   if configured then
     api.nvim_input(vim.g.mapleader .. "sD")
@@ -296,8 +296,16 @@ local function run()
     tools.pick_diagnostics({ namespace = ns })
   end
   p = ready()
+  assert(not api.nvim_buf_is_loaded(other), "global picker leaves the diagnostic target unloaded")
   choose(p, "elsewhere error")
   assert(api.nvim_get_current_buf() == other, "global diagnostic picker reaches another file")
+  assert(
+    vim.deep_equal(api.nvim_win_get_cursor(0), { 2, 3 }),
+    "unopened diagnostic jumps to its exact position: "
+      .. vim.inspect(api.nvim_win_get_cursor(0))
+      .. " mode="
+      .. vim.fn.mode()
+  )
   tools.setup({ pickers = false })
   client:stop(true)
   wait(function()

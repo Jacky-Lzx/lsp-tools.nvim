@@ -394,7 +394,15 @@ function M.open(kind, opts)
     end,
     on_choice = function(item)
       if item then
-        jump(s, item)
+        if vim.fn.mode():sub(1, 1) == "i" then
+          -- stopinsert takes effect after the confirmation mapping returns.
+          -- Jump afterwards so leaving Insert mode cannot move the target cursor.
+          vim.schedule(function()
+            jump(s, item)
+          end)
+        else
+          jump(s, item)
+        end
       end
     end,
     on_close = function()

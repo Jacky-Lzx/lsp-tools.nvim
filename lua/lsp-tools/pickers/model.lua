@@ -170,7 +170,8 @@ function M.diagnostics(opts, origin)
           detail = diagnostic.message,
           data = {
             diagnostic = diagnostic,
-            tick = api.nvim_buf_get_changedtick(buf),
+            -- Unloaded buffers have a changedtick but no text snapshot to validate.
+            tick = api.nvim_buf_is_loaded(buf) and api.nvim_buf_get_changedtick(buf) or nil,
             stat = location.stat(file ~= "" and file or nil),
           },
         }
@@ -204,8 +205,12 @@ function M.diagnostic_valid(item)
   if not M.target_valid(item) then
     return false
   end
-  local diagnostic = item.data.diagnostic
+  -- Neovim creates/replaces this private tracking mark when a buffer is loaded.
+  -- It does not change the diagnostic content or its source position.
+  local diagnostic = vim.tbl_extend("force", {}, item.data.diagnostic)
+  diagnostic._extmark_id = nil
   for _, current in ipairs(vim.diagnostic.get(item.bufnr, { namespace = diagnostic.namespace })) do
+    current._extmark_id = nil
     if vim.deep_equal(current, diagnostic) then
       return true
     end
