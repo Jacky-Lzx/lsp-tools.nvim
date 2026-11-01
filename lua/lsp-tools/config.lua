@@ -20,6 +20,15 @@ end
 -- Validate supplied options without importing the implementation or its defaults.
 function M.tool(name, opts)
   require("lsp-tools.keymaps").validate(opts)
+  if name == "pickers" then
+    for _, key in ipairs({ "jump_single", "include_current", "include_declaration" }) do
+      assert(
+        opts[key] == nil or type(opts[key]) == "boolean",
+        "pickers." .. key .. " must be boolean"
+      )
+    end
+    assert(opts.picker == nil or type(opts.picker) == "table", "pickers.picker must be a table")
+  end
   if name == "results" and opts.history ~= nil then
     assert(
       type(opts.history) == "number" and opts.history >= 0 and opts.history % 1 == 0,

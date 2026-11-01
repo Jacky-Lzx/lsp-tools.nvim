@@ -233,6 +233,68 @@ following window. Setup options: `width = 0.4`, `debounce = 200`,
 source or detaching cancels pending requests; existing pinned content remains
 readable when the source changes. Stale results cannot replace it.
 
+## Searchable LSP and diagnostic pickers
+
+Enable `pickers = true` to use selection-tools for navigation and search. This is
+independent of `results` and `diagnostics`: their existing persistent panels stay
+available through `locations()`, `diagnostics()` and `diagnostic()`.
+
+```lua
+local tools = require("lsp-tools")
+tools.setup({
+  pickers = {
+    request_timeout = 3000,
+    debounce = 100, -- workspace-symbol queries, in milliseconds
+    jump_single = true,
+    picker = {}, -- optional selection-tools layout/keys; inherits its global setup
+  },
+})
+tools.lsp_definitions()
+tools.lsp_declarations()
+tools.lsp_references({ include_declaration = false })
+tools.lsp_implementations()
+tools.lsp_type_definitions()
+tools.lsp_symbols()
+tools.lsp_workspace_symbols({ query = "" })
+tools.pick_diagnostics() -- all diagnostics already received, including linters
+tools.pick_diagnostics({ scope = "buffer" })
+tools.pick_diagnostics({ scope = "project", root = vim.fn.getcwd() })
+```
+
+Location queries use every attached provider that supports the method. Results
+are deduplicated after converting each provider's UTF position encoding to byte
+columns. LocationLinks use their target selection range. Current-cursor locations
+are excluded unless `include_current = true`; a single remaining location jumps
+directly unless `jump_single = false`. Native LSP jumps retain the jumplist and
+tagstack. Unsupported methods, timeouts and failed providers are reported; valid
+results from another provider remain available.
+
+Picker rows put highlighted content on the left and muted, right-aligned
+file locations and file icons on the right, matching selection-tools grep.
+Symbols use their kind colors; diagnostics use their severity colors; location
+results use full-source Tree-sitter highlights when available. Query matches
+remain highlighted over these colors. Narrow layouts prioritize the content.
+
+Document symbols include all kinds and preserve nesting as indentation;
+SymbolInformation remains flat. Workspace symbols query the server as you type,
+with debounce and cancellation of superseded queries. URI-only WorkspaceSymbols
+resolve on confirmation when the provider supports `workspaceSymbol/resolve`.
+
+Diagnostic pickers refresh on `DiagnosticChanged`. Optional `namespace`, `severity`
+(native `vim.diagnostic.get` severity/range), and `filter` (result-model filters)
+restrict the received diagnostics. Source previews include unsaved buffer text;
+F2 shows the full diagnostic message or symbol details.
+
+Enter jumps; the configured selection-tools split/vsplit/tab keys open the chosen
+result in another destination. Quickfix and location-list export use selection-tools
+keys and validate snapshots first; URI-only unresolved symbols support navigation
+through confirmation, and cannot be exported before their location is resolved.
+Changed sources/targets, removed diagnostics and detached providers cannot silently
+jump to old coordinates. Escape, picker replacement and `setup({ pickers = false })`
+cancel pending requests and remove picker listeners. These context-bound pickers
+use `resume = false`. Requiring/configuring lsp-tools loads no picker UI, and no
+Snacks dependency is needed for this workflow. lsp-tools installs no global mappings.
+
 ## Optional diagnostic workflow
 
 Enable `diagnostics = true`, then call `require("lsp-tools").diagnostic()` to open
@@ -620,6 +682,8 @@ recommended example and can be configured buffer-locally on LSP attachment.
 ./tests/run.sh
 SELECTION_TOOLS_DIR=../selection-tools.nvim GIT_TOOLS_DIR=../git-tools.nvim ./tests/integration.sh
 ./tests/tui.sh # run from a terminal; exercises actual mapped keys and focus
+sh tests/pickers-integration.sh # real LuaLS, typed search and diagnostic scopes in a PTY
+LSP_TOOLS_NVIM_CONFIG="$HOME/.config/nvim" sh tests/pickers-integration.sh # current config and keys
 ./tests/references-integration.sh # requires lua-language-server (or LUA_LS=/path/to/server)
 ./tests/references-integration.sh tui # real terminal keys and Ctrl-O
 ./tests/rename-integration.sh # deterministic real LSP client/server and selection-tools

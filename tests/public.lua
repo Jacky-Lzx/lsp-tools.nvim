@@ -29,6 +29,7 @@ for _, name in ipairs({
   "inspect",
   "hierarchy",
   "results",
+  "pickers",
 }) do
   check(
     not package.loaded["lsp-tools." .. name],

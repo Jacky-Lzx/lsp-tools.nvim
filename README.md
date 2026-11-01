@@ -18,6 +18,8 @@ normal buffers, and the Vim motions you already use.
 - **Diagnostics with context.** Group by directory and file, filter by severity
   or producer, and preview the exact source range. Pin a snapshot or preview a
   fix and continue to the next confirmed diagnostic.
+- **Searchable LSP navigation.** Find definitions, references, document/workspace
+  symbols and diagnostics in selection-tools, with source previews and native jumps.
 - **Changes you can review.** Inspect code-action diffs and all files affected by
   a rename before confirming. Previews include unsaved buffer contents; changes
   stay unsaved after applying.
@@ -54,6 +56,7 @@ Use [lazy.nvim](https://github.com/folke/lazy.nvim):
   opts = {
     results = { auto_preview = true },
     diagnostics = true,
+    pickers = true,
     breadcrumbs = { winbar = true },
   },
   config = function(_, opts)
@@ -188,9 +191,10 @@ and diagnostic details. Other tools are opt-in: pinned hover documentation,
 call/type hierarchies, linked editing, semantic links, a code-action indicator,
 and LSP inspection.
 
-selection-tools and git-tools are needed for code-action and rename pickers.
+selection-tools is needed for search pickers, code actions and rename; git-tools
+is needed for code-action and rename diff previews.
 For the other tools, disable those integrations with
-`code_actions = false, rename = false` and omit those dependencies. Snacks is optional, for importing existing picker
+`code_actions = false, rename = false, pickers = false` and omit those dependencies. Snacks is optional, for importing existing picker
 results. No plenary or external diff executable is required. Delta is
 optional and falls back to native rendering if unavailable.
 
@@ -202,6 +206,7 @@ optional and falls back to native rendering if unavailable.
 | Grouped diagnostics, filters, fixes | [Diagnostic overview](doc/guide.md#diagnostic-overview) · [Diagnostic details](doc/guide.md#optional-diagnostic-workflow) |
 | Previews, folds, history, persistent lists | [Result lists](doc/guide.md#optional-persistent-result-lists) |
 | Quickfix, location lists, LSP and Snacks results | [Quickfix / loclist](doc/guide.md#quickfix-and-location-list) · [LSP locations](doc/guide.md#persistent-lsp-locations) · [Picker import](doc/guide.md#import-picker-results) |
+| Search definitions, references, symbols and diagnostics | [Search pickers](doc/guide.md#searchable-lsp-and-diagnostic-pickers) |
 | Structure and semantic navigation | [Outline](doc/guide.md#symbol-outline) · [Breadcrumbs](doc/guide.md#current-location-breadcrumbs) · [References](doc/guide.md#reference-navigation) |
 | Reviewable changes | [Rename](doc/guide.md#rename-preview) · [Code-action rendering](doc/guide.md#configuration) |
 | More LSP tools | [Hover](doc/guide.md#optional-pinned-documentation) · [Hierarchies](doc/guide.md#optional-call-and-type-hierarchies) · [Inspection](doc/guide.md#optional-lsp-inspection) |

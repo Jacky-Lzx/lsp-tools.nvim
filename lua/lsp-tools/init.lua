@@ -13,6 +13,7 @@ local names = {
   "inspect",
   "hierarchy",
   "results",
+  "pickers",
 }
 local defaults =
   { code_actions = true, references = true, rename = true, outline = true, breadcrumbs = true }
@@ -297,6 +298,26 @@ function M.locations(opts)
 end
 function M.from_picker(picker, opts)
   return call("results", "from_picker", picker, opts)
+end
+
+---Search LSP locations and symbols using selection-tools. Enable pickers in setup().
+for _, kind in ipairs({
+  "definitions",
+  "declarations",
+  "references",
+  "implementations",
+  "type_definitions",
+  "symbols",
+  "workspace_symbols",
+}) do
+  M["lsp_" .. kind] = function(opts)
+    return call("pickers", "open", kind, opts)
+  end
+end
+
+---Search diagnostics already received by Neovim; persistent diagnostics() is unchanged.
+function M.pick_diagnostics(opts)
+  return call("pickers", "open", "diagnostics", opts)
 end
 
 return M

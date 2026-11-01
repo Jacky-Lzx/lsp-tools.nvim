@@ -110,10 +110,12 @@ function M.check()
   health.start("Optional dependencies")
   if available("lua/selection_tools/init.lua") then
     health.ok("selection-tools picker API available on runtimepath")
-  elseif config.enabled.code_actions or config.enabled.rename then
+  elseif config.enabled.code_actions or config.enabled.rename or config.enabled.pickers then
     health.error(
-      "selection-tools unavailable; enabled code action/rename pickers require it",
-      { "Install/update Jacky-Lzx/selection-tools.nvim, or disable code_actions and rename" }
+      "selection-tools unavailable; enabled code action/rename/location pickers require it",
+      {
+        "Install/update Jacky-Lzx/selection-tools.nvim, or disable code_actions, rename and pickers",
+      }
     )
   else
     health.info("selection-tools unavailable; native result views do not require it")
