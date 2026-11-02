@@ -169,6 +169,37 @@ local function run()
     "print(alpha(value), beta(value))",
   })
   vim.bo.filetype = "lua"
+  local notify, notices = vim.notify, {}
+  vim.notify = function(message, level)
+    notices[#notices + 1] = { message = message, level = level }
+  end
+  local windows = api.nvim_list_wins()
+  local opened_windows = 0
+  local watcher = api.nvim_create_autocmd("WinNew", {
+    callback = function()
+      opened_windows = opened_windows + 1
+    end,
+  })
+  for _, kind in ipairs({
+    "definitions",
+    "declarations",
+    "references",
+    "implementations",
+    "type_definitions",
+    "symbols",
+    "workspace_symbols",
+  }) do
+    local before = #notices
+    assert(require("lsp-tools")["lsp_" .. kind]() == false, kind .. " requires a provider")
+    assert(#notices == before + 1, kind .. " emits one warning")
+    assert(notices[#notices].level == vim.log.levels.WARN, kind .. " uses warning severity")
+    assert(vim.deep_equal(api.nvim_list_wins(), windows), kind .. " keeps the window layout")
+    assert(api.nvim_get_current_win() == win, kind .. " keeps source focus")
+    assert(not picker(), kind .. " leaves no active selection picker")
+  end
+  api.nvim_del_autocmd(watcher)
+  vim.notify = notify
+  assert(opened_windows == 0, "missing LSP never opens even a transient selection window")
   local capabilities = vim.lsp.protocol.make_client_capabilities()
   capabilities.workspace.didChangeWatchedFiles.dynamicRegistration = false
   local id = assert(vim.lsp.start({

@@ -358,6 +358,10 @@ function M.open(kind, opts)
     method = definition and definition[2],
     locations = definition and kind ~= "symbols" and kind ~= "workspace_symbols",
   }
+  if s.method and #vim.lsp.get_clients({ bufnr = s.origin.buf, method = s.method }) == 0 then
+    vim.notify("No LSP provider supports " .. s.method, vim.log.levels.WARN)
+    return false
+  end
   local spec = vim.tbl_deep_extend("force", {}, opts.picker, {
     prompt = definition and definition[1]
       or "Diagnostics · " .. (opts.scope or "all") .. " (received)",

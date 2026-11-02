@@ -1,6 +1,6 @@
 vim.opt.rtp:prepend(vim.env.LSP_TOOLS_ROOT)
 local api, tools = vim.api, require("lsp-tools")
-local count, calls, notices = 0, {}, {}
+local count, calls, notices, notice_levels = 0, {}, {}, {}
 local function check(value, message)
   assert(value, message)
   count = count + 1
@@ -20,8 +20,9 @@ local function flush()
     return false
   end, 1)
 end
-vim.notify = function(message)
+vim.notify = function(message, level)
   notices[#notices + 1] = tostring(message)
+  notice_levels[#notices] = level
 end
 tools.setup({
   pickers = { debounce = 1, jump_single = false },
@@ -50,9 +51,44 @@ local function client(id, encoding)
 end
 local one, two = client(1, "utf-16"), client(2, "utf-8")
 local clients = { one, two }
-vim.lsp.get_clients = function()
+local client_filter
+vim.lsp.get_clients = function(filter)
+  client_filter = filter
   return clients
 end
+local methods = {
+  definitions = "textDocument/definition",
+  declarations = "textDocument/declaration",
+  references = "textDocument/references",
+  implementations = "textDocument/implementation",
+  type_definitions = "textDocument/typeDefinition",
+  symbols = "textDocument/documentSymbol",
+  workspace_symbols = "workspace/symbol",
+}
+clients = {}
+for kind, method in pairs(methods) do
+  local windows, buffers, before = api.nvim_list_wins(), api.nvim_list_bufs(), #notices
+  check(tools["lsp_" .. kind]() == false, kind .. " rejects a missing provider")
+  check(#notices == before + 1 and notices[#notices]:find(method, 1, true), kind .. " warns")
+  check(notice_levels[#notices] == vim.log.levels.WARN, kind .. " uses warning severity")
+  check(client_filter.bufnr == buf and client_filter.method == method, kind .. " checks capability")
+  check(vim.deep_equal(windows, api.nvim_list_wins()), kind .. " opens no windows")
+  check(vim.deep_equal(buffers, api.nvim_list_bufs()), kind .. " allocates no picker buffers")
+  check(api.nvim_get_current_win() == win, kind .. " preserves source focus")
+end
+check(not package.loaded.selection_tools, "unavailable LSP pickers do not load selection-tools")
+check(#calls == 0, "unavailable LSP pickers send no requests")
+local all_clients = vim.lsp.get_clients
+vim.lsp.get_clients = function(filter)
+  return filter.method and {} or { one }
+end
+check(
+  #vim.lsp.get_clients({ bufnr = buf }) == 1,
+  "unsupported-method fixture has an attached client"
+)
+check(tools.lsp_definitions() == false, "an attached client without the capability cannot open UI")
+vim.lsp.get_clients = all_clients
+clients = { one, two }
 local function loc(row, first, last)
   return {
     uri = vim.uri_from_bufnr(buf),
@@ -306,12 +342,6 @@ api.nvim_buf_set_lines(buf, 0, 1, false, { "edited source" })
 p:confirm()
 check(not p.closed, "changed source cannot confirm a stale result")
 p:close()
-clients = {}
-p = tools.lsp_definitions()
-wait(function()
-  return p.error ~= nil
-end, "unsupported LSP method is reported")
-p:close()
 clients = { one }
 p, a = opened("references", { request_timeout = 10 })
 wait(function()
@@ -337,6 +367,7 @@ vim.diagnostic.set(
   { { lnum = 1, col = 0, message = "lint warning", severity = 2, source = "lint" } }
 )
 vim.diagnostic.set(ns, other, { { lnum = 0, col = 0, message = "other error", severity = 1 } })
+clients = {}
 p = tools.pick_diagnostics()
 check(
   #p.entries == 3 and p.entries[1].item.severity == 1,
@@ -369,6 +400,7 @@ check(
 )
 vim.cmd("cclose")
 api.nvim_set_current_win(win)
+clients = { one }
 p, a = opened("references")
 tools.setup({ pickers = false })
 check(
