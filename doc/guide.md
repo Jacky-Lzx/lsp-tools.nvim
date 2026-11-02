@@ -218,9 +218,35 @@ The plugin installs no `go` or Visual-mode mappings.
 
 Enable `hover = true`, then call `require("lsp-tools").hover()` to pin the source
 position's hover documentation in a searchable, read-only Markdown side buffer.
-Normal `K`, signature help and Noice remain available. Results from capable
+Native `K` gets a bounded, padded documentation float with theme-aware colors.
+Code fences stay hidden even after `KK` focuses the float; Markdown and injected
+code highlighting start independently of legacy `:syntax` settings. `q` closes
+the focused float, and moving the source cursor dismisses it as usual. Signature
+help and other floating previews keep their existing rendering. Results from capable
 clients are labeled and sorted by client ID; Unicode positions use each client's
 encoding. No Snacks dependency is needed.
+
+Inside the float, `j`/`k`, arrow keys, `Ctrl-N`/`Ctrl-P` and `gj`/`gk` skip hidden
+fence rows. Counts and Visual selection count visible steps; screen-line motions
+also retain their behavior on wrapped text. These mappings are local to the
+hover buffer, and the original Markdown remains available for copying.
+
+Configure the native float separately from the pinned panel:
+
+```lua
+require("lsp-tools").setup({
+  hover = {
+    float = { max_width = 80, max_height = 20, border = "rounded" },
+  },
+})
+```
+
+Use `hover = { float = false }` to keep the native float's original appearance
+while retaining pinned documentation. Options supplied directly to
+`vim.lsp.buf.hover(opts)` take precedence. No `K` mapping is installed.
+Markdown/code highlighting uses available Tree-sitter parsers; fence hiding also
+works without them. Other UI plugins that replace native hover rendering own
+their presentation.
 
 Keys inside the side window: `<LocalLeader>r` refreshes from the source window's current
 position, `<LocalLeader>f` toggles debounced following, `<LocalLeader>y` copies the document (including

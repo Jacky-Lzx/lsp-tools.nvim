@@ -187,7 +187,7 @@ require("lsp-tools").setup({
 
 Code actions, reference highlights/navigation, rename, outline, and breadcrumbs
 are enabled by default. The quick-start configuration also enables result lists
-and diagnostic details. Other tools are opt-in: pinned hover documentation,
+and diagnostic details. Other tools are opt-in: styled native `K` and pinned hover documentation,
 call/type hierarchies, linked editing, semantic links, a code-action indicator,
 and LSP inspection.
 

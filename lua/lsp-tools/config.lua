@@ -20,6 +20,21 @@ end
 -- Validate supplied options without importing the implementation or its defaults.
 function M.tool(name, opts)
   require("lsp-tools.keymaps").validate(opts)
+  if name == "hover" and opts.float ~= nil then
+    assert(
+      opts.float == false or type(opts.float) == "table",
+      "hover.float must be false or a table"
+    )
+    if type(opts.float) == "table" then
+      for _, key in ipairs({ "max_width", "max_height" }) do
+        local value = opts.float[key]
+        assert(
+          value == nil or type(value) == "number" and value >= 1 and value % 1 == 0,
+          "hover.float." .. key .. " must be a positive integer"
+        )
+      end
+    end
+  end
   if name == "pickers" then
     for _, key in ipairs({ "jump_single", "include_current", "include_declaration" }) do
       assert(

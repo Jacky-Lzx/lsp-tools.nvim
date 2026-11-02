@@ -166,6 +166,14 @@ function M.setup(opts)
           recorder.disable()
         end
       end
+      if name == "hover" then
+        local float = package.loaded["lsp-tools.hover.float"]
+        if update.enabled then
+          require("lsp-tools.hover.float").setup(update.options.float)
+        elseif float then
+          float.disable()
+        end
+      end
     end
   end
   watch_automatic()
