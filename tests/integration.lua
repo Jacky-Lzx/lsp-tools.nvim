@@ -101,6 +101,44 @@ local function run()
     local _, occurrences = text:gsub("markdown/test%.md", "")
     assert(occurrences == 1, "only the hunk title shows the filename; top file section is hidden")
   end
+  for _, query in ipairs({ "1", "zzzz" }) do
+    local previous = vim.api.nvim_win_get_buf(picker.preview_win)
+    if tui then
+      wait(function()
+        return vim.fn.mode():sub(1, 1) == "i"
+      end, "search input is in Insert mode")
+      vim.api.nvim_input(query)
+    else
+      picker:set_query(query)
+    end
+    wait(function()
+      return picker.closed or picker.query == query and preview_text(picker) == "No preview"
+    end, "unmatched query clears the preview")
+    assert(
+      not picker.closed and current() == picker,
+      "zero matches keep the code action picker open"
+    )
+    assert(#picker.matches == 0 and not picker:current(), "unmatched input selects no action")
+    if expect_delta then
+      assert(
+        not vim.api.nvim_buf_is_valid(previous),
+        "unmatched query releases the old delta frame"
+      )
+    end
+    assert(
+      vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == "hello world",
+      "typing never applies an edit"
+    )
+    if tui then
+      assert(vim.api.nvim_get_current_win() == picker.input_win, "unmatched input retains focus")
+      vim.api.nvim_input(string.rep("<BS>", #query))
+    else
+      picker:set_query("")
+    end
+    wait(function()
+      return picker.query == "" and preview_text(picker):find("你好😀 world", 1, true)
+    end, "clearing the query restores the action preview")
+  end
   if expect_delta then
     picker:move(1)
     wait(function()
