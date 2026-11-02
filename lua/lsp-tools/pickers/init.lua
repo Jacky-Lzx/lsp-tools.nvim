@@ -6,7 +6,7 @@ local model = require("lsp-tools.pickers.model")
 local config = {}
 local active
 function M.current()
-  return active and not active.picker.closed and active.picker or nil
+  return active and not active.pending and not active.picker.closed and active.picker or nil
 end
 local methods = {
   definitions = { "Definitions", "textDocument/definition" },
@@ -27,9 +27,7 @@ end
 
 local function cancel(s)
   stop(s.timer)
-  stop(s.auto_timer)
   s.timer = nil
-  s.auto_timer = nil
   for _, token in ipairs(s.tokens) do
     token.cancel()
   end
@@ -297,25 +295,6 @@ local function find(s, ctx)
       end
       ctx.set_items(items)
       ctx.done()
-      if s.locations and s.opts.jump_single and #items == 1 then
-        local started = vim.uv.hrtime()
-        local function choose_single()
-          s.auto_timer = nil
-          local picker = s.picker
-          if ctx.is_cancelled() or picker.query ~= ctx.query or picker:current() ~= items[1] then
-            return
-          end
-          if picker.syntax_pending then
-            -- Confirmation waits for the same ready syntax frame as manual Enter.
-            if (vim.uv.hrtime() - started) / 1e6 < s.opts.request_timeout then
-              s.auto_timer = vim.defer_fn(choose_single, 10)
-            end
-          else
-            picker:confirm()
-          end
-        end
-        vim.schedule(choose_single)
-      end
     end)
     s.tokens[#s.tokens + 1] = token
   end
@@ -364,6 +343,7 @@ function M.open(kind, opts)
     vim.notify("No LSP provider supports " .. s.method, vim.log.levels.WARN)
     return false
   end
+  M.disable()
   local spec = vim.tbl_deep_extend("force", {}, opts.picker, {
     prompt = definition and definition[1]
       or "Diagnostics · " .. (opts.scope or "all") .. " (received)",
@@ -413,6 +393,9 @@ function M.open(kind, opts)
     end,
     on_close = function()
       cancel(s)
+      if s.handle then
+        s.handle.closed = true
+      end
       if s.group then
         api.nvim_del_augroup_by_id(s.group)
       end
@@ -441,9 +424,37 @@ function M.open(kind, opts)
       return find(s, ctx)
     end
   end
-  s.picker = require("selection_tools").open(spec)
+  local function mount(items)
+    s.pending = false
+    if items then
+      spec.items, spec.finder = items, nil
+    end
+    s.picker = require("selection_tools").open(spec)
+    if s.handle then
+      s.handle.picker = s.picker
+    end
+  end
+  if s.locations and opts.jump_single then
+    -- Query before allocating windows: a unique definition needs no picker.
+    s.pending = true
+    s.handle = { closed = false }
+    function s.handle:close()
+      if self.closed then
+        return
+      end
+      if s.pending then
+        self.closed = true
+        spec.on_close()
+      elseif s.picker ~= self then
+        s.picker:close()
+      end
+    end
+    s.picker = s.handle
+  else
+    mount()
+  end
   active = s
-  s.group = api.nvim_create_augroup("LspToolsPicker" .. s.picker.input_buf, { clear = true })
+  s.group = api.nvim_create_augroup("LspToolsPicker" .. s.origin.win, { clear = true })
   api.nvim_create_autocmd(
     kind == "diagnostics" and { "DiagnosticChanged", "BufWipeout" }
       or { "TextChanged", "TextChangedI", "BufWipeout", "LspDetach" },
@@ -457,7 +468,17 @@ function M.open(kind, opts)
             end
           end)
         elseif ev.buf == s.origin.buf and not s.stale then
+          if
+            (ev.event == "TextChanged" or ev.event == "TextChangedI")
+            and api.nvim_buf_get_changedtick(ev.buf) == s.origin.tick
+          then
+            return
+          end
           s.stale = true
+          if s.pending then
+            s.handle:close()
+            return
+          end
           cancel(s)
           s.picker:set_items({})
           if s.finder then
@@ -467,6 +488,58 @@ function M.open(kind, opts)
       end,
     }
   )
+  if s.pending then
+    api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI", "BufLeave", "WinLeave" }, {
+      group = s.group,
+      callback = function(ev)
+        if
+          s.pending
+          and ev.buf == s.origin.buf
+          and (
+            ev.event == "BufLeave"
+            or ev.event == "WinLeave"
+            or not request.valid(s.origin, true)
+          )
+        then
+          s.handle:close()
+        end
+      end,
+    })
+    local items
+    local ctx = {
+      query = "",
+      is_cancelled = function()
+        if s.handle.closed then
+          return true
+        end
+        if not request.valid(s.origin, true) then
+          s.handle:close()
+          return true
+        end
+        return false
+      end,
+      set_items = function(values)
+        items = values
+      end,
+      fail = function(err)
+        s.handle:close()
+        vim.notify(err, vim.log.levels.WARN)
+      end,
+      done = function()
+        if #items == 1 then
+          s.handle:close()
+          jump(s, items[1])
+        elseif #items == 0 then
+          s.handle:close()
+          vim.notify("No " .. definition[1]:lower() .. " found", vim.log.levels.INFO)
+        else
+          mount(items)
+        end
+      end,
+    }
+    find(s, ctx)
+    return s.handle
+  end
   return s.picker
 end
 

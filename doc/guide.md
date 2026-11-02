@@ -291,7 +291,12 @@ Location queries use every attached provider that supports the method. Results
 are deduplicated after converting each provider's UTF position encoding to byte
 columns. LocationLinks use their target selection range. Current-cursor locations
 are excluded unless `include_current = true`; a single remaining location jumps
-directly unless `jump_single = false`. Native LSP jumps retain the jumplist and
+directly unless `jump_single = false`. With this default, location requests keep
+the source visible while waiting; only multiple results open a populated picker.
+Empty results and request errors produce a notification. Moving away from the
+query position cancels pending navigation. The returned pending handle supports
+`:close()` and `closed`; its `picker` field is set if multiple results open a picker.
+Native LSP jumps retain the jumplist and
 tagstack. Unsupported methods, timeouts and failed providers are reported; valid
 results from another provider remain available.
 

@@ -231,6 +231,12 @@ local function run()
     return indexed
   end, "LuaLS indexes real unsaved source")
   local tools = require("lsp-tools")
+  local navigation_windows = 0
+  watcher = api.nvim_create_autocmd("WinNew", {
+    callback = function()
+      navigation_windows = navigation_windows + 1
+    end,
+  })
   if configured then
     api.nvim_input("gd")
   else
@@ -239,6 +245,9 @@ local function run()
   wait(function()
     return not picker() and api.nvim_win_get_cursor(win)[1] == 1
   end, "single real definition jumps directly, including lazy key replay")
+  api.nvim_del_autocmd(watcher)
+  assert(navigation_windows == 0, "single real definition never opens a transient picker")
+  assert(vim.fn.mode():sub(1, 1) ~= "i", "direct normal-mode navigation stays in Normal mode")
   api.nvim_win_set_cursor(win, { 3, 15 })
   if configured then
     api.nvim_input("gi")

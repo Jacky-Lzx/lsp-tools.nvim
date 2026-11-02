@@ -145,12 +145,83 @@ for _, kind in ipairs({ "definitions", "declarations", "implementations", "type_
   p:close()
 end
 api.nvim_win_set_cursor(win, { 3, 0 })
+local windows_before, buffers_before = api.nvim_list_wins(), api.nvim_list_bufs()
 p, a = opened("definitions", { jump_single = true })
+check(
+  vim.deep_equal(windows_before, api.nvim_list_wins())
+    and vim.deep_equal(buffers_before, api.nvim_list_bufs())
+    and api.nvim_get_current_win() == win,
+  "pending direct navigation allocates no picker windows or buffers"
+)
+check(not require("lsp-tools.pickers").current(), "pending navigation is not an open picker")
+api.nvim_exec_autocmds("TextChanged", { buffer = buf })
+check(not p.closed and not a.cancelled, "queued unchanged TextChanged does not cancel navigation")
 a.callback(nil, loc(0, 2, 7))
 wait(function()
   return p.closed
 end, "a unique location jumps directly")
 check(api.nvim_win_get_cursor(win)[2] == 4, "automatic jump uses byte column")
+check(vim.deep_equal(windows_before, api.nvim_list_wins()), "single result never opens picker UI")
+
+api.nvim_win_set_cursor(win, { 3, 0 })
+clients = { one, two }
+p, a, b = opened("definitions", { jump_single = true })
+a.callback(nil, { loc(0, 2, 7) })
+flush()
+check(
+  vim.deep_equal(windows_before, api.nvim_list_wins()),
+  "wait for every provider before showing UI"
+)
+local sent = #calls
+b.callback(nil, { loc(1, 0, 4) })
+wait(function()
+  return p.picker and #p.picker.entries == 2
+end, "multiple locations open a populated picker after responses arrive")
+check(#calls == sent, "mounting results does not repeat the LSP request")
+check(require("lsp-tools.pickers").current() == p.picker, "current exposes the mounted picker")
+p:close()
+check(p.closed and p.picker.closed, "pending handle closes its eventual picker")
+
+clients = { one }
+api.nvim_win_set_cursor(win, { 3, 0 })
+p, a = opened("definitions", { jump_single = true })
+local before_notices = #notices
+a.callback(nil, {})
+check(p.closed and #notices == before_notices + 1, "empty locations report without opening UI")
+check(
+  vim.deep_equal(windows_before, api.nvim_list_wins()),
+  "empty response keeps the source visible"
+)
+
+p, a = opened("definitions", { jump_single = true, request_timeout = 30 })
+wait(function()
+  return p.closed
+end, "pending navigation times out")
+check(
+  a.cancelled and notices[#notices]:find("timed out", 1, true),
+  "timeout cancels and explains failure"
+)
+check(vim.deep_equal(windows_before, api.nvim_list_wins()), "timeout leaves no empty picker")
+
+p, a = opened("definitions", { jump_single = true })
+api.nvim_win_set_cursor(win, { 2, 0 })
+a.callback(nil, { loc(0, 2, 7) })
+check(
+  p.closed and api.nvim_win_get_cursor(win)[1] == 2,
+  "cursor movement discards delayed navigation"
+)
+
+api.nvim_win_set_cursor(win, { 3, 0 })
+p, a = opened("definitions", { jump_single = true })
+p:close()
+check(p.closed and a.cancelled, "pending navigation can be cancelled before any UI exists")
+check(pcall(p.close, p), "closing a pending handle twice is safe")
+p, a = opened("definitions", { jump_single = true })
+local next_pending, next_call = opened("definitions", { jump_single = true })
+check(p.closed and a.cancelled, "replacing pending navigation cancels its request")
+next_pending:close()
+check(next_call.cancelled, "replacement handle can be cancelled independently")
+api.nvim_win_set_cursor(win, { 1, 4 })
 p, a = opened("references")
 a.callback(nil, { loc(0, 2, 7), loc(1, 0, 4) })
 wait(function()
