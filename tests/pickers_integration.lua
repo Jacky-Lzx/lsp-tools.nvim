@@ -247,7 +247,32 @@ local function run()
   end
   local p = ready()
   assert(#p.entries >= 2, "multiple semantic references use searchable picker")
-  close()
+  local reference = p:current()
+  local expected = vim.deepcopy(reference.pos)
+  local reference_notices = {}
+  vim.notify = function(message)
+    reference_notices[#reference_notices + 1] = message
+  end
+  if vim.env.LSP_TOOLS_TUI then
+    api.nvim_input("<CR>")
+  else
+    p:confirm()
+  end
+  wait(function()
+    return p.closed and vim.fn.mode():sub(1, 1) ~= "i"
+  end, "Enter confirms a reference and leaves Insert mode")
+  vim.notify = notify
+  assert(
+    #reference_notices == 0,
+    "reference confirmation warns: " .. vim.inspect(reference_notices)
+  )
+  assert(
+    vim.deep_equal(api.nvim_win_get_cursor(win), expected),
+    "reference jumps to "
+      .. vim.inspect(expected)
+      .. ", got "
+      .. vim.inspect(api.nvim_win_get_cursor(win))
+  )
   if configured then
     api.nvim_input(vim.g.mapleader .. "ss")
   else

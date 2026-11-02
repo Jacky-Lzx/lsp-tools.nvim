@@ -51,7 +51,7 @@ function M.setup(opts)
   )
 end
 
-local function origin_valid(s)
+local function origin_valid(s, check_cursor)
   local origin = s.origin
   if s.kind == "diagnostics" then
     return api.nvim_win_is_valid(origin.win)
@@ -59,7 +59,7 @@ local function origin_valid(s)
       and api.nvim_win_get_buf(origin.win) == origin.buf
       and vim.uri_from_bufnr(origin.buf) == origin.uri
   end
-  return not s.stale and request.valid(origin, s.locations, true)
+  return not s.stale and request.valid(origin, s.locations and check_cursor ~= false, true)
 end
 
 local function provider(s, item, method)
@@ -72,8 +72,8 @@ local function provider(s, item, method)
   end
 end
 
-local function valid(s, item)
-  if not origin_valid(s) then
+local function valid(s, item, check_cursor)
+  if not origin_valid(s, check_cursor) then
     return false, "Source changed; reopen this picker"
   end
   if s.kind == "diagnostics" then
@@ -95,7 +95,9 @@ local function valid(s, item)
 end
 
 local function jump(s, item)
-  local ok, err = valid(s, item)
+  -- Confirmation already checked the query position. Leaving Insert mode while
+  -- closing the picker can move the source cursor before this deferred jump.
+  local ok, err = valid(s, item, false)
   if not ok then
     vim.notify(err, vim.log.levels.WARN)
     return

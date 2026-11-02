@@ -159,6 +159,24 @@ end, "current location filter finishes")
 check(#p.entries == 1 and p.entries[1].item.pos[1] == 2, "current reference is excluded by default")
 p:close()
 
+api.nvim_win_set_cursor(win, { 3, 3 })
+p, a = opened("references")
+a.callback(nil, { loc(0, 2, 7) })
+wait(function()
+  return not p.loading
+end, "reference is ready before closing")
+local on_close, notice_count = p.opts.on_close, #notices
+p.opts.on_close = function(...)
+  on_close(...)
+  -- Model stopinsert moving the source cursor before the deferred jump.
+  api.nvim_win_set_cursor(win, { 3, 2 })
+end
+p:confirm()
+check(
+  p.closed and vim.deep_equal(api.nvim_win_get_cursor(win), { 1, 4 }) and #notices == notice_count,
+  "cursor movement during picker teardown does not invalidate an accepted reference"
+)
+
 api.nvim_win_set_cursor(win, { 3, 0 })
 p, a = opened("definitions")
 api.nvim_win_set_cursor(win, { 2, 0 })
