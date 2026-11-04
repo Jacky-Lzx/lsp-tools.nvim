@@ -120,6 +120,7 @@ package manager or Mason).
 
 ```lua
 require("lsp-tools").setup({
+  server_activation = "filetype", -- Optional; default is "eager".
   servers = {
     lua_ls = {
       settings = {
@@ -150,6 +151,23 @@ require("lsp-tools").setup({
   recorded as external and stays enabled when lsp-tools management is disabled.
 - Omitted server names and an omitted `servers` option leave server state unchanged.
   An empty map is a no-op. Servers are never enabled just because their configs exist.
+
+`server_activation = "filetype"` reduces first-load work for large language profiles.
+All selected configs are still resolved and validated at setup, but native enablement
+waits until a loaded buffer matches their `filetypes`. Existing loaded buffers are
+checked immediately; a single `FileType` listener handles future buffers and is
+removed when no configs remain pending. A config without `filetypes` matches every
+nonempty filetype; an empty list matches none. Special buffers other than help are
+ignored. Pending configs show `pending = true` and "Waiting for a matching filetype"
+in status/inspection. Once enabled, Neovim handles future attachment and reuse normally.
+`:lsp enable <name>` can also enable a pending config explicitly without transferring
+ownership to lsp-tools. The default `"eager"` mode preserves immediate enablement of
+every selected config. Changing to `"eager"` enables remaining pending configs;
+changing to `"filetype"` does not stop already enabled clients. Repeated setup keeps
+the previous mode when this option is omitted.
+The filetype index uses the configs resolved at setup. If another part of your
+configuration later changes a pending server's `filetypes`, call
+`setup({ servers = { server_name = true } })` to refresh that entry.
 
 Load the plugin before LSP startup (`lazy = false` in lazy.nvim). `LspAttach` cannot
 bootstrap server management because an LSP must already be running to emit that event.
@@ -183,7 +201,7 @@ local servers = require("lsp-tools").server_status() -- optional source buffer n
 vim.print(servers)
 ```
 
-The sorted snapshots include `name`, `requested`, native `enabled`, `managed`,
+The sorted snapshots include `name`, `requested`, native `enabled`, `managed`, `pending`,
 `configured`, `cmd`, `executable` (only for command lists), `filetypes`,
 `matches_filetype`, `root`, `root_markers`, `dynamic_root`, `workspace_required`,
 and `clients` (IDs, initialization, attachment to this buffer, and roots).
@@ -825,7 +843,7 @@ opens real terminal Neovim, triggers Normal/Visual mappings through key input,
 confirms with Enter, cancels with Escape, and checks source-buffer focus recovery.
 
 Server tests use runtimepath/after config fixtures and a real local LSP process,
-covering preflight validation, hook preservation, ownership, missing executables,
+covering eager/filetype activation, preflight validation, hook preservation, ownership, missing executables,
 existing/new buffers, client reuse, multiple project roots and single-file mode.
 The optional `LSPCONFIG_DIR` run requires a local nvim-lspconfig checkout and
 `lua-language-server` on PATH (or `LUA_LS=/path/to/server`) and verifies actual

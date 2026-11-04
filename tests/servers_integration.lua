@@ -40,6 +40,7 @@ local function run()
     outline = false,
     breadcrumbs = false,
     inspect = true,
+    server_activation = vim.env.LSP_TOOLS_SERVER_ACTIVATION or "eager",
     servers = { lsp_tools_fixture = { settings = { fixture = { user = true } } } },
   })
   local client = attached(first)
@@ -102,11 +103,29 @@ local function run()
   wait(function()
     return #vim.lsp.get_clients({ name = "lsp_tools_fixture" }) == 0
   end, "bulk disable stops all managed clients")
+  tools.setup({
+    servers = {
+      lsp_tools_starting = {
+        cmd = { "python3", "-c", "import time; time.sleep(30)" },
+        filetypes = { "lsp-tools-fixture" },
+        root_dir = project,
+      },
+    },
+  })
+  local starting = vim.lsp.get_clients({ name = "lsp_tools_starting", _uninitialized = true })
+  assert(
+    #starting == 1 and not starting[1].initialized,
+    "client is still awaiting initialize response"
+  )
+  tools.setup({ servers = false })
+  wait(function()
+    return #vim.lsp.get_clients({ name = "lsp_tools_starting", _uninitialized = true }) == 0
+  end, "disable stops a client before initialization completes")
   assert(not package.loaded["lspconfig"], "native management never loads the legacy framework")
   assert(vim.v.errmsg == "", vim.v.errmsg)
 end
 local ok, err = xpcall(run, debug.traceback)
-for _, client in ipairs(vim.lsp.get_clients()) do
+for _, client in ipairs(vim.lsp.get_clients({ _uninitialized = true })) do
   client:stop(true)
 end
 vim.wait(1000, function()

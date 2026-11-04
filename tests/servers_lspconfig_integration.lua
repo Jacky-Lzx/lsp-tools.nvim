@@ -21,6 +21,7 @@ local function run()
     rename = false,
     outline = false,
     breadcrumbs = false,
+    server_activation = vim.env.LSP_TOOLS_SERVER_ACTIVATION or "eager",
     servers = { lua_ls = { cmd = { vim.env.LUA_LS or "lua-language-server" } } },
   })
   local function clients()

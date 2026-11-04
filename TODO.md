@@ -106,6 +106,7 @@ key mappings belong to the user's configuration.
 
 - [x] Use nvim-lspconfig/native runtimepath configs without the legacy setup framework.
 - [x] Offer opt-in server overrides and native activation with owned-server disabling.
+- [x] Offer filetype-based activation to avoid enabling unrelated server configs on first load.
 - [x] Report selected configs, missing commands and attachment state in health and inspection.
 - [x] Verify native config precedence, hooks, client reuse, project isolation and single-file mode.
 

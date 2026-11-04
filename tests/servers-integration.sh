@@ -8,6 +8,8 @@ export XDG_STATE_HOME="$test_tmp/state"
 export XDG_CACHE_HOME="$test_tmp/cache"
 export NVIM_LOG_FILE="$test_tmp/nvim.log"
 nvim --headless -u NONE -i NONE -l "$root/tests/servers_integration.lua"
+LSP_TOOLS_SERVER_ACTIVATION=filetype nvim --headless -u NONE -i NONE -l "$root/tests/servers_integration.lua"
 if [ -n "${LSPCONFIG_DIR:-}" ]; then
   nvim --headless -u NONE -i NONE -l "$root/tests/servers_lspconfig_integration.lua"
+  LSP_TOOLS_SERVER_ACTIVATION=filetype nvim --headless -u NONE -i NONE -l "$root/tests/servers_lspconfig_integration.lua"
 fi

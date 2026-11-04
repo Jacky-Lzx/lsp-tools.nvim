@@ -57,6 +57,7 @@ Use [lazy.nvim](https://github.com/folke/lazy.nvim):
   },
   lazy = false, -- Configure servers before the first LspAttach.
   opts = {
+    server_activation = "filetype", -- Enable configs when their filetypes are opened.
     servers = {
       lua_ls = true, -- Install lua-language-server separately; choose your servers here.
       -- clangd = { cmd = { "clangd", "--background-index" } },

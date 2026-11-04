@@ -140,8 +140,11 @@ function M.setup(opts)
       pending[name] = { enabled = on, options = config }
     end
   end
-  local servers = opts.servers ~= nil and require("lsp-tools.servers") or nil
-  local server_updates = servers and servers.prepare(opts.servers)
+  local servers = (opts.servers ~= nil or opts.server_activation ~= nil)
+      and require("lsp-tools.servers")
+    or nil
+  local server_updates = servers
+    and servers.prepare(opts.servers == nil and {} or opts.servers, opts.server_activation)
   if opts.ui ~= nil then
     require("lsp-tools.keymaps").configure(opts.ui)
   end
@@ -197,11 +200,16 @@ function M.setup(opts)
 end
 function M.configuration()
   local servers = package.loaded["lsp-tools.servers"]
+  local configs, _, activation
+  if servers then
+    configs, _, activation = servers.configuration()
+  end
   return {
     enabled = vim.deepcopy(enabled),
     options = vim.deepcopy(options),
     ui = require("lsp-tools.keymaps").config(),
-    servers = servers and servers.configuration() or {},
+    servers = configs or {},
+    server_activation = activation or "eager",
   }
 end
 

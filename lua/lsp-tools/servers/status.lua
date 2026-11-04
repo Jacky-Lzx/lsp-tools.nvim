@@ -9,7 +9,7 @@ function M.snapshot(buf)
     return {}
   end
   buf = buf or vim.api.nvim_get_current_buf()
-  local entries, owned = manager.configuration()
+  local entries, owned, _, waiting = manager.configuration()
   local result = {}
   local ft = vim.bo[buf].filetype
   for name, value in pairs(entries) do
@@ -26,6 +26,7 @@ function M.snapshot(buf)
       enabled = vim.lsp.is_enabled(name),
       managed = owned[name] == true,
       configured = ok and config ~= nil,
+      pending = waiting[name] ~= nil and not vim.lsp.is_enabled(name),
       clients = {},
     }
     if ok and config then
@@ -67,7 +68,8 @@ function M.describe(info)
   elseif not info.requested then
     return info.enabled and "Management disabled; enabled externally" or "Disabled"
   elseif not info.enabled then
-    return "Configured; native auto-activation is disabled"
+    return info.pending and "Waiting for a matching filetype"
+      or "Configured; native auto-activation is disabled"
   elseif not info.configured then
     return "Configuration unavailable"
   elseif info.executable == false then
