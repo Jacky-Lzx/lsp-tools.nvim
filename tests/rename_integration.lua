@@ -223,10 +223,14 @@ local function run()
   wait(function()
     return text():find("bar", 1, true)
   end, "diff renders the new name")
-  if backend == "delta" or configured then
+  if backend == "delta" and not configured then
     wait(function()
       return vim.bo[vim.api.nvim_win_get_buf(picker.preview_win)].buftype == "terminal"
     end, "delta ANSI diff is rendered")
+  elseif backend == "native" or configured then
+    wait(function()
+      return vim.b[vim.api.nvim_win_get_buf(picker.preview_win)].git_tools_diff == true
+    end, "native diff is rendered")
   end
   if not real then
     assert(

@@ -81,7 +81,9 @@ local function run()
   assert(
     expect_delta and vim.bo[vim.api.nvim_win_get_buf(picker.preview_win)].buftype == "terminal"
       or not expect_delta
-        and (vim.bo[vim.api.nvim_win_get_buf(picker.preview_win)].syntax == "diff" or vim.treesitter.highlighter.active[vim.api.nvim_win_get_buf(
+        and (vim.b[vim.api.nvim_win_get_buf(picker.preview_win)].git_tools_diff or vim.bo[vim.api.nvim_win_get_buf(
+          picker.preview_win
+        )].syntax == "diff" or vim.treesitter.highlighter.active[vim.api.nvim_win_get_buf(
           picker.preview_win
         )]),
     "diff highlighting is active"

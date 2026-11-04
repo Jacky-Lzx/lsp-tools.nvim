@@ -11,6 +11,7 @@ export XDG_STATE_HOME="$test_tmp/state"
 export XDG_CACHE_HOME="$test_tmp/cache"
 export NVIM_LOG_FILE="$test_tmp/nvim.log"
 nvim --headless -u NONE -i NONE -l "$root/tests/integration.lua"
+LSP_TOOLS_BACKEND=native nvim --headless -u NONE -i NONE -l "$root/tests/integration.lua"
 LSP_TOOLS_BACKEND=delta LSP_TOOLS_DELTA_COMMAND="$test_tmp/missing-delta" \
   LSP_TOOLS_EXPECT_DELTA=0 nvim --headless -u NONE -i NONE -l "$root/tests/integration.lua"
 cat > "$test_tmp/slow-delta" <<'EOF'

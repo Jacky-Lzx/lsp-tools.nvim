@@ -180,8 +180,9 @@ require("lsp-tools").setup({
     preview = { layout = "right", before = 3, after = 6 },
   },
   outline = { width = 0.25, indent = 1 },
-  -- Optional; native diff rendering works without delta.
-  code_actions = { backend = "delta" },
+  -- Theme-aware native previews; "delta" and raw "vim" remain available.
+  code_actions = { backend = "native", native = { file_header = false } },
+  rename = { backend = "native", native = { file_header = false } },
 })
 ```
 
