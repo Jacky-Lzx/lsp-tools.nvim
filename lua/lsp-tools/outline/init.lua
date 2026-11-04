@@ -149,15 +149,20 @@ render = function(s)
   for _, entry in ipairs(s.rows) do
     local node = entry.node
     local kind = vim.lsp.protocol.SymbolKind[node.kind] or "Unknown"
-    local icon = config.icons[kind]
-    local glyph = type(icon) == "table" and icon.icon
-      or type(icon) == "string" and icon
-      or kind:sub(1, 1)
+    local glyph, hl = require("lsp-tools.symbols.icons").get(kind, config.icons)
     local prefix = string.rep(" ", config.indent * entry.depth)
-      .. (entry.children and (s.doc.folds[node.key] and "▸ " or "▾ ") or "  ")
-    local text = prefix .. glyph .. " " .. clean(node.name)
+      .. (
+        entry.children
+          and require("lsp-tools.icons").prefix(
+            "ui",
+            s.doc.folds[node.key] and "collapsed" or "expanded",
+            s.doc.folds[node.key] and "▸" or "▾"
+          )
+        or "  "
+      )
+    local text = prefix .. (glyph ~= "" and (glyph .. " ") or "") .. clean(node.name)
     lines[#lines + 1] = text .. (node.detail ~= "" and "  " .. clean(node.detail) or "")
-    marks[#marks + 1] = { #prefix, #text, type(icon) == "table" and icon.hl or "@type" }
+    marks[#marks + 1] = { #prefix, #text, hl }
   end
   if #lines == 0 then
     lines = { s.status or (filter(s) and "No structure (m: all symbols)" or "No symbols") }
@@ -696,6 +701,15 @@ watch = function()
     end,
   })
   api.nvim_create_autocmd("ColorScheme", { group = group, callback = highlights })
+  api.nvim_create_autocmd("User", {
+    group = group,
+    pattern = { "ThemeToolsIconsChanged", "ThemeToolsReady" },
+    callback = function()
+      for _, s in pairs(sessions) do
+        render(s)
+      end
+    end,
+  })
 end
 
 return M

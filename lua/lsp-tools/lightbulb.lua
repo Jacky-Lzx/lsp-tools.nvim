@@ -67,9 +67,13 @@ local function query()
       if not result.error and type(result.result) == "table" then
         for _, action in ipairs(result.result) do
           if not action.disabled then
-            local opts = config.sign
-                and { sign_text = config.text, sign_hl_group = config.hl, priority = 20 }
-              or { virt_text = { { config.text, config.hl } }, virt_text_pos = "eol", priority = 20 }
+            local icon, hl =
+              require("lsp-tools.icons").get("ui", "lightbulb", config.text, config.hl)
+            if icon == "" then
+              return
+            end
+            local opts = config.sign and { sign_text = icon, sign_hl_group = hl, priority = 20 }
+              or { virt_text = { { icon, hl } }, virt_text_pos = "eol", priority = 20 }
             vim.api.nvim_buf_set_extmark(ctx.buf, ns, ctx.pos[1] - 1, 0, opts)
             marked = ctx.buf
             return
@@ -125,6 +129,11 @@ function M.setup(opts)
     { "InsertEnter", "BufLeave", "WinLeave", "BufWipeout", "LspDetach" },
     { group = group, callback = clear }
   )
+  vim.api.nvim_create_autocmd("User", {
+    group = group,
+    pattern = { "ThemeToolsIconsChanged", "ThemeToolsReady" },
+    callback = schedule,
+  })
   schedule()
 end
 

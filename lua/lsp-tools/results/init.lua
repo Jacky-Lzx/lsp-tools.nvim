@@ -771,6 +771,7 @@ function M.preview(v)
   preview(v)
 end
 function M.disable()
+  pcall(api.nvim_del_augroup_by_name, "LspToolsResultsIcons")
   enabled = false
   view.disable()
   if package.loaded["lsp-tools.results.picker"] then
@@ -800,5 +801,14 @@ function M.setup(opts)
   M.disable()
   view.setup()
   config, enabled = next_config, true
+  api.nvim_create_autocmd("User", {
+    group = api.nvim_create_augroup("LspToolsResultsIcons", { clear = true }),
+    pattern = { "ThemeToolsIconsChanged", "ThemeToolsReady" },
+    callback = function()
+      for v in pairs(sessions) do
+        render(v)
+      end
+    end,
+  })
 end
 return M

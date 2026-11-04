@@ -300,12 +300,8 @@ function M.statusline(opts)
   local parts = {}
   for _, node in ipairs(M.get(opts.winid)) do
     local kind = vim.lsp.protocol.SymbolKind[node.kind] or "Unknown"
-    local icon = config.icons[kind]
-    local glyph = type(icon) == "table" and icon.icon
-      or type(icon) == "string" and icon
-      or kind:sub(1, 1)
-    local text = (opts.icons == false and "" or glyph .. " ") .. node.name
-    local hl = type(icon) == "table" and icon.hl or "Identifier"
+    local glyph, hl = require("lsp-tools.symbols.icons").get(kind, config.icons)
+    local text = (opts.icons == false or glyph == "") and node.name or (glyph .. " " .. node.name)
     if opts.color ~= false and type(hl) == "string" and hl:match("^[@%w_.]+$") then
       text = "%#" .. hl .. "#" .. escape(text) .. "%*"
     else
@@ -377,6 +373,11 @@ function M.setup(opts)
       end
       redraw()
     end,
+  })
+  api.nvim_create_autocmd("User", {
+    group = group,
+    pattern = { "ThemeToolsIconsChanged", "ThemeToolsReady" },
+    callback = redraw,
   })
   scan()
 end

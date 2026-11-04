@@ -87,6 +87,9 @@ local function file_icon(path, icons)
   if not icons then
     return "", prefix .. "File"
   end
+  if package.loaded["theme_tools.icons"] then
+    return require("lsp-tools.icons").prefix("file", path or "", "", prefix .. "File")
+  end
   local provider = package.loaded["nvim-web-devicons"]
   if provider then
     local icon, hl =
@@ -99,7 +102,10 @@ local function file_icon(path, icons)
 end
 local function sign(item, icons)
   if not severity[item.severity] then
-    return icons and " " or "· ", prefix .. "Guide"
+    if icons then
+      return require("lsp-tools.icons").prefix("ui", "bullet", "", prefix .. "Guide")
+    end
+    return "· ", prefix .. "Guide"
   end
   local config = vim.diagnostic.config().signs
   local configured = type(config) == "table"
@@ -107,6 +113,14 @@ local function sign(item, icons)
     and config.text[item.severity]
   local icon = icons and (configured or signs[item.severity])
     or ({ "E", "W", "I", "H" })[item.severity]
+  if icons then
+    return require("lsp-tools.icons").prefix(
+      "diagnostic",
+      severity[item.severity]:lower(),
+      clean(icon),
+      "Diagnostic" .. severity[item.severity]
+    )
+  end
   return clean(icon) .. " ", "Diagnostic" .. severity[item.severity]
 end
 local function builder()
@@ -137,7 +151,10 @@ local function indent(line, row, guides, enabled, continuation)
   end
 end
 local function group(line, row, v)
-  line:add(v.options.icons and " " or "▾ ", prefix .. "Guide")
+  line:add(
+    v.options.icons and require("lsp-tools.icons").prefix("ui", "expanded", "") or "▾ ",
+    prefix .. "Guide"
+  )
   if row.field == "file" then
     local icon, hl = file_icon(row.value, v.options.icons)
     line:add(icon, hl)
@@ -149,7 +166,11 @@ local function group(line, row, v)
       end
     end
   elseif row.field == "directory" then
-    line:add(v.options.icons and " " or "", prefix .. "Directory")
+    line:add(
+      v.options.icons and require("lsp-tools.icons").prefix("directory", row.value or "", "")
+        or "",
+      prefix .. "Directory"
+    )
     line:add(label(row.value, v), prefix .. "Directory")
   else
     line:add(row.label, prefix .. "Title")

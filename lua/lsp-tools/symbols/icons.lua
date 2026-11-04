@@ -1,4 +1,4 @@
-return {
+local M = {
   File = { icon = "󰈔", hl = "Identifier" },
   Module = { icon = "󰆧", hl = "Include" },
   Namespace = { icon = "󰅪", hl = "Include" },
@@ -26,3 +26,14 @@ return {
   Operator = { icon = "󰆕", hl = "Operator" },
   TypeParameter = { icon = "󰊄", hl = "Type" },
 }
+
+function M.get(name, configured)
+  name = name or "Unknown"
+  local fallback = (configured or M)[name]
+  local icon = type(fallback) == "table" and fallback.icon
+    or type(fallback) == "string" and fallback
+    or name:sub(1, 1)
+  local hl = type(fallback) == "table" and fallback.hl or "Identifier"
+  return require("lsp-tools.icons").get("lsp", name, icon, hl)
+end
+return M

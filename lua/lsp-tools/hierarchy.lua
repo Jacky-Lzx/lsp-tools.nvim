@@ -127,7 +127,16 @@ render = function(s)
       or n.children and #n.children == 0 and " "
       or n.expanded and "▾"
       or "▸"
-    lines[#lines + 1] = string.rep("  ", n.depth) .. icon .. " " .. n.item.name:gsub("[\r\n]", " ")
+    if not (n.children and #n.children == 0) then
+      icon = require("lsp-tools.icons").get(
+        "ui",
+        n.cycle and "cycle" or n.loading and "loading" or n.expanded and "expanded" or "collapsed",
+        icon
+      )
+    end
+    lines[#lines + 1] = string.rep("  ", n.depth)
+      .. (icon ~= "" and (icon .. " ") or "")
+      .. n.item.name:gsub("[\r\n]", " ")
     s.rows[#lines] = n
     if n == selected then
       cursor = #lines
@@ -424,6 +433,13 @@ local function open(ctx, client, kind, direction, opts)
       end
     end
   end)
+  vim.api.nvim_create_autocmd("User", {
+    group = s.group,
+    pattern = { "ThemeToolsIconsChanged", "ThemeToolsReady" },
+    callback = function()
+      render(s)
+    end,
+  })
   vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI", "LspDetach" }, {
     group = s.group,
     callback = function(ev)

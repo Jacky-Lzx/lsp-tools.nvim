@@ -67,13 +67,13 @@ function M.highlights(item)
   local first = item.content_offset
   if item.kind then
     local name = vim.lsp.protocol.SymbolKind[item.kind]
-    local icon = require("lsp-tools.symbols.icons")[name]
+    local _, icon_hl = require("lsp-tools.symbols.icons").get(name)
     local indent = #(string.rep("  ", item.depth or 0))
     return {
       {
         first + indent,
         first + indent + #item.name,
-        hl = icon and icon.hl or "Identifier",
+        hl = icon_hl,
         priority = 100,
       },
       { first + indent + #item.name, first + #item.display_code, hl = "Comment", priority = 100 },
