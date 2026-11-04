@@ -140,6 +140,8 @@ function M.setup(opts)
       pending[name] = { enabled = on, options = config }
     end
   end
+  local servers = opts.servers ~= nil and require("lsp-tools.servers") or nil
+  local server_updates = servers and servers.prepare(opts.servers)
   if opts.ui ~= nil then
     require("lsp-tools.keymaps").configure(opts.ui)
   end
@@ -188,14 +190,29 @@ function M.setup(opts)
       end, { force = true, desc = command })
     end
   end
+  if servers then
+    servers.apply(server_updates)
+  end
   return M
 end
 function M.configuration()
+  local servers = package.loaded["lsp-tools.servers"]
   return {
     enabled = vim.deepcopy(enabled),
     options = vim.deepcopy(options),
     ui = require("lsp-tools.keymaps").config(),
+    servers = servers and servers.configuration() or {},
   }
+end
+
+---Inspect servers selected through setup without loading an interactive view.
+---@param buf? integer
+---@return table[]
+function M.server_status(buf)
+  if not package.loaded["lsp-tools.servers"] then
+    return {}
+  end
+  return require("lsp-tools.servers.status").snapshot(buf)
 end
 
 ---Render the enclosing symbol path for lualine or a native statusline/winbar.

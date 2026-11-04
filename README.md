@@ -35,8 +35,10 @@ normal buffers, and the Vim motions you already use.
 
 ## Quick start
 
-Requires **Neovim 0.12** (tested with 0.12.6) and an LSP configured for your
-language. Code actions, rename, outline, and other LSP features depend on the
+Requires **Neovim 0.12** (tested with 0.12.6) and an installed language server.
+The configuration below uses nvim-lspconfig's maintained server configs;
+lsp-tools applies your overrides and enables the selected servers through native
+Neovim LSP. Code actions, rename, outline, and other LSP features depend on the
 methods your server supports. Diagnostic lists also include non-LSP producers.
 
 Use [lazy.nvim](https://github.com/folke/lazy.nvim):
@@ -45,6 +47,7 @@ Use [lazy.nvim](https://github.com/folke/lazy.nvim):
 {
   "Jacky-Lzx/lsp-tools.nvim",
   dependencies = {
+    "neovim/nvim-lspconfig",
     "Jacky-Lzx/selection-tools.nvim",
     {
       dir = vim.fn.expand("~/Documents/Github/nvim_plugins/git-tools.nvim"),
@@ -52,8 +55,12 @@ Use [lazy.nvim](https://github.com/folke/lazy.nvim):
       main = "git_tools",
     },
   },
-  event = "LspAttach",
+  lazy = false, -- Configure servers before the first LspAttach.
   opts = {
+    servers = {
+      lua_ls = true, -- Install lua-language-server separately; choose your servers here.
+      -- clangd = { cmd = { "clangd", "--background-index" } },
+    },
     results = { auto_preview = true },
     diagnostics = true,
     pickers = true,
@@ -103,6 +110,14 @@ git-tools generates patches and renders native/delta previews. git-tools is a
 new local plugin: clone or place its checkout at the `dir` above, or adjust that
 path. It is not assumed to have a published remote release.
 `:checkhealth lsp-tools` checks both dependencies without loading their UIs.
+
+Server management is opt-in. If your configuration already enables LSP servers,
+omit `servers` and the nvim-lspconfig dependency here; UI-only use can keep
+`event = "LspAttach"` instead of `lazy = false`. When using `servers`, load
+nvim-lspconfig before setup and remove duplicate startup from legacy
+`require("lspconfig").SERVER.setup()` calls or Mason automatic enablement.
+See [server configuration and lifecycle](doc/guide.md#server-configuration-and-lifecycle)
+for custom configs, disabling, ownership and status inspection.
 
 The keys above are suggestions; lsp-tools installs no global editor mappings.
 The diagnostic overview opens with focus in your source window. Use `<C-w>j` to
@@ -204,6 +219,7 @@ optional and falls back to native rendering if unavailable.
 | Workflow | Guide |
 | --- | --- |
 | Setup, action prefixes, tool lifecycle | [Configuration](doc/guide.md#configuration) · [Panel mappings](doc/guide.md#panel-action-mappings) |
+| Server configs, native activation and status | [Server management](doc/guide.md#server-configuration-and-lifecycle) |
 | Grouped diagnostics, filters, fixes | [Diagnostic overview](doc/guide.md#diagnostic-overview) · [Diagnostic details](doc/guide.md#optional-diagnostic-workflow) |
 | Previews, folds, history, persistent lists | [Result lists](doc/guide.md#optional-persistent-result-lists) |
 | Quickfix, location lists, LSP and Snacks results | [Quickfix / loclist](doc/guide.md#quickfix-and-location-list) · [LSP locations](doc/guide.md#persistent-lsp-locations) · [Picker import](doc/guide.md#import-picker-results) |

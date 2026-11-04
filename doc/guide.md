@@ -22,7 +22,8 @@ Ordinary `vim.ui.select` requests keep using your existing provider.
 ## Health checks
 
 Run `:checkhealth lsp-tools` from a source buffer to inspect the Neovim version,
-enabled/deferred tools, selection-tools, git-tools, optional delta, preview parsers and syntax
+enabled/deferred tools, selected server configs and missing server commands,
+selection-tools, git-tools, optional delta, preview parsers and syntax
 fallbacks, attached LSP providers, and lualine winbar ownership. This does not open
 tools or modify source buffers. Missing capabilities depend on the attached server.
 Other winbar providers must preserve the `lsp-tools-results` filetype.
@@ -106,6 +107,92 @@ require("lsp-tools").setup({
   },
 })
 ```
+
+## Server configuration and lifecycle
+
+The optional `servers` map selects native Neovim LSP configurations. Install
+`neovim/nvim-lspconfig` and load it before lsp-tools setup to use its maintained
+`lsp/*.lua` configs. lsp-tools does not copy those configs or call the deprecated
+`require("lspconfig").SERVER.setup()` framework. Native configs from your own
+runtimepath work as well; no nvim-lspconfig dependency is required for custom configs.
+Language server executables must be installed separately (for example with your
+package manager or Mason).
+
+```lua
+require("lsp-tools").setup({
+  servers = {
+    lua_ls = {
+      settings = {
+        Lua = {
+          runtime = { version = "LuaJIT" },
+          diagnostics = { globals = { "vim" } },
+          workspace = { library = { vim.env.VIMRUNTIME } },
+        },
+      },
+    },
+    clangd = true,
+    custom_server = {
+      cmd = { "/path/to/server", "--stdio" },
+      filetypes = { "custom" },
+      root_markers = { { ".custom-root", "custom.json" }, ".git" },
+      workspace_required = true,
+    },
+  },
+})
+```
+
+- `true` enables an existing native config. A table applies native overrides and
+  enables the config. Unknown names require a custom `cmd` or an existing native config;
+  missing configs fail setup with an actionable error.
+- `false` stops that server only if lsp-tools enabled it, and releases its management.
+  `servers = false` does this for every selected server. Native config overrides remain
+  registered, so enabling again retains them. A server already enabled elsewhere is
+  recorded as external and stays enabled when lsp-tools management is disabled.
+- Omitted server names and an omitted `servers` option leave server state unchanged.
+  An empty map is a no-op. Servers are never enabled just because their configs exist.
+
+Load the plugin before LSP startup (`lazy = false` in lazy.nvim). `LspAttach` cannot
+bootstrap server management because an LSP must already be running to emit that event.
+Interactive tools still load on demand. If lsp-tools manages servers, remove other
+startup paths for the same names, including legacy lspconfig setup and Mason automatic
+enablement. Native activation has no ownership reference count: lsp-tools tracks which
+names it enabled, but cannot detect another plugin taking ownership later.
+
+Overrides use `vim.lsp.config(name, opts)`; activation uses `vim.lsp.enable(name)`.
+Neovim keeps the merge order: global `'*'` defaults, runtimepath `lsp/*.lua`,
+`after/lsp/*.lua`, then explicit per-server overrides. Dictionary fields merge; lists
+and functions replace earlier values. In particular, overriding `on_init` or
+`on_attach` can replace upstream hooks. Prefer `LspAttach` autocommands for common
+buffer behavior. Configure shared capabilities explicitly with
+`vim.lsp.config("*", { capabilities = ... })`; lsp-tools never changes global defaults.
+
+Repeated setup merges native overrides and does not restart or re-enable an already
+enabled config. Changes apply to future clients; use `:lsp restart <name>` to apply
+them to running clients. `:lsp enable <name>` and `:lsp disable <name>` also remain
+available. Root selection, single-file support (`workspace_required`), dynamic
+`root_dir(bufnr, on_dir)`, workspace isolation and client reuse follow Neovim's rules.
+Server names, entry types and core config fields are validated alongside UI options
+before lsp-tools changes tool state or registers overrides. Server-specific extension
+fields pass through to Neovim. Config resolution evaluates selected runtimepath config
+files using Neovim's loader.
+
+Inspect selected servers without opening a view:
+
+```lua
+local servers = require("lsp-tools").server_status() -- optional source buffer number
+vim.print(servers)
+```
+
+The sorted snapshots include `name`, `requested`, native `enabled`, `managed`,
+`configured`, `cmd`, `executable` (only for command lists), `filetypes`,
+`matches_filetype`, `root`, `root_markers`, `dynamic_root`, `workspace_required`,
+and `clients` (IDs, initialization, attachment to this buffer, and roots).
+`configuration().servers` returns an isolated copy of supplied entries; use
+`server_status()` for effective native configuration and current runtime state.
+Health checks and the optional `inspect = true` view also show selected configs
+that have no attached client. Status checks do not run command functions or dynamic
+root callbacks. An enabled but unattached config is reported without guessing why
+a server declined the buffer; check its root policy and native LSP log.
 
 ## Panel action mappings
 
@@ -711,6 +798,8 @@ recommended example and can be configured buffer-locally on LSP attachment.
 
 ```sh
 ./tests/run.sh
+sh tests/servers-integration.sh # native startup, config merging, reuse and project isolation
+LSPCONFIG_DIR="$HOME/.local/share/nvim/lazy/nvim-lspconfig" sh tests/servers-integration.sh # also real LuaLS with upstream configs
 SELECTION_TOOLS_DIR=../selection-tools.nvim GIT_TOOLS_DIR=../git-tools.nvim ./tests/integration.sh
 ./tests/tui.sh # run from a terminal; exercises actual mapped keys and focus
 sh tests/pickers-integration.sh # real LuaLS, typed search and diagnostic scopes in a PTY
@@ -734,6 +823,13 @@ Public API tests verify lazy loading, option forwarding, repeated setup, disabli
 and select-provider ownership without loading code-actions.nvim. The TUI test
 opens real terminal Neovim, triggers Normal/Visual mappings through key input,
 confirms with Enter, cancels with Escape, and checks source-buffer focus recovery.
+
+Server tests use runtimepath/after config fixtures and a real local LSP process,
+covering preflight validation, hook preservation, ownership, missing executables,
+existing/new buffers, client reuse, multiple project roots and single-file mode.
+The optional `LSPCONFIG_DIR` run requires a local nvim-lspconfig checkout and
+`lua-language-server` on PATH (or `LUA_LS=/path/to/server`) and verifies actual
+LuaLS attachment and rename using an upstream config.
 
 Renderer and generation tests live in git-tools (`tests/render.lua` and
 `tests/unified.lua`); selection-tools keeps generic transaction/frame lifecycle

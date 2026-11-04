@@ -102,6 +102,13 @@ key mappings belong to the user's configuration.
 - [x] Explain client selection when multiple servers provide the same feature.
 - [x] Expose optional tools' request failures, timeouts and empty results; show native lifecycle metadata and link to the LSP log.
 
+## Server configuration and management
+
+- [x] Use nvim-lspconfig/native runtimepath configs without the legacy setup framework.
+- [x] Offer opt-in server overrides and native activation with owned-server disabling.
+- [x] Report selected configs, missing commands and attachment state in health and inspection.
+- [x] Verify native config precedence, hooks, client reuse, project isolation and single-file mode.
+
 ## Result interaction milestones
 
 - [x] Persistent diagnostics/LSP/quickfix/loclist views and picker snapshots.

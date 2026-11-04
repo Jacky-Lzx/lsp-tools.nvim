@@ -147,6 +147,25 @@ function M.check()
     end
   end
   local buf = source_buffer()
+  if package.loaded["lsp-tools.servers"] then
+    local status = require("lsp-tools.servers.status")
+    health.start("Configured LSP servers")
+    for _, server in ipairs(status.snapshot(buf)) do
+      local message = server.name
+        .. (server.managed and " (managed): " or " (external/unmanaged): ")
+        .. status.describe(server)
+      if server.error or server.requested and not server.configured then
+        health.error(message)
+      elseif server.requested and server.executable == false then
+        health.warn(
+          message,
+          { "Install the server or override its cmd; lsp-tools does not install servers" }
+        )
+      else
+        health.info(message)
+      end
+    end
+  end
   syntax(health, buf)
   winbar(health)
   health.start("Attached LSP providers")

@@ -1,5 +1,6 @@
 vim.opt.rtp:prepend(vim.env.LSP_TOOLS_ROOT)
 local tools = require("lsp-tools")
+local root_calls = 0
 tools.setup({
   code_actions = false,
   references = false,
@@ -7,6 +8,15 @@ tools.setup({
   outline = false,
   rename = { backend = "delta", delta = { command = "/missing/lsp-tools-delta" } },
   results = true,
+  servers = {
+    lsp_tools_health = {
+      cmd = { "/missing/lsp-tools-health-server" },
+      filetypes = { "lsp-tools-health" },
+      root_dir = function()
+        root_calls = root_calls + 1
+      end,
+    },
+  },
 })
 vim.bo.filetype = "lua"
 local reports = {}
@@ -46,6 +56,11 @@ check(
 )
 check(has("info", "No LSP clients"), "missing server is informational")
 check(has("ok", "results (deferred)"), "enabled deferred tools reported")
+check(
+  has("warn", "Executable missing: /missing/lsp-tools-health-server"),
+  "missing managed server command reported"
+)
+check(root_calls == 0, "health does not invoke dynamic root callbacks")
 check(
   not package.loaded["lsp-tools.results"]
     and not package.loaded["lsp-tools.rename"]

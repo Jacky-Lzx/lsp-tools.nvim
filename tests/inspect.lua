@@ -25,7 +25,20 @@ local clients = {
 vim.lsp.get_clients = function()
   return clients
 end
-inspect.setup()
+require("lsp-tools").setup({
+  code_actions = false,
+  references = false,
+  rename = false,
+  outline = false,
+  breadcrumbs = false,
+  inspect = true,
+  servers = {
+    lsp_tools_inspect = {
+      cmd = { "/missing/lsp-tools-inspect-server" },
+      filetypes = { "lsp-tools-inspect" },
+    },
+  },
+})
 local snapshot = inspect.snapshot(buf)
 local count = 0
 local function check(value, message)
@@ -33,6 +46,10 @@ local function check(value, message)
   count = count + 1
 end
 check(snapshot.clients[1].id == 1 and #snapshot.clients == 2, "client list sorted by ID")
+check(
+  snapshot.servers[1].name == "lsp_tools_inspect" and snapshot.servers[1].managed,
+  "snapshot includes selected native configs"
+)
 check(
   snapshot.clients[1].root == "/project/main" and #snapshot.clients[1].workspaces == 1,
   "roots and workspace folders"
@@ -50,6 +67,10 @@ check(
   text():find("Request #5 pending", 1, true)
     and text():find("Linked editing: first capable", 1, true),
   "pending requests and selection policy"
+)
+check(
+  text():find("Configured servers", 1, true) and text():find("Executable missing", 1, true),
+  "inspection shows configured servers even without a usable command"
 )
 for i = 1, 100 do
   vim.api.nvim_exec_autocmds("LspRequest", {

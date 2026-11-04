@@ -33,7 +33,13 @@ local methods = {
 
 function M.snapshot(buf)
   buf = buf or vim.api.nvim_get_current_buf()
-  local result = { buf = buf, clients = {}, outcomes = request.history(buf), lifecycle = {} }
+  local result = {
+    buf = buf,
+    clients = {},
+    outcomes = request.history(buf),
+    lifecycle = {},
+    servers = require("lsp-tools.servers.status").snapshot(buf),
+  }
   local clients = vim.lsp.get_clients({ bufnr = buf })
   table.sort(clients, function(a, b)
     return a.id < b.id
@@ -86,6 +92,26 @@ local function render(s)
     "Attached clients: " .. #data.clients,
     "",
   }
+  if #data.servers > 0 then
+    lines[#lines + 1] = "Configured servers (current buffer)"
+    local status = require("lsp-tools.servers.status")
+    for _, server in ipairs(data.servers) do
+      lines[#lines + 1] = server.name
+        .. (server.managed and " (managed): " or " (external/unmanaged): ")
+        .. status.describe(server)
+      lines[#lines + 1] = "  Command: "
+        .. (
+          type(server.cmd) == "table" and table.concat(server.cmd, " ")
+          or "(function or unavailable)"
+        )
+      lines[#lines + 1] = "  Root policy: "
+        .. (server.dynamic_root and "dynamic callback" or server.root or vim.inspect(
+          server.root_markers
+        ))
+        .. (server.workspace_required and "; workspace required" or "; single files allowed")
+    end
+    lines[#lines + 1] = ""
+  end
   for _, client in ipairs(data.clients) do
     lines[#lines + 1] = ("#%d %s · %s · %s"):format(
       client.id,
