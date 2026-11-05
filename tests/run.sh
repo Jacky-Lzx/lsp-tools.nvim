@@ -44,6 +44,10 @@ nvim --headless -u NONE -i NONE -l "$root/tests/linked_editing.lua"
 nvim --headless -u NONE -i NONE -l "$root/tests/diagnostics.lua"
 nvim --headless -u NONE -i NONE -l "$root/tests/hover.lua"
 nvim --headless -u NONE -i NONE -l "$root/tests/hover_float.lua"
+nvim --headless -u NONE -i NONE -l "$root/tests/hover_theme.lua"
+if [ -d "${THEME_TOOLS_DIR:-$root/../theme-tools.nvim}/tests" ]; then
+  PYTHONDONTWRITEBYTECODE=1 python3 "$root/tests/hover_theme_ui.py"
+fi
 nvim --headless -u NONE -i NONE -l "$root/tests/links.lua"
 nvim --headless -u NONE -i NONE -l "$root/tests/inspect.lua"
 nvim --headless -u NONE -i NONE -l "$root/tests/hierarchy.lua"

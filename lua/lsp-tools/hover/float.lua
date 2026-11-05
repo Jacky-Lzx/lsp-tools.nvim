@@ -35,17 +35,33 @@ local function navigation(buf, hidden)
   end
 end
 
-local function highlights()
-  local normal = api.nvim_get_hl(0, { name = "NormalFloat", link = false })
-  local menu = api.nvim_get_hl(0, { name = "Pmenu", link = false })
-  local editor = api.nvim_get_hl(0, { name = "Normal", link = false })
-  api.nvim_set_hl(0, "LspToolsHoverNormal", {
-    default = true,
-    fg = normal.fg or editor.fg,
-    bg = normal.bg or menu.bg or editor.bg,
-  })
-  api.nvim_set_hl(0, "LspToolsHoverBorder", { default = true, link = "FloatBorder" })
-  api.nvim_set_hl(0, "LspToolsHoverTitle", { default = true, link = "Title" })
+local function definition(name)
+  local seen = {}
+  while name and not seen[name] do
+    seen[name] = true
+    local value = api.nvim_get_hl(0, { name = name, link = true, create = false })
+    if not value.link then
+      return value
+    end
+    name = value.link
+  end
+  return {}
+end
+
+local function highlights(c)
+  local normal, editor = definition("NormalFloat"), definition("Normal")
+  local bg = c and c.ui.float_bg or normal.bg or "NONE"
+  local groups = {
+    Normal = { fg = c and c.ui.float_fg or normal.fg or editor.fg, bg = bg },
+    Border = { fg = c and c.ui.border or definition("FloatBorder").fg, bg = bg },
+    Title = c and { fg = c.ui.accent, bold = true } or { link = "Title" },
+  }
+  for suffix, value in pairs(groups) do
+    local public, target = "LspToolsHover" .. suffix, "LspToolsDefaultHover" .. suffix
+    api.nvim_set_hl(0, target, value)
+    local empty = vim.tbl_isempty(api.nvim_get_hl(0, { name = public, create = false }))
+    api.nvim_set_hl(0, public, { link = target, default = not empty })
+  end
 end
 
 local function render(buf, win, markdown, opts)
@@ -112,6 +128,9 @@ function M.disable()
     return
   end
   installed.enabled = false
+  if installed.stop then
+    installed.stop()
+  end
   if vim.lsp.util.open_floating_preview == installed.wrapper then
     vim.lsp.util.open_floating_preview = installed.original
   end
@@ -158,8 +177,28 @@ function M.setup(opts)
     return buf, win
   end
   state.group = api.nvim_create_augroup("LspToolsHoverFloat", { clear = true })
-  api.nvim_create_autocmd("ColorScheme", { group = state.group, callback = highlights })
-  highlights()
+  local function attach()
+    local themes = package.loaded.theme_tools
+    if not state.stop and type(themes) == "table" and type(themes.on_change) == "function" then
+      state.stop = themes.on_change("lsp-tools:hover-float", highlights)
+    end
+    return state.stop ~= nil
+  end
+  api.nvim_create_autocmd("ColorScheme", {
+    group = state.group,
+    callback = function()
+      if not attach() then
+        highlights()
+      end
+    end,
+  })
+  api.nvim_create_autocmd(
+    "User",
+    { group = state.group, pattern = "ThemeToolsReady", callback = attach }
+  )
+  if not attach() then
+    highlights()
+  end
   vim.lsp.util.open_floating_preview = state.wrapper
   installed = state
 end

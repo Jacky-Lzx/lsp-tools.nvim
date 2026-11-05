@@ -324,6 +324,10 @@ The plugin installs no `go` or Visual-mode mappings.
 Enable `hover = true`, then call `require("lsp-tools").hover()` to pin the source
 position's hover documentation in a searchable, read-only Markdown side buffer.
 Native `K` gets a bounded, padded documentation float with theme-aware colors.
+Hover content and borders share the float surface, including transparent themes.
+When theme-tools is loaded, its float roles apply after theme overrides; otherwise
+`NormalFloat` supplies the background. Public `LspToolsHover*` definitions override
+private defaults. No completion-menu background is borrowed.
 Code fences stay hidden even after `KK` focuses the float; Markdown and injected
 code highlighting start independently of legacy `:syntax` settings. `q` closes
 the focused float, and moving the source cursor dismisses it as usual. Signature
