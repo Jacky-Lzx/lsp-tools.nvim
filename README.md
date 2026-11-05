@@ -213,7 +213,9 @@ is needed for code-action and rename diff previews.
 For the other tools, disable those integrations with
 `code_actions = false, rename = false, pickers = false` and omit those dependencies. Snacks is optional, for importing existing picker
 results. No plenary or external diff executable is required. Delta is
-optional and falls back to native rendering if unavailable.
+optional and falls back to native rendering if unavailable. Native code action
+and rename previews pass complete before/after documents to git-tools, preserving
+Tree-sitter context across hunks and optional colors from an already-loaded pairs.nvim.
 
 ## Documentation
 

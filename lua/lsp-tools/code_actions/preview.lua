@@ -81,10 +81,10 @@ function M.lines(action, encoding, root, read_contents)
   if not action.edit then
     return { "No text edit to preview. This action runs a command when confirmed." }
   end
-  local out, files, groups, by_uri = {}, {}, {}, {}
+  local out, files, groups, by_uri, sources = {}, {}, {}, {}, {}
   local function group(uri)
     if not by_uri[uri] then
-      by_uri[uri] = { uri = uri, text = label(uri, root), lines = {}, edits = 0 }
+      by_uri[uri] = { uri = uri, text = label(uri, root), lines = {}, edits = 0, sources = {} }
       groups[#groups + 1] = by_uri[uri]
     end
     return by_uri[uri]
@@ -105,12 +105,22 @@ function M.lines(action, encoding, root, read_contents)
     group(uri).edits = group(uri).edits + #edits
     files[uri] = after
     local name = label(uri, root)
-    local patch = require("git_tools.diff").unified(before, after, {
+    local ft
+    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+      if vim.api.nvim_buf_is_loaded(buf) and vim.uri_from_bufnr(buf) == uri then
+        ft = vim.bo[buf].filetype
+        break
+      end
+    end
+    local patch, source = require("git_tools.diff").unified(before, after, {
       old_path = name,
       new_path = name,
       context = 3,
+      ft = ft ~= "" and ft or nil,
     })
     if #patch > 0 then
+      sources[#sources + 1] = source
+      table.insert(group(uri).sources, source)
       emit(uri, patch)
     end
   end
@@ -148,7 +158,7 @@ function M.lines(action, encoding, root, read_contents)
     out[#out + 1] = ""
     out[#out + 1] = "This action also runs a command; its effects are not included above."
   end
-  return out, groups
+  return out, groups, sources
 end
 
 return M

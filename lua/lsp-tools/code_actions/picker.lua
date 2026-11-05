@@ -115,13 +115,13 @@ function M.open(actions, opts, on_choice, config, on_applied)
     if not ctx.has_preview then
       ctx.set_lines({ "Resolving code action…" })
     end
-    local displayed
+    local displayed, displayed_sources
     resolve(item, function(action, err)
       vim.schedule(function()
         if closed or current ~= generation or ctx.picker:current() ~= item then
           return
         end
-        local ok, lines = pcall(
+        local ok, lines, _, sources = pcall(
           require("lsp-tools.code_actions.preview").lines,
           action or {},
           (vim.lsp.get_client_by_id(item.entry.ctx.client_id) or {}).offset_encoding or "utf-16",
@@ -133,8 +133,10 @@ function M.open(actions, opts, on_choice, config, on_applied)
           config,
           function()
             return not closed and current == generation and ctx.picker:current() == item
-          end
+          end,
+          ok and not err and sources or nil
         )
+        displayed_sources = ok and not err and sources or nil
         displayed = err and { err }
           or ok and lines
           or { "Preview unavailable: " .. tostring(lines) }
@@ -147,7 +149,13 @@ function M.open(actions, opts, on_choice, config, on_applied)
       resize = function()
         if displayed and not ctx.is_cancelled() then
           stop_render()
-          stop_render = require("lsp-tools.code_actions.render").start(ctx, displayed, config)
+          stop_render = require("lsp-tools.code_actions.render").start(
+            ctx,
+            displayed,
+            config,
+            nil,
+            displayed_sources
+          )
         end
       end,
     }

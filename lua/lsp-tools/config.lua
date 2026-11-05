@@ -7,12 +7,16 @@ function M.diff(config)
   )
   if config.native ~= nil then
     assert(type(config.native) == "table", "native must be a table")
-    for _, key in ipairs({ "line_numbers", "file_header", "syntax", "word_diff" }) do
+    for _, key in ipairs({ "line_numbers", "file_header", "syntax", "word_diff", "decorations" }) do
       assert(
         config.native[key] == nil or type(config.native[key]) == "boolean",
         "native." .. key .. " must be boolean"
       )
     end
+    assert(
+      config.native.highlights == nil or type(config.native.highlights) == "function",
+      "native.highlights must be a function"
+    )
     assert(
       config.native.ft == nil or type(config.native.ft) == "string",
       "native.ft must be a filetype string"
