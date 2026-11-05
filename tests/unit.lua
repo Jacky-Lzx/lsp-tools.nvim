@@ -121,10 +121,21 @@ end
 vim.notify = function(message)
   notices[#notices + 1] = message
 end
+-- The renderer owns window options and mappings even for a plain-text preview.
+local preview_buf = vim.api.nvim_create_buf(false, true)
+local preview_win = vim.api.nvim_open_win(preview_buf, false, {
+  relative = "editor",
+  row = 0,
+  col = 0,
+  width = 40,
+  height = 10,
+  style = "minimal",
+  hide = true,
+})
 package.loaded["lsp-tools.selection"] = {
   pick = function(options)
     captured = options
-    picker = { selected = options.items[1] }
+    picker = { selected = options.items[1], preview_win = preview_win, preview_buf = preview_buf }
     function picker:current()
       return self.selected
     end
@@ -174,6 +185,7 @@ local function context(item)
   end
   function p:set_lines(value)
     self.lines = value
+    vim.api.nvim_buf_set_lines(preview_buf, 0, -1, false, value)
   end
   function p:highlight() end
   function p:set_title() end
@@ -181,6 +193,7 @@ local function context(item)
     item = item,
     picker = picker,
     preview = p,
+    win = preview_win,
     is_cancelled = function()
       return false
     end,
@@ -209,6 +222,10 @@ check(contains(ctx1.preview.lines, "Resolving"), "late previous-item response is
 request2.callback(nil, { title = "Second", command = { command = "second" } })
 flush()
 check(contains(ctx2.preview.lines, "No text edit"), "current-item response appears")
+check(
+  vim.deep_equal(vim.api.nvim_buf_get_lines(preview_buf, 0, -1, false), ctx2.preview.lines),
+  "resolved preview renders in its own host buffer"
+)
 local n = #calls
 options.confirm(current_picker, second)
 flush()
@@ -350,5 +367,7 @@ flush()
 check(#cancelled == cancel_before + 1, "disabling cancels active resolve requests")
 check(#applied == applied_before, "late response after disable cannot execute")
 check(contains(ctx.preview.lines, "Resolving"), "late response after disable cannot render")
+vim.api.nvim_win_close(preview_win, true)
+vim.api.nvim_buf_delete(preview_buf, { force = true })
 print(("lsp-tools code actions: %d assertions passed"):format(count))
 vim.cmd("qa!")
