@@ -249,6 +249,7 @@ function M.open(item, opts, owner)
       or height
   end
   local win = api.nvim_open_win(buf, false, window)
+  vim.wo[win].winfixbuf = true
   vim.wo[win][0].wrap, vim.wo[win][0].foldenable = true, false
   vim.wo[win][0].scrolloff, vim.wo[win][0].sidescrolloff = 0, 0
   vim.wo[win][0].winhighlight =

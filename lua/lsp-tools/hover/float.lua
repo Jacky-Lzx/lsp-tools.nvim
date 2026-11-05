@@ -55,6 +55,7 @@ local function render(buf, win, markdown, opts)
     conceallevel = 2,
     concealcursor = "nvic",
     winblend = 0,
+    winfixbuf = true,
     winhighlight = "Normal:LspToolsHoverNormal,NormalFloat:LspToolsHoverNormal,FloatBorder:LspToolsHoverBorder",
   }) do
     vim.wo[win][name] = value

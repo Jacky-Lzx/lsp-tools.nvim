@@ -106,6 +106,7 @@ local function help(v)
     border = "rounded",
     title = " Result keys ",
   })
+  vim.wo[win].winfixbuf = true
   v.help = { win = win, buf = buf }
   for i in ipairs(lines) do
     api.nvim_buf_set_extmark(
@@ -153,23 +154,26 @@ function M.close(id)
   panel.close(M.current(id))
 end
 local function target_window(v)
-  if
-    api.nvim_win_is_valid(v.ctx.win)
-    and api.nvim_win_get_tabpage(v.ctx.win) == v.tab
-    and vim.bo[api.nvim_win_get_buf(v.ctx.win)].buftype == ""
-  then
+  local function usable(win)
+    return api.nvim_win_is_valid(win)
+      and api.nvim_win_get_tabpage(win) == v.tab
+      and api.nvim_win_get_config(win).relative == ""
+      and not vim.wo[win].previewwindow
+      and not vim.wo[win].winfixbuf
+      and vim.bo[api.nvim_win_get_buf(win)].buftype == ""
+  end
+  if usable(v.ctx.win) then
     return v.ctx.win
   end
   if api.nvim_tabpage_is_valid(v.tab) then
     for _, win in ipairs(api.nvim_tabpage_list_wins(v.tab)) do
-      if win ~= v.win and vim.bo[api.nvim_win_get_buf(win)].buftype == "" then
+      if win ~= v.win and usable(win) then
         v.ctx.win = win
         return win
       end
     end
-    api.nvim_set_current_win(v.win)
-    vim.cmd("aboveleft new")
-    v.ctx.win = api.nvim_get_current_win()
+    local buf = api.nvim_buf_is_valid(v.ctx.buf) and v.ctx.buf or api.nvim_create_buf(true, false)
+    v.ctx.win = api.nvim_open_win(buf, true, { split = "above", win = v.win })
     return v.ctx.win
   end
 end

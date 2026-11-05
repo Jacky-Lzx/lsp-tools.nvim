@@ -159,6 +159,7 @@ function M.new(buf, opts)
       border = "rounded",
       title = " Tool keys ",
     })
+    vim.wo[self.help].winfixbuf = true
     vim.keymap.set("n", "<Esc>", function()
       self:close_help()
       if api.nvim_win_is_valid(win) then

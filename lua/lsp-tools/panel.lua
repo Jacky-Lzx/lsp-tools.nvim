@@ -21,7 +21,7 @@ function M.source(s, restore)
     return false
   end
   if vim.api.nvim_win_get_buf(ctx.win) ~= ctx.buf then
-    if not restore then
+    if not restore or vim.wo[ctx.win].winfixbuf then
       return false
     end
     vim.api.nvim_win_set_buf(ctx.win, ctx.buf)
@@ -57,6 +57,7 @@ function M.close(s, wiping)
     if not ok and vim.api.nvim_win_is_valid(s.win) then
       local buf = vim.api.nvim_buf_is_valid(s.ctx.buf) and s.ctx.buf
         or vim.api.nvim_create_buf(true, false)
+      vim.wo[s.win].winfixbuf = false
       vim.api.nvim_win_set_buf(s.win, buf)
       for name, value in pairs(s.source_options or {}) do
         vim.wo[s.win][name] = value
@@ -97,6 +98,7 @@ function M.open(name, ctx, opts)
     "foldcolumn",
     "winfixwidth",
     "winfixheight",
+    "winfixbuf",
     "winbar",
     "winhighlight",
     "cursorline",
@@ -131,6 +133,7 @@ function M.open(name, ctx, opts)
     signcolumn = "no",
     foldcolumn = "0",
     winfixwidth = true,
+    winfixbuf = true,
   }) do
     vim.wo[win][option] = value
   end

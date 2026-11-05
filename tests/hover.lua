@@ -88,6 +88,12 @@ s = hover.open()
 pending = calls[#calls]
 local replacement = vim.api.nvim_create_buf(false, true)
 local tool_win = s.win
+check(
+  not pcall(vim.api.nvim_win_set_buf, tool_win, replacement) and panel.alive(s),
+  "tool buffer rejects accidental replacement"
+)
+-- Explicitly unlocking the window still exercises forced-replacement cleanup.
+vim.wo[tool_win].winfixbuf = false
 vim.api.nvim_win_set_buf(tool_win, replacement)
 check(
   pending.cancelled and not panel.alive(s),

@@ -789,6 +789,12 @@ recommended example and can be configured buffer-locally on LSP attachment.
 
 ## Behavior and limits
 
+Owned tool panels, result previews, key help and styled native hover windows set
+`winfixbuf`, so ordinary buffer and file commands cannot replace their contents.
+Result jumps use an unlocked editor window or create a source split when none is
+available. Closing the last tool window restores a normal editor. Neovim still
+allows an explicit forced buffer switch or disabling `winfixbuf`.
+
 - Previews use loaded buffer contents, including unsaved edits, before disk.
 - File labels are relative to the source buffer's Git root, otherwise its LSP
   workspace/root directory, otherwise Neovim's cwd when the picker opens. Files
@@ -816,6 +822,7 @@ recommended example and can be configured buffer-locally on LSP attachment.
 
 ```sh
 ./tests/run.sh
+python3 tests/terminal.py window_protection.lua # protected panels, previews, jumps and teardown with real keys
 sh tests/servers-integration.sh # native startup, config merging, reuse and project isolation
 LSPCONFIG_DIR="$HOME/.local/share/nvim/lazy/nvim-lspconfig" sh tests/servers-integration.sh # also real LuaLS with upstream configs
 SELECTION_TOOLS_DIR=../selection-tools.nvim GIT_TOOLS_DIR=../git-tools.nvim ./tests/integration.sh
