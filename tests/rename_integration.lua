@@ -96,8 +96,7 @@ local function run()
   end
   local general_api, general_calls, input_origin
   if native_input then
-    local spec = require("lazy.core.config").plugins["lsp-tools.nvim"]
-    local opts = require("lazy.core.plugin").values(spec, "opts", false)
+    local opts = tools.configuration().options
     assert(opts.rename.input == nil, "rename must not depend on a configuration callback")
     local input_tools = require("input-tools")
     general_api, general_calls = input_tools.input, 0
