@@ -14,6 +14,7 @@ local names = {
   "hierarchy",
   "results",
   "pickers",
+  "lua",
 }
 local defaults =
   { code_actions = true, references = true, rename = true, outline = true, breadcrumbs = true }
@@ -30,7 +31,7 @@ local function load(name)
   if not enabled[name] then
     return nil
   end
-  local module = require("lsp-tools." .. name)
+  local module = require("lsp-tools." .. (name == "lua" and "languages.lua" or name))
   if ready[name] ~= module then
     module.setup(options[name])
     ready[name] = module
@@ -152,7 +153,7 @@ function M.setup(opts)
     local update = pending[name]
     if update then
       enabled[name], options[name], ready[name] = update.enabled, update.options, nil
-      local module = package.loaded["lsp-tools." .. name]
+      local module = package.loaded["lsp-tools." .. (name == "lua" and "languages.lua" or name)]
       if not update.enabled then
         if module then
           module.disable()
@@ -160,7 +161,7 @@ function M.setup(opts)
       elseif module then
         module.setup(update.options)
         ready[name] = module
-      elseif name == "code_actions" then
+      elseif name == "code_actions" or name == "lua" then
         load(name)
       end
       if name == "inspect" then
