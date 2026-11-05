@@ -58,6 +58,7 @@ Use [lazy.nvim](https://github.com/folke/lazy.nvim):
   lazy = false, -- Configure servers before the first LspAttach.
   opts = {
     server_activation = "filetype", -- Enable configs when their filetypes are opened.
+    server_filetypes = { lua_ls = { "lua" } }, -- Optional hints defer native config resolution.
     servers = {
       lua_ls = true, -- Install lua-language-server separately; choose your servers here.
       -- clangd = { cmd = { "clangd", "--background-index" } },
@@ -293,3 +294,14 @@ belong to theme-tools; no extra icon dependency is needed for this integration.
 Without theme-tools, existing standalone defaults remain available.
 Local icon-disable options still apply. Configure shared overrides through
 `require("theme_tools").setup({ icons = { overrides = { ... } } })`.
+
+With `server_activation = "filetype"`, optional `server_filetypes` maps server names
+to activation hints (`{ "lua" }`, `{}` for never, or `false` for any nonempty filetype).
+Hinted servers do not resolve or execute their native `lsp/*.lua` files at setup;
+resolution and full validation happen synchronously before the first activation.
+Unhinted servers retain immediate native resolution to discover their filetypes.
+Hints are copied and merged across setup calls, and never replace native filetypes,
+commands, root policies or hooks. Keep hints aligned with your native configs,
+including `after/lsp/` overrides. Missing or invalid hinted definitions report errors
+at first use; explicit status/health inspection also resolves them. Eager activation
+continues to resolve and validate configurations during setup.

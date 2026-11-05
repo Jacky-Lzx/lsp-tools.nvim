@@ -1,5 +1,5 @@
 local M = {}
-local entries, owned = {}, {}
+local entries, owned, filetypes = {}, {}, {}
 local activation, waiting, group = "eager", {}, nil
 
 local function watch()
@@ -21,6 +21,18 @@ end
 local function enable(names)
   if #names > 0 then
     table.sort(names)
+    -- Hinted configs are resolved only at first use, through the native loader.
+    -- Validate the whole activation batch before enabling any of its members.
+    for _, name in ipairs(names) do
+      if waiting[name] and waiting[name].deferred then
+        local config = vim.lsp.config[name]
+        assert(
+          config,
+          "No LSP config for " .. name .. "; load nvim-lspconfig first or supply a custom cmd"
+        )
+        require("lsp-tools.servers.config").validate(name, config, true)
+      end
+    end
     vim.lsp.enable(names)
     for _, name in ipairs(names) do
       owned[name], waiting[name] = true, nil
@@ -47,21 +59,37 @@ end
 
 -- Prepare every supplied entry before changing tool state or registering overrides.
 -- Native resolution preserves runtimepath/after/lsp config ordering and hooks.
-function M.prepare(opts, mode)
+function M.prepare(opts, mode, hints)
   assert(opts == false or type(opts) == "table", "servers must be a table or false")
   if mode == nil then
     mode = activation
   end
   assert(mode == "eager" or mode == "filetype", "server_activation must be 'eager' or 'filetype'")
-  local pending = { updates = {}, matches = {}, activation = mode }
+  local validation = require("lsp-tools.servers.config")
+  assert(hints == nil or type(hints) == "table", "server_filetypes must be a table")
+  local next_filetypes = vim.deepcopy(filetypes)
+  for name, value in pairs(hints or {}) do
+    validation.name(name)
+    if value ~= false then
+      validation.validate(name, { filetypes = value })
+    end
+    next_filetypes[name] = vim.deepcopy(value)
+  end
+  local pending = { updates = {}, matches = {}, activation = mode, filetypes = next_filetypes }
   if opts == false then
     for name in pairs(entries) do
       pending.updates[name] = false
     end
     return pending
   end
-  local validation = require("lsp-tools.servers.config")
-  for name, value in pairs(opts) do
+  -- Updating hints alone must also update already-selected pending servers.
+  local requests = vim.tbl_extend("force", {}, opts)
+  for name in pairs(hints or {}) do
+    if requests[name] == nil and entries[name] ~= nil then
+      requests[name] = entries[name]
+    end
+  end
+  for name, value in pairs(requests) do
     validation.name(name)
     assert(
       type(value) == "boolean" or type(value) == "table",
@@ -71,8 +99,13 @@ function M.prepare(opts, mode)
       validation.validate(name, value)
     end
   end
-  for name, value in pairs(opts) do
-    if value ~= false then
+  for name, value in pairs(requests) do
+    if value ~= false and mode == "filetype" and next_filetypes[name] ~= nil then
+      pending.matches[name] = {
+        filetypes = next_filetypes[name] ~= false and vim.deepcopy(next_filetypes[name]) or nil,
+        deferred = true,
+      }
+    elseif value ~= false then
       local base = vim.lsp.config[name]
       assert(
         base or type(value) == "table" and value.cmd ~= nil,
@@ -129,7 +162,7 @@ function M.apply(pending)
       entries[name] = value
     end
   end
-  activation = pending.activation
+  activation, filetypes = pending.activation, pending.filetypes
   if activation == "eager" then
     enable(vim.tbl_keys(waiting))
   else
@@ -147,7 +180,11 @@ function M.apply(pending)
 end
 
 function M.configuration()
-  return vim.deepcopy(entries), vim.deepcopy(owned), activation, vim.deepcopy(waiting)
+  return vim.deepcopy(entries),
+    vim.deepcopy(owned),
+    activation,
+    vim.deepcopy(waiting),
+    vim.deepcopy(filetypes)
 end
 
 return M

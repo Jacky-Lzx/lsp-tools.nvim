@@ -127,5 +127,81 @@ check(
 )
 tools.setup({ servers = false })
 vim.lsp.enable = enable
+-- Explicit activation hints avoid executing unrelated native config files.
+vim.opt.rtp:prepend(vim.env.LSP_TOOLS_ROOT .. "/tests/fixtures/servers")
+vim.opt.rtp:append(vim.env.LSP_TOOLS_ROOT .. "/tests/fixtures/servers/after")
+vim.bo[buf].filetype = ""
+vim.bo[hidden].filetype = ""
+local lookup, reads = getmetatable(vim.lsp.config).__index, {}
+getmetatable(vim.lsp.config).__index = function(self, name)
+  reads[name] = (reads[name] or 0) + 1
+  return lookup(self, name)
+end
+local hints = { lsp_tools_fixture = { "lua" }, ft_python = { "python" } }
+tools.setup({
+  server_activation = "filetype",
+  server_filetypes = hints,
+  servers = {
+    lsp_tools_fixture = { settings = { fixture = { hinted = true } } },
+    ft_python = true,
+  },
+})
+check(not next(reads), "hinted setup performs no native config lookups")
+hints.lsp_tools_fixture[1] = "changed"
+check(tools.configuration().server_filetypes.lsp_tools_fixture[1] == "lua", "hints are copied")
+vim.bo[buf].filetype = "lua"
+local resolved = vim.lsp.config.lsp_tools_fixture
+check(
+  vim.lsp.is_enabled("lsp_tools_fixture") and not reads.ft_python,
+  "first file resolves only matching configs"
+)
+check(
+  resolved.settings.fixture.upstream
+    and resolved.settings.fixture.after
+    and resolved.settings.fixture.hinted,
+  "deferred resolution retains native runtime, after and explicit overrides"
+)
+check(
+  type(resolved.on_init) == "function" and type(resolved.root_markers[1]) == "table",
+  "deferred resolution preserves hooks and root priority groups"
+)
+check(
+  vim.deep_equal(resolved.filetypes, { "lsp-tools-fixture" }),
+  "hints do not replace native filetypes"
+)
+tools.setup({ server_filetypes = { ft_python = {} } })
+check(
+  vim.deep_equal(select(4, require("lsp-tools.servers").configuration()).ft_python.filetypes, {}),
+  "hints-only setup refreshes an existing pending server"
+)
+tools.setup({ servers = false })
+for _, bad in ipairs({ true, "lua", 1 }) do
+  check(not pcall(tools.setup, { server_filetypes = bad }), "invalid hint container rejected")
+  check(
+    not pcall(tools.setup, { server_filetypes = { ft_python = bad } }),
+    "invalid hint list rejected"
+  )
+end
+check(
+  not pcall(tools.setup, { server_filetypes = { ["../bad"] = {} } }),
+  "invalid hint name rejected"
+)
+vim.bo[buf].filetype = ""
+tools.setup({
+  server_filetypes = { missing_hinted = { "lua" } },
+  servers = { missing_hinted = true },
+})
+check(not reads.missing_hinted, "missing hinted definitions wait for first use")
+vim.bo[buf].filetype = "text"
+-- Use activate directly so a deliberate configuration error does not escape an autocmd.
+vim.cmd("noautocmd setlocal filetype=lua")
+local ok, err = pcall(require("lsp-tools.servers").activate, buf)
+check(
+  not ok and tostring(err):find("No LSP config", 1, true),
+  "deferred errors are validated before activation"
+)
+check(not vim.lsp.is_enabled("missing_hinted"), "invalid config does not become enabled")
+tools.setup({ servers = false })
+getmetatable(vim.lsp.config).__index = lookup
 print(("filetype server activation: %d assertions passed"):format(count))
 vim.cmd("qa!")
