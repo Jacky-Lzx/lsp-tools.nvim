@@ -299,8 +299,11 @@ function M.disable()
   clear()
 end
 
+local setup_defaults = vim.deepcopy(config)
+
 function M.setup(opts)
-  local next_config = vim.tbl_deep_extend("force", config, opts or {})
+  local next_config =
+    vim.tbl_deep_extend("force", vim.deepcopy(setup_defaults), vim.deepcopy(opts or {}))
   assert(
     type(next_config.debounce) == "number" and next_config.debounce >= 0,
     "debounce must be nonnegative"

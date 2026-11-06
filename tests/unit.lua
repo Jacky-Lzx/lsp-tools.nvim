@@ -152,7 +152,7 @@ end
 local plugin = require("lsp-tools.code_actions")
 plugin.setup({ resolve_timeout = 30 })
 local wrapped = vim.ui.select
-plugin.setup()
+plugin.setup({ resolve_timeout = 30 })
 check(vim.ui.select == wrapped, "setup is idempotent")
 vim.ui.select({ "ordinary" }, {}, function() end)
 check(delegated == 1, "ordinary selects delegate")

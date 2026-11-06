@@ -195,6 +195,16 @@ function M.apply(pending)
   end
 end
 
+function M.dispose()
+  M.apply(M.prepare(false))
+  if group then
+    vim.api.nvim_del_augroup_by_id(group)
+    group = nil
+  end
+  entries, owned, filetypes, waiting = {}, {}, {}, {}
+  activation, provider, loaded_provider = "eager", nil, nil
+end
+
 function M.configuration()
   return vim.deepcopy(entries),
     vim.deepcopy(owned),

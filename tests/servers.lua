@@ -179,6 +179,16 @@ check(
   "bulk disable releases owned servers"
 )
 check(vim.lsp.is_enabled("lsp_tools_external"), "bulk disable preserves external activation")
+tools.update({ servers = { lsp_tools_fixture = true } })
+tools.dispose()
+tools.dispose()
+check(not vim.lsp.is_enabled("lsp_tools_fixture"), "disposal disables owned native servers")
+check(vim.lsp.is_enabled("lsp_tools_external"), "disposal preserves external native servers")
+check(
+  vim.lsp.config.lsp_tools_fixture.settings.fixture.user,
+  "disposal preserves native configuration overlays"
+)
+check(#tools.server_status() == 0, "disposal forgets managed registrations")
 enable("lsp_tools_external", false)
 vim.lsp.enable = enable
 print(("server management: %d assertions passed"):format(count))

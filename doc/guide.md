@@ -51,8 +51,18 @@ The newer optional tools below are enabled explicitly. Set `code_actions = false
 `{ enabled = false }`) to disable the tool, close its open pickers, and cancel
 pending requests. Disabling restores the previous select provider when the
 adapter still owns it, and preserves providers installed by other plugins.
-Repeated setup is supported; supplied code action options merge with previous
-options. Requiring the plugin alone registers no behavior and loads no picker UI.
+Repeated `setup(opts)` starts feature configuration from fresh defaults; omitted
+optional tools are disabled. `update(opts)` applies a partial change and preserves
+unmentioned features and their options. Configuration tables are copied; lists
+replace previous lists, including empty lists. Invalid options are rejected before
+changing live tools. Requiring the plugin alone registers no behavior or picker UI.
+
+`dispose()` cancels feature requests/views, restores owned UI adapters and removes
+owned commands. It disables only native servers activated by this plugin and
+removes pending activation hooks. User replacements, externally enabled servers
+and native configuration definitions are preserved. Calling it repeatedly is safe;
+a later explicit setup recreates feature configuration from defaults.
+
 
 Interactive tools (rename, outline, diagnostic details, pinned documentation,
 links, inspection and hierarchies) retain their settings at setup and initialize
@@ -167,7 +177,7 @@ changing to `"filetype"` does not stop already enabled clients. Repeated setup k
 the previous mode when this option is omitted.
 The filetype index uses the configs resolved at setup. If another part of your
 configuration later changes a pending server's `filetypes`, call
-`setup({ servers = { server_name = true } })` to refresh that entry.
+`update({ servers = { server_name = true } })` to refresh that entry.
 
 Load the plugin before LSP startup (`lazy = false` in lazy.nvim). `LspAttach` cannot
 bootstrap server management because an LSP must already be running to emit that event.

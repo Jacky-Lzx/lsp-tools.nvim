@@ -113,8 +113,15 @@ end
 
 ---Configure tools without loading interactive implementations. No mappings are installed.
 ---@param opts? table
-function M.setup(opts)
-  opts = opts or {}
+local function configure(opts, incremental)
+  assert(opts == nil or type(opts) == "table", "lsp-tools: setup expects a table")
+  opts = vim.deepcopy(opts or {})
+  if not incremental and opts.ui == nil then
+    opts.ui = {}
+  end
+  if incremental and opts.ui ~= nil then
+    opts.ui = vim.tbl_deep_extend("force", require("lsp-tools.keymaps").config(), opts.ui)
+  end
   assert(type(opts) == "table", "lsp-tools options must be a table")
   local validation = require("lsp-tools.config")
   if opts.ui ~= nil then
@@ -128,13 +135,13 @@ function M.setup(opts)
       value == nil or type(value) == "boolean" or type(value) == "table",
       name .. " must be a boolean or table"
     )
-    if value ~= nil or defaults[name] then
-      local on = value ~= false and not (type(value) == "table" and value.enabled == false)
-      local config = options[name] or {}
+    if not incremental or value ~= nil then
+      local on = value ~= nil
+          and value ~= false
+          and not (type(value) == "table" and value.enabled == false)
+        or value == nil and defaults[name] == true
+      local config = incremental and options[name] or {}
       if on then
-        if name == "outline" or name == "breadcrumbs" then
-          config = {}
-        end
         config = vim.tbl_deep_extend("force", {}, config, type(value) == "table" and value or {})
         validation.tool(name, config)
       end
@@ -212,6 +219,52 @@ function M.setup(opts)
   end
   return M
 end
+---Configure all features from fresh defaults. Native server definitions remain native overlays.
+function M.setup(opts)
+  assert(opts == nil or type(opts) == "table", "lsp-tools.nvim: setup expects a table")
+  opts = vim.deepcopy(opts or {})
+  return configure(opts, false)
+end
+
+---Apply a partial feature/service update without resetting unrelated features.
+function M.update(opts)
+  return configure(opts, true)
+end
+
+function M.dispose()
+  if automatic_group then
+    vim.api.nvim_del_augroup_by_id(automatic_group)
+    automatic_group = nil
+  end
+  for _, name in ipairs(names) do
+    local module = package.loaded["lsp-tools." .. (name == "lua" and "languages.lua" or name)]
+    if module then
+      module.disable()
+    end
+  end
+  for _, name in ipairs({ "hover.float", "inspect.recorder" }) do
+    local module = package.loaded["lsp-tools." .. name]
+    if module then
+      module.disable()
+    end
+  end
+  local servers = package.loaded["lsp-tools.servers"]
+  if servers then
+    servers.dispose()
+  end
+  local commands = require("lsp-tools.user_command")
+  for _, name in ipairs({
+    "LspToolsInfo",
+    "LspToolsOutline",
+    "LspToolsOutlineOpen",
+    "LspToolsOutlineClose",
+  }) do
+    commands.delete(name)
+  end
+  options, enabled, ready = {}, {}, {}
+  require("lsp-tools.keymaps").configure({})
+end
+
 function M.configuration()
   local servers = package.loaded["lsp-tools.servers"]
   local configs, _, activation, _, hints, provider

@@ -1,6 +1,7 @@
 local M = {}
 local api = vim.api
-local shared = { key_prefix = "<LocalLeader>", keymaps = {} }
+local defaults = { key_prefix = "<LocalLeader>", keymaps = {} }
+local shared = vim.deepcopy(defaults)
 function M.validate(opts)
   assert(type(opts) == "table", "UI options must be a table")
   if opts.key_prefix ~= nil then
@@ -27,7 +28,7 @@ function M.validate(opts)
 end
 function M.configure(opts)
   M.validate(opts)
-  shared = vim.tbl_deep_extend("force", shared, opts)
+  shared = vim.tbl_deep_extend("force", vim.deepcopy(defaults), vim.deepcopy(opts))
 end
 function M.config()
   return vim.deepcopy(shared)

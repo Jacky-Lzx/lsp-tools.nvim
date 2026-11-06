@@ -58,15 +58,15 @@ check(
   table.concat(vim.api.nvim_buf_get_lines(info.out, 0, -1, false), "\n"):find("request #3", 1, true),
   "inspection retains events from before first opening"
 )
-tools.setup({ inspect = false })
+tools.update({ inspect = false })
 check(not vim.api.nvim_win_is_valid(info.win), "disabling an initialized view closes it")
 check(tools.inspect() == false, "public entry cannot reactivate a disabled tool")
-tools.setup({ hover = false })
+tools.update({ hover = false })
 check(
   tools.hover() == false and not package.loaded["lsp-tools.hover"],
   "disabled unused tools stay unloaded"
 )
-tools.setup({ outline = { width = 30 } })
+tools.update({ outline = { width = 30 } })
 vim.cmd("LspToolsOutlineOpen")
 local sidebar
 for _, win in ipairs(vim.api.nvim_list_wins()) do
@@ -79,7 +79,7 @@ check(
   "first command initializes outline with saved options"
 )
 tools.close_outline()
-tools.setup({ outline = false })
+tools.update({ outline = false })
 vim.cmd("LspToolsOutlineOpen")
 check(tools.open_outline() == false, "disabled outline command does not reenable it")
 check(

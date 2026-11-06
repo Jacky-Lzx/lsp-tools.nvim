@@ -785,8 +785,11 @@ function M.disable()
     panel.close(v)
   end
 end
+local setup_defaults = vim.deepcopy(config)
+
 function M.setup(opts)
-  local next_config = vim.tbl_deep_extend("force", config, opts or {})
+  local next_config =
+    vim.tbl_deep_extend("force", vim.deepcopy(setup_defaults), vim.deepcopy(opts or {}))
   assert(
     next_config.position == "bottom" or next_config.position == "right",
     "results.position must be bottom or right"

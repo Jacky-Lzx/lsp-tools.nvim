@@ -441,8 +441,11 @@ function M.disable()
   end
 end
 
+local setup_defaults = vim.deepcopy(config)
+
 function M.setup(opts)
-  local next_config = vim.tbl_deep_extend("force", config, opts or {})
+  local next_config =
+    vim.tbl_deep_extend("force", vim.deepcopy(setup_defaults), vim.deepcopy(opts or {}))
   render.validate(next_config)
   assert(
     next_config.input == false or type(next_config.input) == "function",

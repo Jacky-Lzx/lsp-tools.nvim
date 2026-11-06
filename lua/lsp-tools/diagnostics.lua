@@ -348,8 +348,11 @@ function M.disable()
   end
 end
 
+local setup_defaults = vim.deepcopy(config)
+
 function M.setup(opts)
-  local next_config = vim.tbl_extend("force", config, opts or {})
+  local next_config =
+    vim.tbl_extend("force", vim.deepcopy(setup_defaults), vim.deepcopy(opts or {}))
   assert(
     type(next_config.request_timeout) == "number" and next_config.request_timeout > 0,
     "request_timeout must be positive"

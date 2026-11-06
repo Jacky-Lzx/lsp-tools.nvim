@@ -242,9 +242,11 @@ function M.disable()
   end
 end
 
+local setup_defaults = vim.deepcopy(config)
+
 function M.setup(opts)
   M.disable()
-  config = vim.tbl_extend("force", config, opts or {})
+  config = vim.tbl_extend("force", vim.deepcopy(setup_defaults), vim.deepcopy(opts or {}))
   enabled = true
   recorder.setup()
 end

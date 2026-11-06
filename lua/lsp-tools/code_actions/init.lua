@@ -34,8 +34,11 @@ function M.pick(entries, on_applied, on_cancel)
   end, on_applied)
 end
 
+local setup_defaults = vim.deepcopy(config)
+
 function M.setup(opts)
-  local next_config = vim.tbl_deep_extend("force", config, opts or {})
+  local next_config =
+    vim.tbl_deep_extend("force", vim.deepcopy(setup_defaults), vim.deepcopy(opts or {}))
   require("lsp-tools.config").diff(next_config)
   assert(
     type(next_config.resolve_timeout) == "number" and next_config.resolve_timeout > 0,

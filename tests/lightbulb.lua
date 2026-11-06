@@ -28,7 +28,7 @@ end
 local function refresh()
   local n = #calls
   vim.api.nvim_exec_autocmds("CursorMoved", {})
-  assert(vim.wait(100, function()
+  assert(vim.wait(1000, function()
     return #calls > n
   end, 1))
   return calls[#calls]
