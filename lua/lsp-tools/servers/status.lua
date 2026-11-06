@@ -10,6 +10,9 @@ function M.snapshot(buf)
   end
   buf = buf or vim.api.nvim_get_current_buf()
   local entries, owned, _, waiting = manager.configuration()
+  if next(entries) then
+    manager.ensure_provider()
+  end
   local result = {}
   local ft = vim.bo[buf].filetype
   for name, value in pairs(entries) do

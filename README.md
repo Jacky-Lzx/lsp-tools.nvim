@@ -305,3 +305,13 @@ commands, root policies or hooks. Keep hints aligned with your native configs,
 including `after/lsp/` overrides. Missing or invalid hinted definitions report errors
 at first use; explicit status/health inspection also resolves them. Eager activation
 continues to resolve and validate configurations during setup.
+
+### Deferred server config providers
+
+`server_provider = function() ... end` makes native config definitions available
+just before resolution, for example by mounting nvim-lspconfig through the host's
+plugin manager. With filetype activation and hints, registration does not call
+the provider. The same function is called once after successful completion; a
+failed callback remains retryable. Eager resolution and explicit server inspection
+also prepare the provider. The callback owns availability only; lsp-tools still
+validates, enables and manages servers through Neovim's native APIs.
