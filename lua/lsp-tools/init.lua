@@ -193,13 +193,16 @@ function M.setup(opts)
     end
   end
   watch_automatic()
+  require("lsp-tools.user_command").create("LspToolsInfo", function()
+    return M.inspect()
+  end, { desc = "Inspect LSP clients, roots, providers and requests" })
   if enabled.outline then
     for command, method in pairs({
       LspToolsOutline = "toggle_outline",
       LspToolsOutlineOpen = "open_outline",
       LspToolsOutlineClose = "close_outline",
     }) do
-      vim.api.nvim_create_user_command(command, function()
+      require("lsp-tools.user_command").create(command, function()
         return M[method]()
       end, { force = true, desc = command })
     end

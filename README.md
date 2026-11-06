@@ -315,3 +315,12 @@ the provider. The same function is called once after successful completion; a
 failed callback remains retryable. Eager resolution and explicit server inspection
 also prepare the provider. The callback owns availability only; lsp-tools still
 validates, enables and manages servers through Neovim's native APIs.
+
+`:LspToolsInfo` inspects clients, roots, providers and requests.
+
+## Command ownership
+
+Commands belong to the plugin; choose global entry keys and short aliases in
+your configuration. Registration reports same-name conflicts without replacing
+user commands. Reconfiguration refreshes only commands still owned by this
+plugin, and cleanup preserves subsequent user replacements.

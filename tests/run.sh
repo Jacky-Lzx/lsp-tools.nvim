@@ -10,6 +10,7 @@ trap 'rm -rf "$test_tmp"' EXIT HUP INT TERM
 export XDG_STATE_HOME="$test_tmp/state"
 export XDG_CACHE_HOME="$test_tmp/cache"
 export NVIM_LOG_FILE="$test_tmp/nvim.log"
+nvim --headless -u NONE -i NONE -l "$root/tests/command_ownership.lua"
 nvim --headless -u NONE -i NONE -l "$root/tests/unit.lua"
 nvim --headless -u NONE -i NONE -l "$root/tests/code_action_syntax.lua"
 nvim --headless -u NONE -i NONE -l "$root/tests/native_diff.lua"

@@ -190,7 +190,7 @@ function M.disable()
     restore(state)
   end
   clients, cache = {}, {}
-  pcall(api.nvim_del_user_command, "LspToolsLua")
+  pcall(require("lsp-tools.user_command").delete, "LspToolsLua")
 end
 function M.setup(config)
   require("lsp-tools.languages.lua.config").validate(config or {})
@@ -234,7 +234,7 @@ function M.setup(config)
       schedule()
     end,
   })
-  api.nvim_create_user_command("LspToolsLua", function(args)
+  require("lsp-tools.user_command").create("LspToolsLua", function(args)
     M.refresh(true)
     if args.args ~= "refresh" then
       local report = {}

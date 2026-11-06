@@ -627,7 +627,7 @@ function M.setup(opts)
     LspToolsOutlineOpen = M.open,
     LspToolsOutlineClose = M.close,
   }) do
-    api.nvim_create_user_command(name, function()
+    require("lsp-tools.user_command").create(name, function()
       callback()
     end, { force = true, desc = name })
   end
