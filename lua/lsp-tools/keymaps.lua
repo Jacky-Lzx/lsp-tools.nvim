@@ -166,7 +166,7 @@ function M.new(buf, opts)
       if api.nvim_win_is_valid(win) then
         api.nvim_set_current_win(win)
       end
-    end, { buffer = buf, nowait = true })
+    end, { buffer = buf, nowait = true, desc = "Close key bindings help" })
   end
   return self
 end
