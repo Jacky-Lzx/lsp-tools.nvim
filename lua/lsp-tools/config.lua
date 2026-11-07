@@ -39,9 +39,6 @@ end
 
 -- Validate supplied options without importing the implementation or its defaults.
 function M.tool(name, opts)
-  if name == "lua" then
-    return require("lsp-tools.languages.lua.config").validate(opts)
-  end
   require("lsp-tools.keymaps").validate(opts)
   if name == "hover" and opts.float ~= nil then
     assert(

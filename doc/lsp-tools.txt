@@ -135,6 +135,11 @@ the attached server. Other winbar providers must preserve the
 
 ==============================================================================
 CONFIGURATION                                              *lsp-tools-options*
+
+LuaLS library discovery moved to lua-tools.nvim. Move the former lua option
+table to require("lua_tools").setup(opts); use :LuaTools for inspection.
+Server configuration remains here. Enabled legacy lua options report a migration
+error before changing live tools.
                                            *lsp-tools-reference-configuration*
 
 >lua

@@ -14,7 +14,6 @@ local names = {
   "hierarchy",
   "results",
   "pickers",
-  "lua",
 }
 local defaults =
   { code_actions = true, references = true, rename = true, outline = true, breadcrumbs = true }
@@ -31,7 +30,7 @@ local function load(name)
   if not enabled[name] then
     return nil
   end
-  local module = require("lsp-tools." .. (name == "lua" and "languages.lua" or name))
+  local module = require("lsp-tools." .. name)
   if ready[name] ~= module then
     module.setup(options[name])
     ready[name] = module
@@ -116,6 +115,10 @@ end
 local function configure(opts, incremental)
   assert(opts == nil or type(opts) == "table", "lsp-tools: setup expects a table")
   opts = vim.deepcopy(opts or {})
+  assert(
+    opts.lua == nil or opts.lua == false,
+    'lsp-tools: Lua libraries moved to lua-tools.nvim; move lua options to require("lua_tools").setup()'
+  )
   if not incremental and opts.ui == nil then
     opts.ui = {}
   end
@@ -170,7 +173,7 @@ local function configure(opts, incremental)
     local update = pending[name]
     if update then
       enabled[name], options[name], ready[name] = update.enabled, update.options, nil
-      local module = package.loaded["lsp-tools." .. (name == "lua" and "languages.lua" or name)]
+      local module = package.loaded["lsp-tools." .. name]
       if not update.enabled then
         if module then
           module.disable()
@@ -178,7 +181,7 @@ local function configure(opts, incremental)
       elseif module then
         module.setup(update.options)
         ready[name] = module
-      elseif name == "code_actions" or name == "lua" then
+      elseif name == "code_actions" then
         load(name)
       end
       if name == "inspect" then
@@ -237,7 +240,7 @@ function M.dispose()
     automatic_group = nil
   end
   for _, name in ipairs(names) do
-    local module = package.loaded["lsp-tools." .. (name == "lua" and "languages.lua" or name)]
+    local module = package.loaded["lsp-tools." .. name]
     if module then
       module.disable()
     end

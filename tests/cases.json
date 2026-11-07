@@ -225,29 +225,6 @@
       }
     },
     {
-      "name": "lua_workspace",
-      "suite": "unit",
-      "command": [
-        "{nvim}",
-        "--cmd",
-        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
-        "--headless",
-        "-u",
-        "NONE",
-        "-i",
-        "NONE",
-        "-l",
-        "{root}/tests/lua_workspace.lua"
-      ],
-      "files": [
-        "tests/lua_workspace.lua"
-      ],
-      "timeout": 90,
-      "env": {
-        "LSP_TOOLS_TEST_TMP": "{tmp}"
-      }
-    },
-    {
       "name": "servers",
       "suite": "unit",
       "command": [
@@ -1326,32 +1303,6 @@
       ],
       "requires": [
         "exe:python3"
-      ],
-      "timeout": 180,
-      "env": {
-        "LSP_TOOLS_TEST_TMP": "{tmp}"
-      }
-    },
-    {
-      "name": "lua_workspace_integration",
-      "suite": "acceptance",
-      "command": [
-        "{nvim}",
-        "--headless",
-        "-u",
-        "NONE",
-        "-i",
-        "NONE",
-        "--noplugin",
-        "-n",
-        "-l",
-        "tests/lua_workspace_integration.lua"
-      ],
-      "files": [
-        "tests/lua_workspace_integration.lua"
-      ],
-      "requires": [
-        "exe:lua-language-server"
       ],
       "timeout": 180,
       "env": {

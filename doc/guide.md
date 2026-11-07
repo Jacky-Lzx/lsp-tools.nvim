@@ -128,47 +128,11 @@ the old plugin and move its options under `code_actions`;
 
 ## Neovim Lua development
 
-Opt in with `lua = true`, or supply library rules:
-
-```lua
-require("lsp-tools").setup({
-  lua = {
-    plugin_roots = { vim.fn.expand("~/src/neovim-plugins") },
-    library = {
-      { path = "${3rd}/luv/library", words = { "vim%.uv" } },
-      { path = "debug-tools.nvim", words = { "debug_tools" } },
-    },
-  },
-  servers = { lua_ls = true },
-})
-```
-
-Only initialized `lua_ls` clients with attached Lua file buffers are augmented.
-Literal `require` calls and `---@module` annotations discover plugin Lua libraries
-without executing plugin code. Runtimepath, already available lazy.nvim specs and
-immediate children of `plugin_roots` supply module paths. Without explicit roots,
-the default plugin directory is `stdpath('data')/lazy`. The module never loads
-lazy.nvim itself. Runtime Neovim types are added automatically.
-
-Libraries are isolated per client and recomputed from its loaded Lua buffers.
-User libraries and settings are preserved. Changes are debounced (80 ms), and
-unchanged buffers use changedtick caches. Files larger than `max_bytes` (default
-1 MiB) skip scanning. A `library` string is unconditional; table rules support
-Lua-pattern `words`/`files` and literal `mods` prefixes. `${3rd}` paths are resolved
-by LuaLS. This feature supplies LSP libraries; it does not install types or add a
-separate completion provider for unloaded module names.
-
-By default, projects containing `.luarc.json` or `.luarc.jsonc` are left alone.
-Set `lua.enabled = true` to supplement them explicitly, or use
-`enabled = function(root) ... end` to select projects. Project files are never
-rewritten. Server-provided settings remain authoritative over defaults.
-`:LspToolsLua` reports current libraries; `:LspToolsLua refresh` rescans paths
-(including newly installed plugins). `setup({ lua = false })` removes owned
-libraries, restores defaults it supplied, and closes its timer/autocommands.
-
-Validation: `tests/lua_workspace.lua`; actual LuaLS with
-`nvim --headless -u NONE -i NONE -l tests/lua_workspace_integration.lua`, or
-`python3 tests/terminal.py lua_workspace_integration.lua` for a real PTY.
+LuaLS library discovery now belongs to lua-tools.nvim. Move the former `lua`
+option table to that plugin's `opts`, or to `require("lua_tools").setup(opts)`.
+Use `:LuaTools` / `:LuaTools refresh` for library inspection and rescanning.
+The old enabled `lua` option reports a migration error before changing LSP state.
+Server configuration remains in lsp-tools or Neovim's native LSP configuration.
 
 ## Everyday keys
 
