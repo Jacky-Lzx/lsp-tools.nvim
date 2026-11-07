@@ -38,6 +38,7 @@ local function flush()
   end, 1)
 end
 local p = open()
+assert(p.components and p.components.specs[2].kind == "text")
 p:confirm()
 local first = calls[1]
 p:move(1)

@@ -12,6 +12,10 @@ function M.pick(options)
   opts.format_item = function(item)
     return item.text
   end
+  if opts.components == nil and not options.format_item then
+    local C = require("selection_tools.components")
+    opts.components = { C.icon(), C.text({ grow = 1, truncate = "match" }) }
+  end
   opts.resume, opts.multi = false, false
   opts.preview = { enabled = true }
   opts.previewer = options.preview

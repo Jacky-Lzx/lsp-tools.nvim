@@ -1,5 +1,7 @@
 # lsp-tools.nvim
 
+Selection-tools action/rename lists use the shared text component style. Location, symbol and diagnostic pickers retain their specialized grep layout and source highlighting; explicit picker components can replace that layout.
+
 Native LSP workflows with previews, persistent results and inspection.
 
 ![Grouped diagnostics with a syntax-highlighted source preview, severity title, and precise target range](assets/screenshots/diagnostics.png)
