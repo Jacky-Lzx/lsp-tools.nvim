@@ -1,7 +1,8 @@
 vim.opt.rtp:prepend(vim.env.LSP_TOOLS_ROOT)
 local inspect = require("lsp-tools.inspect")
 local buf = vim.api.nvim_get_current_buf()
-vim.o.columns = 180
+-- Keep the default headless grid width: resizing columns without an attached UI
+-- can make native checkhealth tabline redraws write beyond the allocated grid.
 local function client(id, name, supported)
   local c = {
     id = id,

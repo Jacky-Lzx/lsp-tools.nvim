@@ -7,7 +7,8 @@
     "GIT_TOOLS_DIR": "{root}/../git-tools.nvim",
     "LSP_TOOLS_ROOT": "{root}",
     "SELECTION_TOOLS_DIR": "{root}/../selection-tools.nvim",
-    "THEME_TOOLS_DIR": "{root}/../theme-tools.nvim"
+    "THEME_TOOLS_DIR": "{root}/../theme-tools.nvim",
+    "LSP_TOOLS_PAIRS_DIR": "{root}/../pairs.nvim"
   },
   "cases": [
     {
@@ -1752,7 +1753,8 @@
   },
   "requires": [
     "path:$SELECTION_TOOLS_DIR/lua/selection_tools/init.lua",
-    "path:$GIT_TOOLS_DIR/lua/git_tools/diff/init.lua"
+    "path:$GIT_TOOLS_DIR/lua/git_tools/diff/init.lua",
+    "path:$LSP_TOOLS_PAIRS_DIR/lua/pairs/init.lua"
   ],
   "fixtures": {
     "git-tools.nvim": {
@@ -1769,6 +1771,11 @@
       "repository": "Jacky-Lzx/theme-tools.nvim",
       "revision": "ea575718d7207d06e278d5ad2ed926b2bf38573d",
       "path": "{root}/../theme-tools.nvim"
+    },
+    "pairs.nvim": {
+      "repository": "Jacky-Lzx/pairs.nvim",
+      "revision": "a0fa6d44476135bd5cb91952ac6b9f202aed8c58",
+      "path": "{root}/../pairs.nvim"
     }
   }
 }

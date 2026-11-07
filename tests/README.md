@@ -62,3 +62,11 @@ compatibility adapters still require their documented environment paths.
 The canonical runner copies live in `plugin-tools.nvim/tests/`. Maintainers can
 run `python3 scripts/sync-test-runner.py --check` there to detect drift, or use
 `--write` to refresh sibling copies without changing their case manifests.
+
+Native code-action syntax tests require the pinned pairs.nvim fixture as well as
+git-tools and selection-tools. The runner declares these dependencies explicitly.
+
+The inspection test keeps the default headless grid width while opening the native
+health tab. Changing `columns` without an attached UI can cause native tabline
+redraws to access an outdated grid on Linux; panel assertions still run at the
+default width.
