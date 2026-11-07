@@ -4,7 +4,9 @@ vim.opt.rtp:prepend(
 )
 local function run()
   vim.opt.rtp:prepend(vim.env.LSP_TOOLS_ROOT)
-  vim.opt.rtp:prepend(vim.env.SNACKS_DIR)
+  if vim.env.SNACKS_DIR then
+    vim.opt.rtp:prepend(vim.env.SNACKS_DIR)
+  end
   local tools = require("lsp-tools")
   local tui = vim.env.LSP_TOOLS_TUI == "1"
   local configured = vim.env.LSP_TOOLS_CONFIG == "1"
@@ -23,7 +25,9 @@ local function run()
     end
   end
   if not configured then
-    require("snacks").setup({ picker = { enabled = true }, input = { enabled = true } })
+    if tui then
+      require("snacks").setup({ picker = { enabled = true }, input = { enabled = true } })
+    end
     tools.setup({ code_actions = false, references = false, rename = { backend = backend } })
     vim.g.mapleader = " "
     vim.keymap.set("n", "<leader>rn", function()

@@ -80,6 +80,10 @@ local function run()
     return not api.nvim_win_is_valid(v.win)
   end, "close key releases result view")
   assert(not v.preview and api.nvim_get_current_win() == win)
+  if vim.env.LSP_TOOLS_TEST_SNACKS ~= "1" then
+    print("result workflows: diagnostics, real fold/preview/close keys and source focus passed")
+    return
+  end
   require("snacks").setup({ picker = { enabled = true } })
   require("snacks.picker").setup()
   local p = require("snacks.picker")({

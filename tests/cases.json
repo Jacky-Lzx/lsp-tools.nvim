@@ -1,0 +1,1773 @@
+{
+  "version": 1,
+  "default": [
+    "unit"
+  ],
+  "defaults": {
+    "GIT_TOOLS_DIR": "{root}/../git-tools.nvim",
+    "LSP_TOOLS_ROOT": "{root}",
+    "SELECTION_TOOLS_DIR": "{root}/../selection-tools.nvim",
+    "THEME_TOOLS_DIR": "{root}/../theme-tools.nvim"
+  },
+  "cases": [
+    {
+      "name": "runner-contracts",
+      "suite": "unit",
+      "command": [
+        "{python}",
+        "tests/runner_checks.py"
+      ],
+      "files": [
+        "tests/runner_checks.py"
+      ],
+      "timeout": 120,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "setup_contract",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/setup_contract.lua"
+      ],
+      "files": [
+        "tests/setup_contract.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "command_ownership",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/command_ownership.lua"
+      ],
+      "files": [
+        "tests/command_ownership.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "unit",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/unit.lua"
+      ],
+      "files": [
+        "tests/unit.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "code_action_syntax",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/code_action_syntax.lua"
+      ],
+      "files": [
+        "tests/code_action_syntax.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "native_diff",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/native_diff.lua"
+      ],
+      "files": [
+        "tests/native_diff.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "selection",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/selection.lua"
+      ],
+      "files": [
+        "tests/selection.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "paths",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/paths.lua"
+      ],
+      "files": [
+        "tests/paths.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "public",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/public.lua"
+      ],
+      "files": [
+        "tests/public.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "lua_workspace",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/lua_workspace.lua"
+      ],
+      "files": [
+        "tests/lua_workspace.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "servers",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/servers.lua"
+      ],
+      "files": [
+        "tests/servers.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "servers_filetype",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/servers_filetype.lua"
+      ],
+      "files": [
+        "tests/servers_filetype.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "servers_provider",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/servers_provider.lua"
+      ],
+      "files": [
+        "tests/servers_provider.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "pickers",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/pickers.lua"
+      ],
+      "files": [
+        "tests/pickers.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "picker_diagnostics",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/picker_diagnostics.lua"
+      ],
+      "files": [
+        "tests/picker_diagnostics.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "pickers_preview",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/pickers_preview.lua"
+      ],
+      "files": [
+        "tests/pickers_preview.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "keymaps",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/keymaps.lua"
+      ],
+      "files": [
+        "tests/keymaps.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "window_protection",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/window_protection.lua"
+      ],
+      "files": [
+        "tests/window_protection.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "health",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/health.lua"
+      ],
+      "files": [
+        "tests/health.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "results",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/results.lua"
+      ],
+      "files": [
+        "tests/results.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "results_view",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/results_view.lua"
+      ],
+      "files": [
+        "tests/results_view.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "results_folds",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/results_folds.lua"
+      ],
+      "files": [
+        "tests/results_folds.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "results_options",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/results_options.lua"
+      ],
+      "files": [
+        "tests/results_options.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "results_preview",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/results_preview.lua"
+      ],
+      "files": [
+        "tests/results_preview.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "results_filters",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/results_filters.lua"
+      ],
+      "files": [
+        "tests/results_filters.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "results_jumps",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/results_jumps.lua"
+      ],
+      "files": [
+        "tests/results_jumps.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "results_history",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/results_history.lua"
+      ],
+      "files": [
+        "tests/results_history.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "diagnostic_results",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/diagnostic_results.lua"
+      ],
+      "files": [
+        "tests/diagnostic_results.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "qf_results",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/qf_results.lua"
+      ],
+      "files": [
+        "tests/qf_results.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "location_results",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/location_results.lua"
+      ],
+      "files": [
+        "tests/location_results.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "picker_results",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/picker_results.lua"
+      ],
+      "files": [
+        "tests/picker_results.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "lazy",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/lazy.lua"
+      ],
+      "files": [
+        "tests/lazy.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "active",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/active.lua"
+      ],
+      "files": [
+        "tests/active.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "automatic",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/automatic.lua"
+      ],
+      "files": [
+        "tests/automatic.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "lightbulb",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/lightbulb.lua"
+      ],
+      "files": [
+        "tests/lightbulb.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "linked_editing",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/linked_editing.lua"
+      ],
+      "files": [
+        "tests/linked_editing.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "diagnostics",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/diagnostics.lua"
+      ],
+      "files": [
+        "tests/diagnostics.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "hover",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/hover.lua"
+      ],
+      "files": [
+        "tests/hover.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "hover_float",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/hover_float.lua"
+      ],
+      "files": [
+        "tests/hover_float.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "hover_theme",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/hover_theme.lua"
+      ],
+      "files": [
+        "tests/hover_theme.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "hover_theme_ui",
+      "suite": "integration",
+      "command": [
+        "{python}",
+        "{root}/tests/hover_theme_ui.py"
+      ],
+      "files": [
+        "tests/hover_theme_ui.py"
+      ],
+      "requires": [
+        "path:{root}/../theme-tools.nvim/lua"
+      ],
+      "timeout": 120,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "links",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/links.lua"
+      ],
+      "files": [
+        "tests/links.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "inspect",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/inspect.lua"
+      ],
+      "files": [
+        "tests/inspect.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "hierarchy",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/hierarchy.lua"
+      ],
+      "files": [
+        "tests/hierarchy.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "references",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/references.lua"
+      ],
+      "files": [
+        "tests/references.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "workspace_edit",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/workspace_edit.lua"
+      ],
+      "files": [
+        "tests/workspace_edit.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "input",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/input.lua"
+      ],
+      "files": [
+        "tests/input.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "rename",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/rename.lua"
+      ],
+      "files": [
+        "tests/rename.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "outline",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/outline.lua"
+      ],
+      "files": [
+        "tests/outline.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "breadcrumbs",
+      "suite": "unit",
+      "command": [
+        "{nvim}",
+        "--cmd",
+        "lua vim.opt.rtp:prepend(vim.env.SELECTION_TOOLS_DIR); vim.opt.rtp:prepend(vim.env.GIT_TOOLS_DIR)",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "-l",
+        "{root}/tests/breadcrumbs.lua"
+      ],
+      "files": [
+        "tests/breadcrumbs.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "hover-theme-real",
+      "suite": "integration",
+      "command": [
+        "{nvim}",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "--noplugin",
+        "-n",
+        "-l",
+        "{root}/tests/hover_theme.lua"
+      ],
+      "files": [
+        "tests/hover_theme.lua"
+      ],
+      "requires": [
+        "path:$THEME_TOOLS_DIR/lua/theme_tools/init.lua"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "breadcrumbs-integration",
+      "suite": "acceptance",
+      "command": [
+        "sh",
+        "tests/breadcrumbs-integration.sh"
+      ],
+      "files": [
+        "tests/breadcrumbs-integration.sh"
+      ],
+      "requires": [
+        "exe:python3"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "integration",
+      "suite": "integration",
+      "command": [
+        "sh",
+        "tests/integration.sh"
+      ],
+      "files": [
+        "tests/integration.sh"
+      ],
+      "requires": [
+        "exe:python3"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "outline-integration",
+      "suite": "acceptance",
+      "command": [
+        "sh",
+        "tests/outline-integration.sh"
+      ],
+      "files": [
+        "tests/outline-integration.sh"
+      ],
+      "requires": [
+        "exe:python3"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "pickers-integration",
+      "suite": "acceptance",
+      "command": [
+        "sh",
+        "tests/pickers-integration.sh"
+      ],
+      "files": [
+        "tests/pickers-integration.sh"
+      ],
+      "requires": [
+        "exe:python3"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "references-integration",
+      "suite": "acceptance",
+      "command": [
+        "sh",
+        "tests/references-integration.sh"
+      ],
+      "files": [
+        "tests/references-integration.sh"
+      ],
+      "requires": [
+        "exe:python3"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "rename-integration",
+      "suite": "integration",
+      "command": [
+        "sh",
+        "tests/rename-integration.sh"
+      ],
+      "files": [
+        "tests/rename-integration.sh"
+      ],
+      "requires": [
+        "exe:python3"
+      ],
+      "timeout": 90,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "servers-integration",
+      "suite": "acceptance",
+      "command": [
+        "sh",
+        "tests/servers-integration.sh"
+      ],
+      "files": [
+        "tests/servers-integration.sh"
+      ],
+      "requires": [
+        "exe:python3"
+      ],
+      "timeout": 180,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "tools-integration",
+      "suite": "acceptance",
+      "command": [
+        "sh",
+        "tests/tools-integration.sh"
+      ],
+      "files": [
+        "tests/tools-integration.sh"
+      ],
+      "requires": [
+        "exe:python3"
+      ],
+      "timeout": 180,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "lua_workspace_integration",
+      "suite": "acceptance",
+      "command": [
+        "{nvim}",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "--noplugin",
+        "-n",
+        "-l",
+        "tests/lua_workspace_integration.lua"
+      ],
+      "files": [
+        "tests/lua_workspace_integration.lua"
+      ],
+      "requires": [
+        "exe:lua-language-server"
+      ],
+      "timeout": 180,
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      }
+    },
+    {
+      "name": "diagnostics_integration",
+      "suite": "integration",
+      "command": [
+        "{nvim}",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "--noplugin",
+        "-n",
+        "-l",
+        "tests/diagnostics_integration.lua"
+      ],
+      "files": [
+        "tests/diagnostics_integration.lua"
+      ],
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      },
+      "requires": [
+        "exe:python3"
+      ],
+      "timeout": 90
+    },
+    {
+      "name": "links_integration",
+      "suite": "acceptance",
+      "command": [
+        "{nvim}",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "--noplugin",
+        "-n",
+        "-l",
+        "tests/links_integration.lua"
+      ],
+      "files": [
+        "tests/links_integration.lua"
+      ],
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      },
+      "requires": [
+        "exe:texquill"
+      ],
+      "timeout": 180
+    },
+    {
+      "name": "hover_integration",
+      "suite": "acceptance",
+      "command": [
+        "{nvim}",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "--noplugin",
+        "-n",
+        "-l",
+        "tests/hover_integration.lua"
+      ],
+      "files": [
+        "tests/hover_integration.lua"
+      ],
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      },
+      "requires": [
+        "exe:lua-language-server"
+      ],
+      "timeout": 180
+    },
+    {
+      "name": "outline_integration",
+      "suite": "acceptance",
+      "command": [
+        "{nvim}",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "--noplugin",
+        "-n",
+        "-l",
+        "tests/outline_integration.lua"
+      ],
+      "files": [
+        "tests/outline_integration.lua"
+      ],
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      },
+      "requires": [
+        "exe:lua-language-server"
+      ],
+      "timeout": 180
+    },
+    {
+      "name": "diagnostic_results_integration",
+      "suite": "integration",
+      "command": [
+        "{nvim}",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "--noplugin",
+        "-n",
+        "-l",
+        "tests/diagnostic_results_integration.lua"
+      ],
+      "files": [
+        "tests/diagnostic_results_integration.lua"
+      ],
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      },
+      "requires": [
+        "exe:python3"
+      ],
+      "timeout": 90
+    },
+    {
+      "name": "hierarchy_integration",
+      "suite": "acceptance",
+      "command": [
+        "{nvim}",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "--noplugin",
+        "-n",
+        "-l",
+        "tests/hierarchy_integration.lua"
+      ],
+      "files": [
+        "tests/hierarchy_integration.lua"
+      ],
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      },
+      "requires": [
+        "exe:clangd"
+      ],
+      "timeout": 180
+    },
+    {
+      "name": "linked_editing_integration",
+      "suite": "acceptance",
+      "command": [
+        "{nvim}",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "--noplugin",
+        "-n",
+        "-l",
+        "tests/linked_editing_integration.lua"
+      ],
+      "files": [
+        "tests/linked_editing_integration.lua"
+      ],
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      },
+      "requires": [
+        "exe:texquill"
+      ],
+      "timeout": 180
+    },
+    {
+      "name": "outline_beamer",
+      "suite": "acceptance",
+      "command": [
+        "{nvim}",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "--noplugin",
+        "-n",
+        "-l",
+        "tests/outline_beamer.lua"
+      ],
+      "files": [
+        "tests/outline_beamer.lua"
+      ],
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      },
+      "requires": [
+        "exe:texquill"
+      ],
+      "timeout": 180
+    },
+    {
+      "name": "results_appearance_integration",
+      "suite": "integration",
+      "command": [
+        "{python}",
+        "tests/terminal.py",
+        "results_appearance_integration.lua"
+      ],
+      "files": [
+        "tests/terminal.py",
+        "tests/results_appearance_integration.lua"
+      ],
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      },
+      "requires": [
+        "exe:python3"
+      ],
+      "timeout": 120
+    },
+    {
+      "name": "automatic_integration",
+      "suite": "integration",
+      "command": [
+        "{nvim}",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "--noplugin",
+        "-n",
+        "-l",
+        "tests/automatic_integration.lua"
+      ],
+      "files": [
+        "tests/automatic_integration.lua"
+      ],
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      },
+      "requires": [
+        "exe:python3"
+      ],
+      "timeout": 90
+    },
+    {
+      "name": "results_integration",
+      "suite": "integration",
+      "command": [
+        "{nvim}",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "--noplugin",
+        "-n",
+        "-l",
+        "tests/results_integration.lua"
+      ],
+      "files": [
+        "tests/results_integration.lua"
+      ],
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      },
+      "requires": [
+        "exe:python3"
+      ],
+      "timeout": 90
+    },
+    {
+      "name": "workflows_integration",
+      "suite": "integration",
+      "command": [
+        "{nvim}",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "--noplugin",
+        "-n",
+        "-l",
+        "tests/workflows_integration.lua"
+      ],
+      "files": [
+        "tests/workflows_integration.lua"
+      ],
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      },
+      "requires": [
+        "exe:python3"
+      ],
+      "timeout": 90
+    },
+    {
+      "name": "location_results_integration",
+      "suite": "integration",
+      "command": [
+        "{nvim}",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "--noplugin",
+        "-n",
+        "-l",
+        "tests/location_results_integration.lua"
+      ],
+      "files": [
+        "tests/location_results_integration.lua"
+      ],
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      },
+      "requires": [
+        "exe:python3"
+      ],
+      "timeout": 90
+    },
+    {
+      "name": "pickers_integration",
+      "suite": "acceptance",
+      "command": [
+        "{nvim}",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "--noplugin",
+        "-n",
+        "-l",
+        "tests/pickers_integration.lua"
+      ],
+      "files": [
+        "tests/pickers_integration.lua"
+      ],
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}"
+      },
+      "requires": [
+        "exe:lua-language-server"
+      ],
+      "timeout": 180
+    },
+    {
+      "name": "results-snacks",
+      "suite": "compatibility",
+      "command": [
+        "{nvim}",
+        "--headless",
+        "-u",
+        "NONE",
+        "-i",
+        "NONE",
+        "--noplugin",
+        "-n",
+        "-l",
+        "tests/results_integration.lua"
+      ],
+      "files": [
+        "tests/results_integration.lua"
+      ],
+      "env": {
+        "LSP_TOOLS_TEST_TMP": "{tmp}",
+        "LSP_TOOLS_TEST_SNACKS": "1"
+      },
+      "requires": [
+        "env:SNACKS_DIR",
+        "path:$SNACKS_DIR/lua/snacks/init.lua"
+      ],
+      "timeout": 90
+    }
+  ],
+  "support": {
+    "tests/server.py": "Loaded by tests/pickers.lua",
+    "tests/servers_integration.lua": "Loaded by tests/servers-integration.sh",
+    "tests/breadcrumbs_integration.lua": "Loaded by tests/breadcrumbs-integration.sh",
+    "tests/integration.lua": "Loaded by tests/integration.sh",
+    "tests/servers_lspconfig_integration.lua": "Loaded by tests/servers-integration.sh",
+    "tests/rename_integration.lua": "Loaded by tests/rename-integration.sh",
+    "tests/references_integration.lua": "Loaded by tests/references-integration.sh",
+    "tests/fixtures/servers/lsp/lsp_tools_fixture.lua": "Loaded by tests/servers.lua",
+    "tests/fixtures/servers/after/lsp/lsp_tools_fixture.lua": "Loaded by tests/servers.lua",
+    "tests/run.sh": "Stable shell entry point for tests/run.py",
+    "tests/dynamic_server.py": "Local dynamic-registration protocol fixture"
+  },
+  "manual": {
+    "tests/tui.sh": "Interactive LSP protocol scenario; automated headless counterpart is integration/integration",
+    "tests/config_lazy_integration.lua": "Historical lazy.nvim personal-configuration acceptance; current configuration lifecycle is covered by the configuration repository",
+    "tests/rename_config_integration.lua": "Historical lazy.nvim personal-configuration acceptance; current configuration lifecycle is covered by the configuration repository",
+    "tests/config_results_integration.lua": "Historical lazy.nvim personal-configuration acceptance; current configuration lifecycle is covered by the configuration repository"
+  },
+  "requires": [
+    "path:$SELECTION_TOOLS_DIR/lua/selection_tools/init.lua",
+    "path:$GIT_TOOLS_DIR/lua/git_tools/diff/init.lua"
+  ],
+  "fixtures": {
+    "git-tools.nvim": {
+      "repository": "Jacky-Lzx/git-tools.nvim",
+      "revision": "29a9db7c77f25800d7c4d21483ea8da0e5b064eb",
+      "path": "{root}/../git-tools.nvim"
+    },
+    "selection-tools.nvim": {
+      "repository": "Jacky-Lzx/selection-tools.nvim",
+      "revision": "1dff1fa0efa8614e784e457c79eefd2d257ba312",
+      "path": "{root}/../selection-tools.nvim"
+    },
+    "theme-tools.nvim": {
+      "repository": "Jacky-Lzx/theme-tools.nvim",
+      "revision": "6eb5fc94618dd0f8e03d97515f8852274a3e6167",
+      "path": "{root}/../theme-tools.nvim"
+    }
+  }
+}
