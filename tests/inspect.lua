@@ -90,7 +90,17 @@ check(
 )
 vim.fn.maparg("<LocalLeader>y", "n", false, true).callback()
 check(vim.fn.getreg('"'):find("/project/main", 1, true), "copy inspection report")
+require("lsp-tools.panel").close(s)
+vim.api.nvim_set_current_buf(buf)
+vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "inspection source" })
+vim.cmd("checkhealth lsp-tools")
+local from_health = assert(inspect.open(), "Info opens from the health buffer")
+check(from_health.ctx.buf == buf, "Info keeps the original source context across health tabs")
+check(
+  vim.api.nvim_buf_get_lines(buf, 0, -1, false)[1] == "inspection source",
+  "Info preserves source contents"
+)
 inspect.disable()
-check(not require("lsp-tools.panel").alive(s), "disable closes owned panel")
+check(not require("lsp-tools.panel").alive(from_health), "disable closes owned panel")
 print(("inspection: %d assertions passed"):format(count))
 vim.cmd("qa!")

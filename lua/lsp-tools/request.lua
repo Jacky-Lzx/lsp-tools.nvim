@@ -2,8 +2,8 @@
 local M = {}
 local history = {}
 
-function M.context()
-  local win = vim.api.nvim_get_current_win()
+function M.context(win)
+  win = win or vim.api.nvim_get_current_win()
   local buf = vim.api.nvim_win_get_buf(win)
   return {
     win = win,

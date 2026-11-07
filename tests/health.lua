@@ -48,14 +48,11 @@ package.loaded.lualine = {
 active =
   { winbar = { lualine_c = { "filename" } }, options = { disabled_filetypes = { winbar = {} } } }
 health.check()
-check(has("warn", "delta executable missing"), "missing configured delta is actionable")
+check(has("warn", "executable missing; rename"), "missing configured delta is actionable")
 check(has("warn", "result titles may flicker"), "lualine ownership conflict detected")
-check(
-  has("ok", "Tree-sitter") or has("info", "Vim syntax fallback"),
-  "source highlight capability reported"
-)
-check(has("info", "No LSP clients"), "missing server is informational")
-check(has("ok", "results (deferred)"), "enabled deferred tools reported")
+check(not has("warn", "No LSP clients"), "an idle server is not a warning")
+check(has("info", "Details: :LspToolsInfo"), "full details have an explicit entry point")
+check(not has("info", "deferred"), "normal deferred modules do not add inventory noise")
 check(
   has("warn", "Executable missing: /missing/lsp-tools-health-server"),
   "missing managed server command reported"
@@ -72,10 +69,7 @@ check(
 active.options.disabled_filetypes.winbar = { "lsp-tools-results" }
 reports = {}
 health.check()
-check(
-  has("ok", "lualine preserves") and not has("warn", "result titles may flicker"),
-  "proper winbar exclusion accepted"
-)
+check(not has("warn", "result titles may flicker"), "proper winbar exclusion accepted")
 local buf, contents, maps =
   vim.api.nvim_get_current_buf(),
   vim.api.nvim_buf_get_lines(0, 0, -1, false),

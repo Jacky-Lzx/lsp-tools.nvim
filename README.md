@@ -276,8 +276,8 @@ Tree-sitter context across hunks and optional colors from an already-loaded pair
 | Reviewable changes | [Rename](doc/guide.md#rename-preview) · [Code-action rendering](doc/guide.md#configuration) |
 | More LSP tools | [Hover](doc/guide.md#optional-pinned-documentation) · [Hierarchies](doc/guide.md#optional-call-and-type-hierarchies) · [Inspection](doc/guide.md#optional-lsp-inspection) |
 
-Run `:checkhealth lsp-tools` from a source buffer to check dependencies, preview
-highlighting, attached providers, and winbar integration.
+Run `:checkhealth lsp-tools` to check enabled feature dependencies, server configuration
+and winbar conflicts. Use `:LspToolsInfo` for attached providers and capabilities.
 [Behavior and limits](doc/guide.md#behavior-and-limits) documents preview snapshots,
 resource operations, and server-dependent behavior. The diagnostic overview shows
 diagnostics Neovim has received; it does not scan unopened files itself.
@@ -339,3 +339,10 @@ omitting server fields does not unload native configurations or unrelated client
 `dispose()` cancels feature requests/views, releases adapters/owned commands and
 disables only servers activated by this plugin. Native configuration definitions
 and user replacements remain intact. Repeated disposal is safe.
+
+## Health and inspection
+
+Health reports actionable failures and a compact result for applicable checks. Disabled,
+optional and not-yet-activated features do not warn solely because they are inactive.
+Inspection does not configure plugins, start services or install dependencies.
+Use `:LspToolsInfo` for detailed configuration and runtime information.

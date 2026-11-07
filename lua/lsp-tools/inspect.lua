@@ -190,11 +190,29 @@ function M.open(opts)
     render(existing)
     return existing
   end
-  if vim.bo.buftype ~= "" then
+  local ctx
+  if vim.bo.buftype == "" then
+    ctx = request.context()
+  elseif vim.bo.filetype == "checkhealth" then
+    local alternate = vim.fn.bufnr("#")
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+      local buf = vim.api.nvim_win_get_buf(win)
+      if buf == alternate and vim.bo[buf].buftype == "" then
+        ctx = request.context(win)
+        break
+      end
+    end
+  end
+  if not ctx then
+    vim.notify(
+      "Open a source buffer to inspect LSP providers",
+      vim.log.levels.INFO,
+      { title = "LspToolsInfo" }
+    )
     return false
   end
   opts = opts or {}
-  local s = panel.open("inspect", request.context(), {
+  local s = panel.open("inspect", ctx, {
     keymaps = opts.keymaps or config.keymaps,
     key_prefix = opts.key_prefix or config.key_prefix,
     width = config.width,
