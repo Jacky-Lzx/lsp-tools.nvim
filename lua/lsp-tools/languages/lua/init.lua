@@ -245,7 +245,11 @@ function M.setup(config)
           library = vim.deepcopy(state.applied.workspace.library),
         }
       end
-      vim.notify(vim.inspect(report), vim.log.levels.INFO, { title = "Lua workspace libraries" })
+      vim.notify(
+        vim.inspect(report),
+        vim.log.levels.INFO,
+        { title = "Lua workspace libraries", filetype = "lua" }
+      )
     end
   end, {
     nargs = "?",
