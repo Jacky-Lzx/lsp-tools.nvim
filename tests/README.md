@@ -70,3 +70,10 @@ The inspection test keeps the default headless grid width while opening the nati
 health tab. Changing `columns` without an attached UI can cause native tabline
 redraws to access an outdated grid on Linux; panel assertions still run at the
 default width.
+
+## Documentation checks
+
+`python3 tests/run.py unit --filter docs` checks local Markdown links and fragments,
+README Lua syntax, help entry points and isolated native setup. It does not
+download dependencies or write generated tags into the checkout. The canonical
+checker is maintained with the shared runner in plugin-tools.nvim.
