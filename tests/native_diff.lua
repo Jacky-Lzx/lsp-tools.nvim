@@ -2,18 +2,15 @@ vim.opt.rtp:prepend(vim.env.LSP_TOOLS_ROOT or vim.fn.getcwd())
 local config = require("lsp-tools.config")
 for _, tool in ipairs({ "rename", "code_actions" }) do
   config.tool(tool, { backend = "native", native = { file_header = false, ft = "lua" } })
-  config.tool(
-    tool,
-    {
-      backend = "native",
-      native = {
-        decorations = false,
-        highlights = function()
-          return {}
-        end,
-      },
-    }
-  )
+  config.tool(tool, {
+    backend = "native",
+    native = {
+      decorations = false,
+      highlights = function()
+        return {}
+      end,
+    },
+  })
   config.tool(tool, { backend = "delta" })
   config.tool(tool, { backend = "vim" })
   for _, invalid in ipairs({
