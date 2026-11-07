@@ -173,6 +173,13 @@ function M.setup(opts)
     if not vim.b[buf].lsp_tools_hover_float then
       vim.b[buf].lsp_tools_hover_float = true
       render(buf, win, markdown, styled)
+      if opts.on_render then
+        local ok, err =
+          pcall(opts.on_render, { buf = buf, win = win, contents = contents, syntax = syntax })
+        if not ok then
+          vim.notify("lsp-tools hover.float.on_render: " .. tostring(err), vim.log.levels.ERROR)
+        end
+      end
     end
     return buf, win
   end

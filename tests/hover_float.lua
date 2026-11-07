@@ -17,7 +17,15 @@ tools.setup({
   outline = false,
   breadcrumbs = false,
   references = false,
-  hover = true,
+  hover = {
+    float = {
+      on_render = function(ctx)
+        assert(api.nvim_win_get_buf(ctx.win) == ctx.buf)
+        assert(ctx.syntax == "markdown" or ctx.syntax == "plaintext")
+        vim.b[ctx.buf].render_hook_calls = (vim.b[ctx.buf].render_hook_calls or 0) + 1
+      end,
+    },
+  },
 })
 check(not package.loaded["lsp-tools.hover"], "styling native K keeps pinned UI deferred")
 local lines = {
@@ -57,7 +65,9 @@ check(
   raw:find("```rust", 1, true) and raw:find("https://example.com", 1, true),
   "raw Markdown and URLs survive for copying and links"
 )
+check(vim.b[buf].render_hook_calls == 1, "render callback decorates the ready hover")
 local again, focused = open()
+check(vim.b[buf].render_hook_calls == 1, "focus does not re-run decoration")
 check(
   again == buf and focused == win and api.nvim_get_current_win() == win,
   "second native hover focuses the same float"
@@ -150,6 +160,7 @@ check(
 )
 api.nvim_win_close(win, true)
 vim.o.columns, vim.o.lines = 100, 35
+assert(not pcall(tools.setup, { hover = { float = { on_render = true } } }))
 local wrapper = vim.lsp.util.open_floating_preview
 check(
   not pcall(tools.setup, { hover = { float = { max_height = 0 } } }),

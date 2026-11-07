@@ -49,6 +49,10 @@ function M.tool(name, opts)
       "hover.float must be false or a table"
     )
     if type(opts.float) == "table" then
+      assert(
+        opts.float.on_render == nil or type(opts.float.on_render) == "function",
+        "hover.float.on_render must be a function"
+      )
       for _, key in ipairs({ "max_width", "max_height" }) do
         local value = opts.float[key]
         assert(
